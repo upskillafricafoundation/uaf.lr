@@ -1,25 +1,26 @@
 /* =========================================================
    UAF IMPACT — APP SHELL
    PHASE 1: navigation, branding, PWA install, offline shell.
-   No live data yet — Impact/Communities figures are wired to
-   the public API in Phase 4. Everything data-shaped here is
-   built so Phase 4 only has to swap fetchers, not markup.
+   PHASE 2+4: see data.js for the live public-data layer that
+   plugs into this same markup. This file's job stays nav,
+   forms-as-UI, install, and shell behavior.
    ========================================================= */
 
 (() => {
   "use strict";
 
   /* ---------------------------------------------------------
-     CONFIG — placeholder reference lists only.
-     Phase 4 replaces these with a call to the public API
-     (Communities.gs) instead of hardcoding them here.
+     CONFIG — county/year reference lists for the selectors.
+     These are just Liberia's counties, not fetched data, so
+     they stay static here rather than round-tripping to the
+     API on every load.
   --------------------------------------------------------- */
   const COUNTIES = [
     "Montserrado", "Margibi", "Bong", "Nimba", "Grand Bassa"
   ];
   const YEARS = ["2026", "2027"];
 
-  const APP_VERSION = "phase-1";
+  const APP_VERSION = "phase-2";
 
   /* ---------------------------------------------------------
      ROUTER
@@ -166,11 +167,10 @@
 
   /* ---------------------------------------------------------
      FORM STUBS
-     Phase 1 = frontend only. No browser code may ever talk to
-     Sheets/MTN directly (see project security rules), so these
-     handlers simply confirm receipt in the UI. Phase 4 swaps
-     the body of each submit handler for a fetch() to the
-     Apps Script Web App endpoint.
+     Donation and Data & Evidence stay UI-only until Phase 8/9
+     (MTN MoMo) and the evidence-review workflow are built.
+     The out-of-school report form is wired for real in Phase 4
+     — see data.js, which owns #report-form's submit handling.
   --------------------------------------------------------- */
   function initDonationForm() {
     const form = document.getElementById("donation-form");
@@ -178,16 +178,6 @@
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       showToast("Secure donations open soon — this form isn't connected to payment yet.");
-    });
-  }
-
-  function initReportForm() {
-    const form = document.getElementById("report-form");
-    if (!form) return;
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      showToast("Submission queue opens soon. Your report isn't sent yet.");
-      form.reset();
     });
   }
 
@@ -213,6 +203,7 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 3200);
   }
+  window.__uafShowToast = showToast; // used by data.js so both files share one toast
 
   /* ---------------------------------------------------------
      OFFLINE STATUS
@@ -233,8 +224,8 @@
 
   /* ---------------------------------------------------------
      LAST UPDATED STAMPS
-     Placeholder now; Phase 4 sets these from the API response
-     timestamp rather than the client clock.
+     Placeholder default; data.js overwrites these with the
+     real API timestamp once live data loads successfully.
   --------------------------------------------------------- */
   function stampLastUpdated() {
     document.querySelectorAll("[data-last-updated]").forEach((el) => {
@@ -350,7 +341,6 @@
     initAmountChips();
     initPaymentMethods();
     initDonationForm();
-    initReportForm();
     initContactForm();
     initInstall();
     initSheets();
@@ -368,6 +358,9 @@
         /* offline-first is best-effort; app still works without SW */
       });
     }
+
+    // data.js (Phase 2+4) hooks in after the shell is ready.
+    window.__uafDataInit && window.__uafDataInit();
 
     console.info("UAF Impact —", APP_VERSION);
   });

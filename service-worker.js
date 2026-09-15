@@ -1,17 +1,19 @@
 /* =========================================================
    UAF IMPACT — SERVICE WORKER
-   Caches only the public app shell (markup, styles, script,
+   Caches only the public app shell (markup, styles, scripts,
    icons). Never cache admin routes or private API responses —
-   there are none in Phase 1, and Phase 4+ must keep it that
-   way for any authenticated/admin request.
+   Phase 4's public data fetch is explicitly excluded below via
+   the /api path check, same rule Phase 1 set.
    ========================================================= */
 
-const CACHE_VERSION = "uaf-impact-shell-v1";
+const CACHE_VERSION = "uaf-impact-shell-v2";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
+  "./config.js",
   "./app.js",
+  "./data.js",
   "./manifest.json",
   "./assets/uaf-logo.png",
   "./assets/nic-logo.png",
@@ -42,10 +44,11 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-/* Rule: never intercept /admin or /api paths here in later phases —
-   only same-origin app-shell GET requests are cache-first. Anything
-   else (future public/admin API calls) should go network-first or
-   be excluded entirely from this worker. */
+/* Rule: never intercept /admin or /api paths here in later phases,
+   and never intercept requests to a different origin (the Apps
+   Script API lives on script.google.com, not this origin) — the
+   origin check below already excludes it, but the path check stays
+   as defense in depth if the API is ever proxied same-origin. */
 self.addEventListener("fetch", (event) => {
   const req = event.request;
 
