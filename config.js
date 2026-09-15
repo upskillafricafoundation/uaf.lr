@@ -5,5 +5,5 @@
    ========================================================= */
 window.UAF_CONFIG = {
   // Paste your Apps Script Web App /exec URL here.
-  API_URL: "PASTE_YOUR_APPS_SCRIPT_WEB_APP_URL_HERE"
+  API_URL: "https://script.google.com/macros/library/d/1DUPLOTuQV1O2KDL7ga_aWIQ3ZROYRiaP9VD0WyZY8vJ_VwgtdRKXecSm/2"
 };
