@@ -1,0 +1,38 @@
+{
+  "id": "/uaf-impact/",
+  "name": "UAF Impact",
+  "short_name": "UAF Impact",
+  "description": "Education Access & Community Impact — Upskill Africa Foundation. Monitor out-of-school children data, understand community needs, and act.",
+  "start_url": "./index.html?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#F5F8FA",
+  "theme_color": "#004F71",
+  "lang": "en",
+  "dir": "ltr",
+  "categories": ["education", "nonprofit", "social"],
+  "icons": [
+    { "src": "icons/favicon-16.png", "sizes": "16x16", "type": "image/png" },
+    { "src": "icons/favicon-32.png", "sizes": "32x32", "type": "image/png" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable" },
+    { "src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "See the Impact",
+      "short_name": "Impact",
+      "url": "./index.html#/impact",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Help a Child Return to School",
+      "short_name": "Support",
+      "url": "./index.html#/support",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}
