@@ -23,6 +23,7 @@
   const isConfigured = API_URL && !API_URL.includes("PASTE_YOUR");
 
   let publicData = null; // { counties, communities, funding, generatedAt }
+  let publicPhotos = []; // Phase 7: [{ photoId, title, caption, category, county, community, program, photoDate, imageUrl }]
 
   /* ---------------------------------------------------------
      FETCH
@@ -43,6 +44,26 @@
       // existing empty states already communicate "no data yet",
       // and the offline banner covers connectivity loss.
       console.error("UAF Impact: failed to load public data.", err);
+    }
+  }
+
+  /* ---------------------------------------------------------
+     FETCH — PUBLIC PHOTOS (Phase 7)
+     Separate route, separate failure mode: if this fails, the
+     Home screen simply keeps Phase 1's placeholder carousel
+     slide exactly as it was — publicData's own render path is
+     never affected by a photo-fetch failure or vice versa.
+  --------------------------------------------------------- */
+  async function loadPublicPhotos() {
+    if (!isConfigured) return;
+    try {
+      const res = await fetch(`${API_URL}?route=publicPhotos`);
+      const json = await res.json();
+      if (!json.ok) throw new Error(json.error || "Unknown API error");
+      publicPhotos = json.photos || [];
+      renderCarousel(publicPhotos);
+    } catch (err) {
+      console.error("UAF Impact: failed to load public photos.", err);
     }
   }
 
@@ -123,6 +144,45 @@
     });
 
     stampMeta(screen, rows);
+  }
+
+  /* ---------------------------------------------------------
+     RENDER — PHOTO CAROUSEL (Phase 7)
+     Reuses the EXACT .carousel__track / .carousel__slide /
+     .carousel__dot markup and classes app.js's initCarousel()
+     already animates. If zero photos are returned, Phase 1's
+     existing placeholder slide is left exactly as-is — the
+     track is never emptied into a blank carousel.
+  --------------------------------------------------------- */
+  function renderCarousel(photos) {
+    const track = document.querySelector(".carousel__track");
+    if (!track || !photos || !photos.length) return;
+
+    track.innerHTML = "";
+    photos.forEach((p) => {
+      const slide = document.createElement("div");
+      slide.className = "carousel__slide carousel__slide--photo";
+      const img = document.createElement("img");
+      img.src = p.imageUrl;
+      img.loading = "lazy";
+      img.alt = p.title || p.caption || "UAF field photograph";
+      slide.appendChild(img);
+
+      const captionText = [p.title, [p.community, p.county].filter(Boolean).join(", ")]
+        .filter(Boolean).join(" — ");
+      if (captionText) {
+        const caption = document.createElement("div");
+        caption.className = "carousel__caption";
+        caption.textContent = captionText;
+        slide.appendChild(caption);
+      }
+      track.appendChild(slide);
+    });
+
+    // Re-run app.js's own carousel init against the new slide set —
+    // see the __uafReinitCarousel note in app.js. Its logic is
+    // untouched; this just re-triggers it now that real slides exist.
+    window.__uafReinitCarousel && window.__uafReinitCarousel();
   }
 
   /* ---------------------------------------------------------
@@ -326,5 +386,6 @@
     initReportForm();
     bindFilterListeners();
     loadPublicData();
+    loadPublicPhotos();
   };
 })();
