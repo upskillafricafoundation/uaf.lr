@@ -91,4 +91,53 @@
   });
 
   restoreSession();
+
+  /* =========================================================
+     MODULE REGISTRY (Phase 7+)
+     ---------------------------------------------------------
+     The Phase 6 "Signed in" card lives in #admin-modules and
+     showDashboard() above already sets #welcome-name/#welcome-role
+     inside it directly — that markup and those IDs are untouched.
+     Rather than risk breaking that by re-rendering #admin-modules'
+     innerHTML, each new module (Phase 7's media.js, later phases'
+     own files) renders into a separate sibling panel
+     (#admin-module-panel) and the two are toggled by visibility.
+     A module registers itself with window.__uafRegisterAdminModule
+     and doesn't need to know about any other module.
+  ========================================================= */
+  const moduleRegistry = {};
+  window.__uafRegisterAdminModule = function (key, renderFn) {
+    moduleRegistry[key] = renderFn;
+  };
+
+  function activateModule(key) {
+    document.querySelectorAll(".admin-nav__item[data-module]").forEach((item) => {
+      item.classList.toggle("is-active", item.dataset.module === key);
+    });
+
+    const dashboardPanel = document.getElementById("admin-modules");
+    const modulePanel = document.getElementById("admin-module-panel");
+    if (!dashboardPanel || !modulePanel) return;
+
+    if (key === "dashboard") {
+      dashboardPanel.classList.remove("is-hidden");
+      modulePanel.classList.add("is-hidden");
+      return;
+    }
+
+    dashboardPanel.classList.add("is-hidden");
+    modulePanel.classList.remove("is-hidden");
+
+    const renderFn = moduleRegistry[key];
+    if (renderFn) {
+      modulePanel.innerHTML = "";
+      renderFn(modulePanel, window.__uafAdminSession);
+    } else {
+      modulePanel.innerHTML = '<div class="admin-card"><p class="admin-muted">This module isn\'t available yet.</p></div>';
+    }
+  }
+
+  document.querySelectorAll(".admin-nav__item[data-module]").forEach((item) => {
+    item.addEventListener("click", () => activateModule(item.dataset.module));
+  });
 })();
