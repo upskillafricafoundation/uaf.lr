@@ -20,7 +20,7 @@
   ];
   const YEARS = ["2026", "2027"];
 
-  const APP_VERSION = "phase-2";
+  const APP_VERSION = "phase-7";
 
   /* ---------------------------------------------------------
      ROUTER
@@ -129,6 +129,14 @@
       timer = setInterval(() => setSlide((index + 1) % slides.length), 5000);
     });
   }
+
+  // Phase 7: data.js replaces the placeholder slide with real approved
+  // photos once they load (asynchronously, after this file's own
+  // DOMContentLoaded init already ran initCarousel() once against the
+  // single placeholder slide). Exposing the function lets data.js
+  // re-run the exact same init logic against the new slide markup
+  // without this file's carousel logic itself changing at all.
+  window.__uafReinitCarousel = initCarousel;
 
   /* ---------------------------------------------------------
      DONATION AMOUNT CHIPS
