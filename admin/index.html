@@ -49,9 +49,9 @@
     <main class="admin-main">
       <nav class="admin-nav">
         <div class="admin-nav__title">Modules</div>
-        <div class="admin-nav__item is-active">Dashboard</div>
+        <div class="admin-nav__item is-active" data-module="dashboard">Dashboard</div>
         <div class="admin-nav__item is-disabled">Community Data <span>Phase 6+</span></div>
-        <div class="admin-nav__item is-disabled">Media Review <span>Phase 7</span></div>
+        <div class="admin-nav__item" data-module="media">Media Review</div>
         <div class="admin-nav__item is-disabled">Donations <span>Phase 8</span></div>
         <div class="admin-nav__item is-disabled">Stories &amp; Evidence <span>Phase 10</span></div>
         <div class="admin-nav__item is-disabled">Users &amp; Roles <span>Phase 7+</span></div>
@@ -65,6 +65,11 @@
           <p class="admin-muted">This confirms Phase 6 end-to-end: login, session token, role lookup, and logout all work against your live Apps Script backend. Each module listed on the left is added in its own phase, gated by this same session — no re-work to auth required.</p>
         </div>
       </section>
+
+      <!-- Phase 7+ modules render here; #admin-modules above stays
+           exactly as Phase 6 left it and is just hidden while a
+           module panel is active. See admin.js's activateModule(). -->
+      <section id="admin-module-panel" class="admin-content is-hidden"></section>
     </main>
   </div>
 
@@ -72,5 +77,6 @@
 
 <script src="../config.js"></script>
 <script src="admin.js"></script>
+<script src="media.js"></script>
 </body>
 </html>
