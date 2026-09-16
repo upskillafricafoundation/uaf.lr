@@ -6,7 +6,7 @@
    the /api path check, same rule Phase 1 set.
    ========================================================= */
 
-const CACHE_VERSION = "uaf-impact-shell-v2";
+const CACHE_VERSION = "uaf-impact-shell-v3";
 const APP_SHELL = [
   "./",
   "./index.html",
