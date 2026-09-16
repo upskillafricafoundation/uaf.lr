@@ -50,3 +50,35 @@
   .admin-nav { width: 100%; display: flex; overflow-x: auto; border-right: none; border-bottom: 1px solid var(--border); }
   .admin-nav__title { display: none; }
 }
+
+/* =========================================================
+   PHASE 7 — MEDIA REVIEW MODULE (additive only)
+   ========================================================= */
+.admin-module-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.admin-module-header h2 { margin-bottom: 0; }
+
+.media-upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 560px) { .media-upload-grid { grid-template-columns: 1fr; } }
+
+.media-group { margin-top: 24px; }
+.media-group__title { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 700; color: var(--ink-700); text-transform: uppercase; letter-spacing: 0.4px; margin-bottom: 10px; }
+.media-group__count { background: var(--blue-050); color: var(--blue-800); border-radius: 999px; padding: 1px 8px; font-size: 11.5px; font-weight: 700; }
+
+.media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.media-card { border: 1px solid var(--border); border-radius: var(--radius-md); background: var(--surface); overflow: hidden; box-shadow: var(--shadow-card); }
+.media-card__thumb-wrap { aspect-ratio: 4/3; background: var(--blue-050); display: flex; align-items: center; justify-content: center; }
+.media-card__thumb-wrap img { width: 100%; height: 100%; object-fit: cover; }
+.media-card__thumb-wrap .admin-muted { font-size: 11.5px; }
+.media-card__body { padding: 10px 12px; }
+.media-card__title { font-size: 13.5px; font-weight: 700; color: var(--ink-900); margin-bottom: 2px; }
+.media-card__meta { font-size: 11.5px; color: var(--ink-500); margin-bottom: 8px; }
+.media-card__consent { display: flex; align-items: flex-start; gap: 6px; font-size: 11.5px; color: var(--ink-700); background: var(--amber-050); border: 1px solid #EFD9A9; border-radius: var(--radius-sm); padding: 8px; margin-bottom: 8px; }
+.media-card__consent input { margin-top: 2px; }
+.media-card__actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.media-card__actions .btn { padding: 7px 10px; font-size: 12.5px; }
+.media-status-tag { display: inline-block; font-size: 10.5px; font-weight: 700; letter-spacing: 0.3px; padding: 2px 8px; border-radius: 999px; }
+.media-status-tag--DRAFT { background: var(--bg); color: var(--ink-500); border: 1px solid var(--border); }
+.media-status-tag--UNDER_REVIEW { background: var(--amber-050); color: var(--amber-600); }
+.media-status-tag--APPROVED { background: var(--blue-050); color: var(--blue-800); }
+.media-status-tag--PUBLISHED { background: var(--green-050); color: var(--green-700); }
+.media-status-tag--ARCHIVED { background: var(--bg); color: var(--ink-300); border: 1px solid var(--border); }
