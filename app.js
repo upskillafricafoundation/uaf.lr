@@ -180,15 +180,6 @@
      The out-of-school report form is wired for real in Phase 4
      — see data.js, which owns #report-form's submit handling.
   --------------------------------------------------------- */
-  function initDonationForm() {
-    const form = document.getElementById("donation-form");
-    if (!form) return;
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      showToast("Secure donations open soon — this form isn't connected to payment yet.");
-    });
-  }
-
   function initContactForm() {
     const form = document.getElementById("evidence-form");
     if (!form) return;
@@ -348,7 +339,6 @@
     initCarousel();
     initAmountChips();
     initPaymentMethods();
-    initDonationForm();
     initContactForm();
     initInstall();
     initSheets();
