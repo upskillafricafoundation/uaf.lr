@@ -192,9 +192,7 @@ table.data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 }
 
 /* =========================================================
-   PHASE 7 — real photo carousel slides (additive only; the
-   base .carousel__slide / .carousel__slide img rules above,
-   used by Phase 1's placeholder slide, are untouched).
+   PHASE 7 — real photo carousel slides (additive only)
    ========================================================= */
 .carousel__slide--photo { padding: 0; position: relative; }
 .carousel__slide--photo img { width: 100%; height: 100%; object-fit: cover; opacity: 1; }

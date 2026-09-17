@@ -43,7 +43,7 @@
 .admin-nav__item.is-active { background: var(--blue-050); color: var(--blue-800); font-weight: 600; border-right: 3px solid var(--blue-800); }
 .admin-nav__item.is-disabled { color: var(--ink-300); cursor: default; }
 .admin-nav__item.is-disabled span { font-size: 10px; background: var(--border); padding: 2px 6px; border-radius: 8px; }
-.admin-content { flex: 1; padding: 24px; max-width: 760px; }
+.admin-content { flex: 1; padding: 24px; max-width: 960px; }
 
 @media (max-width: 720px) {
   .admin-main { flex-direction: column; }
@@ -52,9 +52,9 @@
 }
 
 /* =========================================================
-   PHASE 7 — MEDIA REVIEW MODULE (additive only)
+   PHASE 7 — MEDIA REVIEW MODULE
    ========================================================= */
-.admin-module-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+.admin-module-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; flex-wrap: wrap; gap: 12px; }
 .admin-module-header h2 { margin-bottom: 0; }
 
 .media-upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
@@ -82,3 +82,55 @@
 .media-status-tag--APPROVED { background: var(--blue-050); color: var(--blue-800); }
 .media-status-tag--PUBLISHED { background: var(--green-050); color: var(--green-700); }
 .media-status-tag--ARCHIVED { background: var(--bg); color: var(--ink-300); border: 1px solid var(--border); }
+
+/* =========================================================
+   PHASE 8 — DONATIONS MODULE STYLES
+   ========================================================= */
+.admin-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.admin-stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); padding: 14px 16px; box-shadow: var(--shadow-card); }
+.admin-stat-card__label { font-size: 11.5px; color: var(--ink-500); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+.admin-stat-card__value { font-family: var(--font-display); font-size: 22px; font-weight: 700; color: var(--blue-900); margin-top: 4px; }
+
+.admin-filter-bar { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+.admin-filter-btn { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 6px 14px; font-size: 12.5px; font-weight: 600; color: var(--ink-700); cursor: pointer; }
+.admin-filter-btn:hover { background: var(--blue-050); }
+.admin-filter-btn.is-active { background: var(--blue-800); color: #fff; border-color: var(--blue-800); }
+
+.admin-table-wrap { overflow-x: auto; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-card); }
+table.admin-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+.admin-table th, .admin-table td { padding: 12px 14px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+.admin-table th { background: var(--bg); color: var(--ink-500); font-size: 11.5px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.3px; }
+.admin-table tr:last-child td { border-bottom: none; }
+.admin-table tr:hover td { background: var(--blue-050); }
+
+.admin-badge { display: inline-flex; align-items: center; gap: 5px; padding: 3px 9px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: 0.2px; }
+.admin-badge--pending { background: var(--amber-050); color: var(--amber-600); border: 1px solid #EFD9A9; }
+.admin-badge--verified { background: var(--green-050); color: var(--green-700); border: 1px solid #C4E7D4; }
+.admin-badge--rejected { background: var(--red-050); color: var(--red-600); border: 1px solid #F6CDD0; }
+.admin-badge--failed { background: var(--bg); color: var(--ink-500); border: 1px solid var(--border); }
+
+.btn--verify { background: var(--green-700); color: #fff; border: none; padding: 6px 12px; font-size: 12px; border-radius: var(--radius-sm); cursor: pointer; }
+.btn--verify:hover { background: #176343; }
+.btn--reject { background: transparent; color: var(--red-600); border: 1px solid var(--red-600); padding: 6px 12px; font-size: 12px; border-radius: var(--radius-sm); cursor: pointer; }
+.btn--reject:hover { background: var(--red-050); }
+
+/* =========================================================
+   MODALS & DIALOGS
+   ========================================================= */
+.admin-modal-overlay {
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 1000; padding: 20px;
+}
+.admin-modal {
+  background: var(--surface); border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-raised); padding: 24px; max-width: 500px; width: 100%;
+  max-height: 90vh; overflow-y: auto;
+}
+.admin-modal h3 { margin-top: 0; margin-bottom: 16px; font-size: 16px; color: var(--ink-900); }
+.admin-modal input, .admin-modal select, .admin-modal textarea {
+  width: 100%; font-family: inherit; font-size: 13px; padding: 8px 10px;
+  border: 1px solid var(--border); border-radius: var(--radius-sm);
+  background: var(--surface); color: var(--ink-900);
+}

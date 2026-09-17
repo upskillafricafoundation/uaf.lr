@@ -6,7 +6,7 @@
    the /api path check, same rule Phase 1 set.
    ========================================================= */
 
-const CACHE_VERSION = "uaf-impact-shell-v4";
+const CACHE_VERSION = "uaf-impact-shell-v5";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -69,15 +69,7 @@ self.addEventListener("fetch", (event) => {
           }
           return res;
         })
-        .catch(() => {
-          if (req.mode === "navigate") {
-            return caches.match("./index.html");
-          }
-        });
+        .catch(() => cached);
     })
   );
-});
-
-self.addEventListener("message", (event) => {
-  if (event.data === "SKIP_WAITING") self.skipWaiting();
 });

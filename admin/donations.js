@@ -1,145 +1,464 @@
 /* =========================================================
-   UAF IMPACT — ADMIN: DONATIONS MODULE (Phase 8)
+   UAF IMPACT — ADMIN: DONATIONS & FUNDING MODULE (Phase 8)
    ---------------------------------------------------------
-   Registers into the same module registry Phase 7's media.js
-   uses (window.__uafRegisterAdminModule) — admin.js's
-   activateModule() renders this into #admin-module-panel and
-   nothing about the Phase 6 shell/session code changes.
+   Registers itself with admin.js's module registry and renders
+   into #admin-module-panel when "Donations" is clicked.
+   Reads window.__uafAdminSession to authenticate requests.
+
+   Enforces Phase 8 requirements:
+   - Verified total calculation
+   - Pending donations queue
+   - Action buttons for Verify / Reject with reviewer notes
+   - CSV Export for Accountant / Admin
+   - Role-based permissions mirror (server enforces authoritatively)
    ========================================================= */
 (() => {
   "use strict";
 
   const API_URL = (window.UAF_CONFIG && window.UAF_CONFIG.API_URL) || "";
 
-  async function callApi(action, payload, token) {
+  // Mirrors Config.gs ROLE_PERMISSIONS
+  const ROLE_CAN = {
+    VIEW_DONATIONS: ["ADMIN", "ACCOUNTANT", "PROGRAM_MANAGER"],
+    VERIFY_DONATION: ["ADMIN", "ACCOUNTANT"],
+    EXPORT_DONATIONS: ["ADMIN", "ACCOUNTANT"]
+  };
+
+  function can(permission, role) {
+    if (role === "SUPER_ADMIN") return true;
+    return (ROLE_CAN[permission] || []).indexOf(role) !== -1;
+  }
+
+  async function callApi(action, payload) {
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      cache: "no-store",
-      body: JSON.stringify(Object.assign({ action, token }, payload))
+      body: JSON.stringify(Object.assign({ action }, payload))
     });
     return res.json();
   }
 
-  function fmtUSD(n) {
-    return "$" + Number(n).toLocaleString("en-US");
-  }
-  function fmtDate(iso) {
-    if (!iso) return "—";
-    const d = new Date(iso);
-    if (isNaN(d.getTime())) return "—";
-    return d.toLocaleString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
-  }
-  function escapeHtml_(str) {
+  function escapeHtml(str) {
     const div = document.createElement("div");
     div.textContent = str == null ? "" : String(str);
     return div.innerHTML;
   }
 
-  function renderDonationsModule(panel, session) {
-    panel.innerHTML = `
-      <div class="admin-card">
-        <div class="admin-card__header">
-          <h2>Donations</h2>
-          <div class="admin-tabs" id="don-status-tabs">
-            <button class="admin-tab is-active" data-status="PENDING">Pending</button>
-            <button class="admin-tab" data-status="VERIFIED">Verified</button>
-            <button class="admin-tab" data-status="REJECTED">Rejected</button>
-            <button class="admin-tab" data-status="">All</button>
-          </div>
+  function formatCurrency(num) {
+    const val = Number(num) || 0;
+    return "$" + val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatDate(isoStr) {
+    if (!isoStr) return "—";
+    try {
+      const d = new Date(isoStr);
+      if (isNaN(d.getTime())) return isoStr;
+      return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+    } catch (e) {
+      return isoStr;
+    }
+  }
+
+  let cachedDonations = [];
+  let currentFilter = "ALL";
+  let searchQuery = "";
+
+  function renderDonationsModule(container, session) {
+    if (!can("VIEW_DONATIONS", session.role)) {
+      container.innerHTML = `
+        <div class="admin-card">
+          <h2>Access Restricted</h2>
+          <p class="admin-muted">Your role (${escapeHtml(session.role)}) does not have permission to view donation records.</p>
         </div>
-        <p class="admin-muted">Only donations UAF has verified against MTN records count toward any public funding total. Verifying is final — MTN's own transaction record is the source of truth; a screenshot alone is never sufficient.</p>
-        <div id="don-list" class="admin-table-wrap"><p class="admin-muted">Loading…</p></div>
+      `;
+      return;
+    }
+
+    container.innerHTML = `
+      <div class="admin-module-header">
+        <div>
+          <h2>Donations &amp; Funding Management</h2>
+          <p class="admin-muted" style="margin-top:4px;">Review incoming donations, verify transactions, and track campaign funding.</p>
+        </div>
+        <div style="display:flex;gap:8px;">
+          ${can("EXPORT_DONATIONS", session.role) ? '<button id="donations-export-btn" class="btn btn--outline">Export CSV</button>' : ''}
+          <button id="donations-refresh-btn" class="btn btn--primary">Refresh</button>
+        </div>
+      </div>
+
+      <div id="donations-flash"></div>
+
+      <!-- Stat Cards -->
+      <div class="admin-stats-grid">
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__label">Verified Total</div>
+          <div class="admin-stat-card__value" id="stat-verified-total">$0.00</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__label">Pending Review</div>
+          <div class="admin-stat-card__value" id="stat-pending-count" style="color:var(--amber-600);">0</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__label">Pending Amount</div>
+          <div class="admin-stat-card__value" id="stat-pending-amount" style="color:var(--amber-600);">$0.00</div>
+        </div>
+        <div class="admin-stat-card">
+          <div class="admin-stat-card__label">Total Transactions</div>
+          <div class="admin-stat-card__value" id="stat-total-count">0</div>
+        </div>
+      </div>
+
+      <!-- Controls: Filter & Search -->
+      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
+        <div class="admin-filter-bar" style="margin-bottom:0;">
+          <button class="admin-filter-btn is-active" data-filter="ALL">All (<span id="count-all">0</span>)</button>
+          <button class="admin-filter-btn" data-filter="PENDING">Pending (<span id="count-pending">0</span>)</button>
+          <button class="admin-filter-btn" data-filter="VERIFIED">Verified (<span id="count-verified">0</span>)</button>
+          <button class="admin-filter-btn" data-filter="REJECTED">Rejected (<span id="count-rejected">0</span>)</button>
+        </div>
+        <div style="min-width:240px;max-width:320px;flex:1;">
+          <input type="text" id="donations-search" placeholder="Search by name, phone, ref ID…" style="padding:7px 12px;font-size:13px;width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);" />
+        </div>
+      </div>
+
+      <!-- Table Container -->
+      <div class="admin-table-wrap">
+        <div id="donations-table-container">
+          <p class="admin-muted" style="padding:24px;text-align:center;">Loading donations…</p>
+        </div>
       </div>
     `;
 
-    const listEl = panel.querySelector("#don-list");
-    const tabs = panel.querySelectorAll(".admin-tab");
-    let currentStatus = "PENDING";
+    // Event listeners
+    document.getElementById("donations-refresh-btn").addEventListener("click", () => loadDonations(session));
 
-    tabs.forEach((tab) => {
-      tab.addEventListener("click", () => {
-        tabs.forEach((t) => t.classList.remove("is-active"));
-        tab.classList.add("is-active");
-        currentStatus = tab.dataset.status;
-        load();
+    const exportBtn = document.getElementById("donations-export-btn");
+    if (exportBtn) {
+      exportBtn.addEventListener("click", exportCsv);
+    }
+
+    const filterBtns = container.querySelectorAll(".admin-filter-btn");
+    filterBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        filterBtns.forEach((b) => b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+        currentFilter = btn.dataset.filter;
+        renderFilteredTable(session);
       });
     });
 
-    async function load() {
-      listEl.innerHTML = '<p class="admin-muted">Loading…</p>';
-      try {
-        const result = await callApi("listDonations", { status: currentStatus }, session.token);
-        if (!result.ok) {
-          listEl.innerHTML = `<p class="admin-error">${escapeHtml_(result.error || "Couldn't load donations.")}</p>`;
-          return;
-        }
-        renderTable(result.donations);
-      } catch (err) {
-        listEl.innerHTML = '<p class="admin-error">Couldn\'t reach the server.</p>';
-      }
-    }
+    const searchInput = document.getElementById("donations-search");
+    searchInput.addEventListener("input", (e) => {
+      searchQuery = e.target.value.toLowerCase().trim();
+      renderFilteredTable(session);
+    });
 
-    function renderTable(donations) {
-      if (!donations.length) {
-        listEl.innerHTML = '<p class="admin-muted">No donations in this view.</p>';
+    loadDonations(session);
+  }
+
+  function flash(message, kind) {
+    const el = document.getElementById("donations-flash");
+    if (!el) return;
+    el.innerHTML = `<div class="admin-error" style="${kind === "success" ? "background:var(--green-050);color:var(--green-700);" : ""}">${escapeHtml(message)}</div>`;
+    setTimeout(() => { if (el) el.innerHTML = ""; }, 5000);
+  }
+
+  async function loadDonations(session) {
+    const tableContainer = document.getElementById("donations-table-container");
+    if (!tableContainer) return;
+    tableContainer.innerHTML = '<p class="admin-muted" style="padding:24px;text-align:center;">Loading donations…</p>';
+
+    try {
+      const result = await callApi("listDonations", { token: session.token });
+      if (!result.ok) {
+        tableContainer.innerHTML = `<div class="admin-error" style="margin:16px;">${escapeHtml(result.error || "Could not load donations.")}</div>`;
         return;
       }
 
-      const rows = donations.map((d) => `
+      cachedDonations = result.donations || result.items || [];
+      updateStats(cachedDonations);
+      renderFilteredTable(session);
+    } catch (err) {
+      tableContainer.innerHTML = `<div class="admin-error" style="margin:16px;">Couldn't reach server. Please check your connection.</div>`;
+    }
+  }
+
+  function updateStats(items) {
+    let verifiedTotal = 0;
+    let pendingCount = 0;
+    let pendingAmount = 0;
+    let verifiedCount = 0;
+    let rejectedCount = 0;
+
+    items.forEach((item) => {
+      const amt = Number(item.amount) || 0;
+      const st = String(item.status || "").toUpperCase();
+      if (st === "VERIFIED") {
+        verifiedTotal += amt;
+        verifiedCount++;
+      } else if (st === "PENDING") {
+        pendingCount++;
+        pendingAmount += amt;
+      } else if (st === "REJECTED") {
+        rejectedCount++;
+      }
+    });
+
+    const statVerifiedTotal = document.getElementById("stat-verified-total");
+    const statPendingCount = document.getElementById("stat-pending-count");
+    const statPendingAmount = document.getElementById("stat-pending-amount");
+    const statTotalCount = document.getElementById("stat-total-count");
+
+    if (statVerifiedTotal) statVerifiedTotal.textContent = formatCurrency(verifiedTotal);
+    if (statPendingCount) statPendingCount.textContent = pendingCount;
+    if (statPendingAmount) statPendingAmount.textContent = formatCurrency(pendingAmount);
+    if (statTotalCount) statTotalCount.textContent = items.length;
+
+    const cAll = document.getElementById("count-all");
+    const cPending = document.getElementById("count-pending");
+    const cVerified = document.getElementById("count-verified");
+    const cRejected = document.getElementById("count-rejected");
+
+    if (cAll) cAll.textContent = items.length;
+    if (cPending) cPending.textContent = pendingCount;
+    if (cVerified) cVerified.textContent = verifiedCount;
+    if (cRejected) cRejected.textContent = rejectedCount;
+  }
+
+  function renderFilteredTable(session) {
+    const tableContainer = document.getElementById("donations-table-container");
+    if (!tableContainer) return;
+
+    let filtered = cachedDonations.slice();
+
+    if (currentFilter !== "ALL") {
+      filtered = filtered.filter((d) => String(d.status || "").toUpperCase() === currentFilter);
+    }
+
+    if (searchQuery) {
+      filtered = filtered.filter((d) => {
+        const text = [
+          d.transactionId,
+          d.externalId,
+          d.name,
+          d.phone,
+          d.email,
+          d.mtnReference,
+          d.paymentMethod,
+          d.notes
+        ].filter(Boolean).join(" ").toLowerCase();
+        return text.indexOf(searchQuery) !== -1;
+      });
+    }
+
+    if (filtered.length === 0) {
+      tableContainer.innerHTML = '<p class="admin-muted" style="padding:28px;text-align:center;">No matching donations found.</p>';
+      return;
+    }
+
+    const rowsHtml = filtered.map((item) => {
+      const st = String(item.status || "PENDING").toUpperCase();
+      let badgeClass = "admin-badge--pending";
+      if (st === "VERIFIED") badgeClass = "admin-badge--verified";
+      if (st === "REJECTED") badgeClass = "admin-badge--rejected";
+
+      const donorDisplay = item.anonymous ? `${escapeHtml(item.name || "Anonymous")} <span style="font-size:10.5px;color:var(--ink-400);">(Anon)</span>` : escapeHtml(item.name || "Anonymous");
+      const contactInfo = [item.phone, item.email].filter(Boolean).map(escapeHtml).join("<br/>") || "—";
+      const methodDisplay = formatMethod(item.paymentMethod, item.mtnReference);
+
+      let actionHtml = "";
+      if (st === "PENDING" && can("VERIFY_DONATION", session.role)) {
+        actionHtml = `
+          <div style="display:flex;gap:6px;">
+            <button class="btn--verify" data-action="verify" data-id="${escapeHtml(item.transactionId)}">Verify</button>
+            <button class="btn--reject" data-action="reject" data-id="${escapeHtml(item.transactionId)}">Reject</button>
+          </div>
+        `;
+      } else if (st === "VERIFIED") {
+        actionHtml = `<span class="admin-muted" style="font-size:11px;">By ${escapeHtml(item.verifiedBy || "Admin")}<br/>${formatDate(item.verifiedAt)}</span>`;
+      } else if (st === "REJECTED") {
+        actionHtml = `<span class="admin-muted" style="font-size:11px;color:var(--red-600);">${escapeHtml(item.notes || "Rejected")}</span>`;
+      } else {
+        actionHtml = `<span class="admin-muted">—</span>`;
+      }
+
+      return `
         <tr>
-          <td>${escapeHtml_(d.transactionId)}</td>
-          <td>${d.anonymous ? "Anonymous" : escapeHtml_(d.name)}</td>
-          <td>${escapeHtml_(d.phone)}</td>
-          <td>${fmtUSD(d.amount)}</td>
-          <td>${escapeHtml_(d.paymentMethod)}</td>
-          <td><span class="pill">${escapeHtml_(d.status)}</span></td>
-          <td>${fmtDate(d.createdAt)}</td>
           <td>
-            ${d.status === "PENDING" ? `
-              <button class="btn btn--outline btn--small" data-verify="${escapeHtml_(d.transactionId)}">Verify</button>
-              <button class="btn btn--outline btn--small" data-reject="${escapeHtml_(d.transactionId)}">Reject</button>
-            ` : "—"}
+            <div style="font-weight:600;">${formatDate(item.createdAt)}</div>
+            <div style="font-size:11px;color:var(--ink-400);">${escapeHtml(item.transactionId || "—")}</div>
+          </td>
+          <td>
+            <div>${donorDisplay}</div>
+            <div style="font-size:11.5px;color:var(--ink-500);">${contactInfo}</div>
+          </td>
+          <td>
+            <strong style="color:var(--ink-900);font-size:14px;">${formatCurrency(item.amount)}</strong>
+            <div style="font-size:10.5px;color:var(--ink-400);">${escapeHtml(item.currency || "USD")}</div>
+          </td>
+          <td>
+            <div>${methodDisplay}</div>
+          </td>
+          <td>
+            <span class="admin-badge ${badgeClass}">${escapeHtml(st)}</span>
+          </td>
+          <td>
+            ${actionHtml}
           </td>
         </tr>
-      `).join("");
-
-      listEl.innerHTML = `
-        <table class="data-table">
-          <thead><tr>
-            <th>Transaction</th><th>Donor</th><th>Phone</th><th>Amount</th>
-            <th>Method</th><th>Status</th><th>Submitted</th><th></th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>
       `;
+    }).join("");
 
-      listEl.querySelectorAll("[data-verify]").forEach((btn) => {
-        btn.addEventListener("click", () => actOn(btn.dataset.verify, "verifyDonation"));
-      });
-      listEl.querySelectorAll("[data-reject]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const reason = prompt("Reason for rejecting this donation (shown only to UAF staff):") || "";
-          actOn(btn.dataset.reject, "rejectDonation", { reason });
-        });
-      });
+    tableContainer.innerHTML = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Date / ID</th>
+            <th>Donor / Contact</th>
+            <th>Amount</th>
+            <th>Method</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    `;
+
+    // Attach verify / reject listeners
+    tableContainer.querySelectorAll("button[data-action='verify']").forEach((btn) => {
+      btn.addEventListener("click", () => handleVerify(btn.dataset.id, session));
+    });
+
+    tableContainer.querySelectorAll("button[data-action='reject']").forEach((btn) => {
+      btn.addEventListener("click", () => handleReject(btn.dataset.id, session));
+    });
+  }
+
+  function formatMethod(method, ref) {
+    let name = method || "Unknown";
+    if (method === "MTN_MOMO") name = "MTN MoMo";
+    else if (method === "ORANGE_MONEY") name = "Orange Money";
+    else if (method === "BANK_TRANSFER") name = "Bank Transfer";
+    else if (method === "CASH") name = "Cash";
+
+    if (ref) {
+      return `${escapeHtml(name)}<br/><span style="font-size:10.5px;color:var(--ink-400);">Ref: ${escapeHtml(ref)}</span>`;
     }
+    return escapeHtml(name);
+  }
 
-    async function actOn(transactionId, action, extra) {
-      try {
-        const result = await callApi(action, Object.assign({ transactionId }, extra || {}), session.token);
-        if (!result.ok) {
-          window.__uafShowToast?.(result.error || "Action failed.");
-          return;
-        }
-        window.__uafShowToast?.(result.message || "Done.");
-        load();
-      } catch (err) {
-        window.__uafShowToast?.("Couldn't reach the server.");
+  async function handleVerify(transactionId, session) {
+    const don = cachedDonations.find((d) => d.transactionId === transactionId);
+    const donorName = don ? (don.name || "Donor") : "this donation";
+    const amountStr = don ? formatCurrency(don.amount) : "";
+
+    const confirmed = window.confirm(`Are you sure you want to verify donation ${transactionId} (${amountStr}) from ${donorName}? This will count towards official verified public funding metrics.`);
+    if (!confirmed) return;
+
+    try {
+      const result = await callApi("verifyDonation", {
+        token: session.token,
+        transactionId: transactionId
+      });
+
+      if (result.ok) {
+        flash(result.message || `Donation ${transactionId} verified successfully.`, "success");
+        loadDonations(session);
+      } else {
+        flash(result.error || "Failed to verify donation.");
       }
+    } catch (err) {
+      flash("Network error while verifying donation.");
+    }
+  }
+
+  async function handleReject(transactionId, session) {
+    const don = cachedDonations.find((d) => d.transactionId === transactionId);
+    const donorName = don ? (don.name || "Donor") : "this donation";
+
+    const reason = window.prompt(`Please enter the reason for rejecting donation ${transactionId} from ${donorName}:`, "Payment unverified / discrepancy");
+    if (reason === null) return; // Cancelled
+
+    try {
+      const result = await callApi("rejectDonation", {
+        token: session.token,
+        transactionId: transactionId,
+        notes: reason.trim()
+      });
+
+      if (result.ok) {
+        flash(result.message || `Donation ${transactionId} rejected.`, "success");
+        loadDonations(session);
+      } else {
+        flash(result.error || "Failed to reject donation.");
+      }
+    } catch (err) {
+      flash("Network error while rejecting donation.");
+    }
+  }
+
+  function exportCsv() {
+    if (!cachedDonations.length) {
+      flash("No donations to export.");
+      return;
     }
 
-    load();
+    const headers = [
+      "TransactionID",
+      "ExternalID",
+      "Date",
+      "Name",
+      "Phone",
+      "Email",
+      "Amount",
+      "Currency",
+      "PaymentMethod",
+      "MTNReference",
+      "Status",
+      "Anonymous",
+      "VerifiedBy",
+      "VerifiedAt",
+      "Notes"
+    ];
+
+    const csvRows = [headers.join(",")];
+
+    cachedDonations.forEach((d) => {
+      const row = [
+        d.transactionId || "",
+        d.externalId || "",
+        d.createdAt || "",
+        d.name || "",
+        d.phone || "",
+        d.email || "",
+        d.amount || 0,
+        d.currency || "USD",
+        d.paymentMethod || "",
+        d.mtnReference || "",
+        d.status || "",
+        d.anonymous ? "YES" : "NO",
+        d.verifiedBy || "",
+        d.verifiedAt || "",
+        (d.notes || "").replace(/"/g, '""')
+      ];
+
+      const escaped = row.map((val) => `"${String(val).replace(/"/g, '""')}"`);
+      csvRows.push(escaped.join(","));
+    });
+
+    const blob = new Blob([csvRows.join("\r\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `uaf-donations-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   window.__uafRegisterAdminModule && window.__uafRegisterAdminModule("donations", renderDonationsModule);

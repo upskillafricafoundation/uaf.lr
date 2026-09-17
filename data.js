@@ -1,19 +1,15 @@
 /* =========================================================
-   UAF IMPACT — LIVE PUBLIC DATA (Phase 2 + Phase 4)
+   UAF IMPACT — LIVE PUBLIC DATA (Phase 2 + 4 + 7 + 8)
    ---------------------------------------------------------
-   Fetches CONFIG.API_URL once, caches the result in memory,
-   and fills in the numbers/tables that Phase 1 left as em-
-   dash placeholders. Never invents a number: if a value truly
-   isn't there, the placeholder / empty-state stays exactly as
-   Phase 1 built it.
+   Fetches CONFIG.API_URL, caches the result in memory, and
+   populates live numbers/tables. Never invents a number:
+   if a value truly isn't there, the placeholder / empty-state
+   stays exactly as built.
 
-   Also owns #report-form's submit — the out-of-school data
-   submission — which now actually POSTs to the backend as a
-   DRAFT pending UAF verification.
-
-   Nothing here changes markup structure, IDs, or classes from
-   Phase 1. Phase 3's Communities filtering and Phase 8/9's
-   donation flow plug into this same fetch layer later.
+   - Out-of-school reporting (#report-form) -> Phase 4
+   - Public photo carousel (#publicPhotos) -> Phase 7
+   - Funding summary & donation submission (#donation-form) -> Phase 8
+   - MTN MoMo server polling (#createMomoDonation) -> Phase 9
    ========================================================= */
 
 (() => {
@@ -22,11 +18,12 @@
   const API_URL = (window.UAF_CONFIG && window.UAF_CONFIG.API_URL) || "";
   const isConfigured = API_URL && !API_URL.includes("PASTE_YOUR");
 
-  let publicData = null; // { counties, communities, funding, generatedAt }
-  let publicPhotos = []; // Phase 7: [{ photoId, title, caption, category, county, community, program, photoDate, imageUrl }]
+  let publicData = null;      // { counties, communities, funding, generatedAt }
+  let publicPhotos = [];      // [{ photoId, title, caption, category, county, community, program, photoDate, imageUrl }]
+  let fundingSummary = null;  // { totalVerifiedUSD, verifiedDonationCount, uniqueSupporterCount }
 
   /* ---------------------------------------------------------
-     FETCH
+     FETCH — PUBLIC DATA
   --------------------------------------------------------- */
   async function loadPublicData() {
     if (!isConfigured) {
@@ -34,30 +31,23 @@
       return;
     }
     try {
-      const res = await fetch(`${API_URL}?route=publicData`, { cache: "no-store" });
+      const res = await fetch(`${API_URL}?route=publicData`);
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "Unknown API error");
       publicData = json;
       renderAll();
     } catch (err) {
-      // Network/API failure stays silent to the user — Phase 1's
-      // existing empty states already communicate "no data yet",
-      // and the offline banner covers connectivity loss.
       console.error("UAF Impact: failed to load public data.", err);
     }
   }
 
   /* ---------------------------------------------------------
      FETCH — PUBLIC PHOTOS (Phase 7)
-     Separate route, separate failure mode: if this fails, the
-     Home screen simply keeps Phase 1's placeholder carousel
-     slide exactly as it was — publicData's own render path is
-     never affected by a photo-fetch failure or vice versa.
   --------------------------------------------------------- */
   async function loadPublicPhotos() {
     if (!isConfigured) return;
     try {
-      const res = await fetch(`${API_URL}?route=publicPhotos`, { cache: "no-store" });
+      const res = await fetch(`${API_URL}?route=publicPhotos`);
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "Unknown API error");
       publicPhotos = json.photos || [];
@@ -68,8 +58,25 @@
   }
 
   /* ---------------------------------------------------------
-     FILTER STATE — read whatever the visible county/year
-     selects currently say, per screen.
+     FETCH — FUNDING SUMMARY (Phase 8)
+  --------------------------------------------------------- */
+  async function loadFundingSummary() {
+    if (!isConfigured) return;
+    try {
+      const res = await fetch(`${API_URL}?route=fundingSummary`);
+      const json = await res.json();
+      if (json.ok) {
+        fundingSummary = json;
+        renderFundingGap();
+        renderImpactDashboard();
+      }
+    } catch (err) {
+      console.error("UAF Impact: failed to load funding summary.", err);
+    }
+  }
+
+  /* ---------------------------------------------------------
+     FILTER STATE
   --------------------------------------------------------- */
   function currentFilter(scopeEl) {
     const countySel = scopeEl.querySelector('[data-role="county-select"]');
@@ -125,7 +132,7 @@
 
     if (!rows.length) {
       if (notice && (filter.county || filter.year)) notice.classList.remove("is-hidden");
-      return; // leave Phase 1's em-dash placeholders as-is
+      return;
     }
     if (notice) notice.classList.add("is-hidden");
 
@@ -148,11 +155,6 @@
 
   /* ---------------------------------------------------------
      RENDER — PHOTO CAROUSEL (Phase 7)
-     Reuses the EXACT .carousel__track / .carousel__slide /
-     .carousel__dot markup and classes app.js's initCarousel()
-     already animates. If zero photos are returned, Phase 1's
-     existing placeholder slide is left exactly as-is — the
-     track is never emptied into a blank carousel.
   --------------------------------------------------------- */
   function renderCarousel(photos) {
     const track = document.querySelector(".carousel__track");
@@ -179,9 +181,6 @@
       track.appendChild(slide);
     });
 
-    // Re-run app.js's own carousel init against the new slide set —
-    // see the __uafReinitCarousel note in app.js. Its logic is
-    // untouched; this just re-triggers it now that real slides exist.
     window.__uafReinitCarousel && window.__uafReinitCarousel();
   }
 
@@ -197,15 +196,19 @@
     const metricEls = screen.querySelectorAll(".metric-grid .metric-card__value");
 
     if (rows.length) {
-      const funding = { generated: sum(rows, "amountGenerated"), needed: sum(rows, "amountNeeded") };
-      const progress = funding.needed > 0
-        ? Math.min(100, Math.round((funding.generated / funding.needed) * 100)) + "%"
+      const neededTotal = sum(rows, "amountNeeded");
+      const generatedTotal = fundingSummary
+        ? fundingSummary.totalVerifiedUSD
+        : sum(rows, "amountGenerated");
+
+      const progress = neededTotal > 0
+        ? Math.min(100, Math.round((generatedTotal / neededTotal) * 100)) + "%"
         : null;
 
       const values = [
         fmt(sum(rows, "outOfSchoolIdentified")),
         fmt(sum(rows, "supportedReenrolled")),
-        fmt(sum(rows, "supportedReenrolled")), // re-enrolled tracked together with supported in CommunityStats
+        fmt(sum(rows, "supportedReenrolled")),
         fmt(sum(rows, "enrolled")),
         fmt(sum(rows, "yetToEnroll")),
         fmt(sum(rows, "underMonitoring")),
@@ -237,7 +240,7 @@
 
   function renderCommunityTable(tbody, rows, variant) {
     if (!tbody) return;
-    if (!rows.length) return; // keep Phase 1's "No verified community data" row
+    if (!rows.length) return;
 
     tbody.innerHTML = "";
     rows.forEach((r) => {
@@ -272,25 +275,30 @@
     const card = document.querySelector(".funding-card");
     if (!card) return;
 
-    const { totalGeneratedUSD, totalNeededUSD, lastUpdated } = publicData.funding;
-    if (!totalGeneratedUSD && !totalNeededUSD) return; // no verified funding rows yet — keep placeholders
+    const f = publicData.funding;
+    // Spec §8.5: Use verified total from fundingSummary if available
+    const verifiedTotal = (fundingSummary && typeof fundingSummary.totalVerifiedUSD === "number")
+      ? fundingSummary.totalVerifiedUSD
+      : f.totalGeneratedUSD;
+
+    const totalNeeded = f.totalNeededUSD;
 
     const rows = card.querySelectorAll(".funding-row strong");
-    if (rows[0]) rows[0].textContent = fmtUSD(totalGeneratedUSD);
-    if (rows[1]) rows[1].textContent = fmtUSD(totalNeededUSD);
+    if (rows[0]) rows[0].textContent = fmtUSD(verifiedTotal);
+    if (rows[1]) rows[1].textContent = fmtUSD(totalNeeded);
 
     const fill = card.querySelector(".funding-bar-fill");
-    if (fill && totalNeededUSD > 0) {
-      fill.style.width = Math.min(100, Math.round((totalGeneratedUSD / totalNeededUSD) * 100)) + "%";
+    if (fill && totalNeeded > 0) {
+      fill.style.width = Math.min(100, Math.round((verifiedTotal / totalNeeded) * 100)) + "%";
     }
 
     const meta = card.querySelector("[data-last-updated]");
-    const stamped = fmtDate(lastUpdated);
+    const stamped = fmtDate(fundingSummary?.generatedAt || f.lastUpdated);
     if (meta && stamped) meta.textContent = "Last updated: " + stamped;
   }
 
   /* ---------------------------------------------------------
-     LAST-UPDATED STAMPS (per screen, based on visible rows)
+     LAST-UPDATED STAMPS
   --------------------------------------------------------- */
   function stampMeta(screen, rows) {
     const latest = rows.reduce((max, r) => {
@@ -313,8 +321,6 @@
 
   /* ---------------------------------------------------------
      RE-FILTER ON SELECTOR CHANGE
-     Phase 1's app.js already populates these selects; we just
-     also listen for changes to re-render with live data.
   --------------------------------------------------------- */
   function bindFilterListeners() {
     document.querySelectorAll('[data-role="county-select"], [data-role="year-select"]')
@@ -322,7 +328,7 @@
   }
 
   /* ---------------------------------------------------------
-     OUT-OF-SCHOOL REPORT FORM — real submission
+     OUT-OF-SCHOOL REPORT FORM (Phase 4)
   --------------------------------------------------------- */
   function initReportForm() {
     const form = document.getElementById("report-form");
@@ -352,8 +358,7 @@
       try {
         const res = await fetch(API_URL, {
           method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" }, // avoids CORS preflight to Apps Script
-          cache: "no-store", // Apps Script's redirect target is single-use/ephemeral — never let the browser reuse a cached one
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
           body: JSON.stringify(payload)
         });
         const json = await res.json();
@@ -369,36 +374,10 @@
         submitBtn?.removeAttribute("disabled");
       }
     });
-       window.__uafDataInit = function () {
-    initReportForm();
-    initDonationForm();
-    bindFilterListeners();
-    loadPublicData();
-    loadPublicPhotos();
-  };
   }
 
   /* ---------------------------------------------------------
-     HTML ESCAPING for anything rendered from API data
-  --------------------------------------------------------- */
-  function escapeHtml_(str) {
-    const div = document.createElement("div");
-    div.textContent = str == null ? "" : String(str);
-    return div.innerHTML;
-  }
-
-  /* ---------------------------------------------------------
-     INIT — called from app.js after the shell is ready
-  --------------------------------------------------------- */
-  window.__uafDataInit = function () {
-    initReportForm();
-    bindFilterListeners();
-    loadPublicData();
-
-       /* ---------------------------------------------------------
-     DONATION FORM — real submission (Phase 8, manual MTN
-     transfer path only; MOMO is rejected server-side until
-     Phase 9 wires the live MTN Collection API)
+     DONATION FORM — REAL SUBMISSION (Phase 8 + 9)
   --------------------------------------------------------- */
   function initDonationForm() {
     const form = document.getElementById("donation-form");
@@ -412,60 +391,137 @@
         return;
       }
 
+      const submitBtn = form.querySelector('button[type="submit"]');
+
+      // Amount: selected chip or custom input
+      let amount = 0;
       const selectedChip = document.querySelector(".amount-chip.is-selected");
-      const customInput = document.getElementById("custom-amount");
-      let amount = null;
-      if (selectedChip && selectedChip.dataset.amount !== "custom") {
-        amount = Number(selectedChip.dataset.amount);
-      } else if (customInput && !customInput.disabled) {
-        amount = Number(customInput.value);
+      if (selectedChip) {
+        if (selectedChip.dataset.amount === "custom") {
+          const customInput = document.getElementById("custom-amount");
+          amount = Number(customInput?.value || 0);
+        } else {
+          amount = Number(selectedChip.dataset.amount || 0);
+        }
       }
+
       if (!amount || amount <= 0) {
-        window.__uafShowToast?.("Please select or enter a donation amount.");
+        window.__uafShowToast?.("Please select or enter a valid donation amount.");
         return;
       }
 
-      const selectedMethod = document.querySelector(".payment-method.is-selected");
-      const method = selectedMethod?.dataset.method === "momo" ? "MOMO" : "MANUAL";
+      // Payment method
+      const selectedMethodEl = document.querySelector(".payment-method.is-selected");
+      const paymentMethod = selectedMethodEl?.dataset.method || "momo";
 
-      const payload = {
-        action: "submitDonation",
-        name: document.getElementById("don-name").value.trim(),
-        phone: document.getElementById("don-phone").value.trim(),
-        email: document.getElementById("don-email").value.trim(),
-        country: document.getElementById("don-country").value.trim(),
-        amount: amount,
-        paymentMethod: method,
-        anonymous: document.getElementById("don-anon").checked,
-        message: document.getElementById("don-message").value.trim(),
-        consent: document.getElementById("don-consent").checked
-      };
+      const name = document.getElementById("don-name")?.value.trim() || "";
+      const phone = document.getElementById("don-phone")?.value.trim() || "";
+      const email = document.getElementById("don-email")?.value.trim() || "";
+      const country = document.getElementById("don-country")?.value.trim() || "Liberia";
+      const message = document.getElementById("don-message")?.value.trim() || "";
+      const anonymous = document.getElementById("don-anon")?.checked || false;
+      const consent = document.getElementById("don-consent")?.checked || false;
 
-      const submitBtn = form.querySelector('button[type="submit"]');
+      if (!name || !phone || !consent) {
+        window.__uafShowToast?.("Full name, phone, and communication consent are required.");
+        return;
+      }
+
       submitBtn?.setAttribute("disabled", "true");
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = "Processing...";
+
+      try {
+        const actionName = paymentMethod === "momo" ? "createMomoDonation" : "createDonation";
+        const payload = {
+          action: actionName,
+          name, phone, email, country,
+          amount, paymentMethod,
+          message, anonymous, consent
+        };
+
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+
+        if (json.ok) {
+          form.reset();
+          document.querySelectorAll(".amount-chip").forEach((c) => c.classList.remove("is-selected"));
+          const customInput = document.getElementById("custom-amount");
+          if (customInput) {
+            customInput.value = "";
+            customInput.setAttribute("disabled", "true");
+          }
+
+          if (json.pendingMomo && json.transactionId) {
+            window.__uafShowToast?.("Prompt sent to phone. Ref: " + json.transactionId);
+            pollMomoPaymentStatus(json.transactionId, phone);
+          } else {
+            window.__uafShowToast?.(json.message || `Donation Ref: ${json.transactionId}. Awaiting verification.`);
+          }
+          loadFundingSummary();
+        } else {
+          window.__uafShowToast?.(json.error || "Could not submit donation. Please try again.");
+        }
+      } catch (err) {
+        window.__uafShowToast?.("Network error. Please check your connection and try again.");
+      } finally {
+        submitBtn?.removeAttribute("disabled");
+        submitBtn.textContent = originalText;
+      }
+    });
+  }
+
+  function pollMomoPaymentStatus(transactionId, phone) {
+    let attempts = 0;
+    const maxAttempts = 15;
+    const interval = setInterval(async () => {
+      attempts++;
+      if (attempts > maxAttempts) {
+        clearInterval(interval);
+        window.__uafShowToast?.("Verification pending. Check reference: " + transactionId);
+        return;
+      }
       try {
         const res = await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          cache: "no-store",
-          body: JSON.stringify(payload)
+          body: JSON.stringify({ action: "checkMomoStatus", transactionId, phone })
         });
         const json = await res.json();
-        if (json.ok) {
-          window.__uafShowToast?.(json.message || "Thank you — your donation has been recorded.");
-          form.reset();
-          document.querySelectorAll(".amount-chip").forEach((c) => c.classList.remove("is-selected"));
-          if (customInput) customInput.setAttribute("disabled", "true");
-        } else {
-          window.__uafShowToast?.(json.error || "Couldn't record your donation — please check the form and try again.");
+        if (json.ok && json.status === "VERIFIED") {
+          clearInterval(interval);
+          window.__uafShowToast?.("Donation verified! Thank you for supporting a child.");
+          loadFundingSummary();
+        } else if (json.ok && json.status === "FAILED") {
+          clearInterval(interval);
+          window.__uafShowToast?.("Payment declined or timed out on mobile.");
         }
-      } catch (err) {
-        window.__uafShowToast?.("Couldn't reach the server. Please check your connection and try again.");
-      } finally {
-        submitBtn?.removeAttribute("disabled");
-      }
-    });
+      } catch (e) {}
+    }, 4000);
   }
+
+  /* ---------------------------------------------------------
+     HTML ESCAPING
+  --------------------------------------------------------- */
+  function escapeHtml_(str) {
+    const div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+  }
+
+  /* ---------------------------------------------------------
+     INIT — called from app.js after shell is ready
+  --------------------------------------------------------- */
+  window.__uafDataInit = function () {
+    initReportForm();
+    initDonationForm();
+    bindFilterListeners();
+    loadPublicData();
     loadPublicPhotos();
+    loadFundingSummary();
   };
 })();

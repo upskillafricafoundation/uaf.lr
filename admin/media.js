@@ -45,7 +45,6 @@
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
-      cache: "no-store", // Apps Script's redirect target is single-use/ephemeral — never let the browser reuse a cached one
       body: JSON.stringify(Object.assign({ action }, payload))
     });
     return res.json();
@@ -129,50 +128,15 @@
   }
 
   /* ---------------------------------------------------------
-     UPLOAD — resize + compress client-side first. Apps Script's
-     web app plumbing (the exec -> echo -> exec redirect dance)
-     struggles with multi-megabyte POST bodies — a raw phone
-     photo, base64-encoded, easily runs 5-10MB and can leave the
-     request hanging indefinitely rather than failing cleanly.
-     Capping the longest edge and re-encoding as JPEG keeps
-     uploads fast and reliable, and is lighter for field users on
-     mobile data regardless.
+     UPLOAD
   --------------------------------------------------------- */
-  function resizeAndCompressImage(file, maxDimension, quality) {
+  function fileToBase64(file) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => {
-        const img = new Image();
-        img.onload = () => {
-          let width = img.width;
-          let height = img.height;
-          if (width > maxDimension || height > maxDimension) {
-            if (width >= height) {
-              height = Math.round((height / width) * maxDimension);
-              width = maxDimension;
-            } else {
-              width = Math.round((width / height) * maxDimension);
-              height = maxDimension;
-            }
-          }
-          const canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, width, height);
-          canvas.toBlob((blob) => {
-            if (!blob) { reject(new Error("Could not process image.")); return; }
-            const outReader = new FileReader();
-            outReader.onload = () => {
-              const commaIndex = outReader.result.indexOf(",");
-              resolve({ base64: outReader.result.slice(commaIndex + 1), mimeType: "image/jpeg" });
-            };
-            outReader.onerror = reject;
-            outReader.readAsDataURL(blob);
-          }, "image/jpeg", quality);
-        };
-        img.onerror = () => reject(new Error("Could not read this image file."));
-        img.src = reader.result;
+        // reader.result is a data: URL — strip the "data:...;base64," prefix
+        const commaIndex = reader.result.indexOf(",");
+        resolve(reader.result.slice(commaIndex + 1));
       };
       reader.onerror = reject;
       reader.readAsDataURL(file);
@@ -191,12 +155,9 @@
       return;
     }
 
-    const originalLabel = submitBtn.textContent;
     submitBtn.setAttribute("disabled", "true");
-    submitBtn.textContent = "Preparing image…";
     try {
-      const { base64: imageBase64, mimeType } = await resizeAndCompressImage(file, 1600, 0.82);
-      submitBtn.textContent = "Uploading…";
+      const imageBase64 = await fileToBase64(file);
       const result = await callApi("uploadMedia", {
         token: session.token,
         title: document.getElementById("media-title").value.trim(),
@@ -206,7 +167,7 @@
         community: document.getElementById("media-community").value.trim(),
         program: document.getElementById("media-program").value.trim(),
         photoDate: document.getElementById("media-photo-date").value,
-        mimeType: mimeType,
+        mimeType: file.type,
         imageBase64: imageBase64
       });
 
@@ -221,7 +182,6 @@
       flash("Couldn't reach the server. Please check your connection and try again.");
     } finally {
       submitBtn.removeAttribute("disabled");
-      submitBtn.textContent = originalLabel;
     }
   }
 

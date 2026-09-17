@@ -3,10 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>UAF Impact — Admin</title>
+<title>UAF Impact — Admin Portal</title>
 <meta name="robots" content="noindex, nofollow" />
-<!-- Deliberately NOT in manifest.json / not installable / not cached by
-     service-worker.js (which already excludes any path containing "/admin"). -->
 <link rel="stylesheet" href="../styles.css" />
 <link rel="stylesheet" href="admin.css" />
 </head>
@@ -50,27 +48,26 @@
       <nav class="admin-nav">
         <div class="admin-nav__title">Modules</div>
         <div class="admin-nav__item is-active" data-module="dashboard">Dashboard</div>
-        <div class="admin-nav__item is-disabled">Community Data <span>Phase 6+</span></div>
+        <div class="admin-nav__item" data-module="community">Community Data</div>
         <div class="admin-nav__item" data-module="media">Media Review</div>
-        <div class="admin-nav__item is-disabled">Donations <span>Phase 8</span></div>
-        <div class="admin-nav__item is-disabled">Stories &amp; Evidence <span>Phase 10</span></div>
-        <div class="admin-nav__item is-disabled">Users &amp; Roles <span>Phase 7+</span></div>
-        <div class="admin-nav__item is-disabled">Audit Logs <span>Phase 7+</span></div>
-          <div class="admin-nav__item" data-module="donations">Donations</div>
-        <div class="admin-nav__item is-disabled">Stories &amp; Evidence <span>Phase 10</span></div>
+        <div class="admin-nav__item" data-module="donations">Donations</div>
+        <div class="admin-nav__item" data-module="stories">Stories &amp; Evidence</div>
+        <div class="admin-nav__item" data-module="users">Users &amp; Roles</div>
+        <div class="admin-nav__item" data-module="audit">Audit Logs</div>
       </nav>
 
       <section id="admin-modules" class="admin-content">
-        <div class="admin-card">
-          <h2>Signed in</h2>
+        <div class="admin-card" style="max-width:680px;">
+          <h2>Administrator Portal</h2>
           <p>You're authenticated as <strong id="welcome-name"></strong> (<span id="welcome-role"></span>).</p>
-          <p class="admin-muted">This confirms Phase 6 end-to-end: login, session token, role lookup, and logout all work against your live Apps Script backend. Each module listed on the left is added in its own phase, gated by this same session — no re-work to auth required.</p>
+          <p class="admin-muted">All administrative and operational modules are online. Use the navigation sidebar on the left to review community reports, approve safeguarding media, verify incoming mobile money and bank donations, publish field stories, manage staff accounts, or inspect system audit logs.</p>
+          <div style="margin-top:20px;padding:16px;background:var(--blue-050);border-radius:var(--radius-md);font-size:13px;color:var(--blue-900);">
+            <strong>Platform Integrity Notice:</strong> All public-facing statistics adhere strictly to the Zero-Fabrication protocol. Only submissions, media, and donations explicitly marked as <code>VERIFIED</code> or <code>PUBLISHED</code> by authorized staff will be reflected on the public PWA.
+          </div>
         </div>
       </section>
 
-      <!-- Phase 7+ modules render here; #admin-modules above stays
-           exactly as Phase 6 left it and is just hidden while a
-           module panel is active. See admin.js's activateModule(). -->
+      <!-- Dynamic module container -->
       <section id="admin-module-panel" class="admin-content is-hidden"></section>
     </main>
   </div>
@@ -79,7 +76,11 @@
 
 <script src="../config.js"></script>
 <script src="admin.js"></script>
+<script src="community.js"></script>
 <script src="media.js"></script>
 <script src="donations.js"></script>
+<script src="stories.js"></script>
+<script src="users.js"></script>
+<script src="audit.js"></script>
 </body>
 </html>

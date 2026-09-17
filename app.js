@@ -1,9 +1,9 @@
 /* =========================================================
    UAF IMPACT — APP SHELL
    PHASE 1: navigation, branding, PWA install, offline shell.
-   PHASE 2+4: see data.js for the live public-data layer that
-   plugs into this same markup. This file's job stays nav,
-   forms-as-UI, install, and shell behavior.
+   PHASE 2+4: live public data layer (see data.js).
+   PHASE 7: media carousel integration (see data.js/media.js).
+   PHASE 8: funding & donation wiring (see data.js/donations.js).
    ========================================================= */
 
 (() => {
@@ -11,16 +11,13 @@
 
   /* ---------------------------------------------------------
      CONFIG — county/year reference lists for the selectors.
-     These are just Liberia's counties, not fetched data, so
-     they stay static here rather than round-tripping to the
-     API on every load.
   --------------------------------------------------------- */
   const COUNTIES = [
     "Montserrado", "Margibi", "Bong", "Nimba", "Grand Bassa"
   ];
   const YEARS = ["2026", "2027"];
 
-  const APP_VERSION = "phase-7";
+  const APP_VERSION = "phase-8";
 
   /* ---------------------------------------------------------
      ROUTER
@@ -58,7 +55,6 @@
 
   /* ---------------------------------------------------------
      COMMUNITY / YEAR SELECTOR (Home + Communities + Impact)
-     Populates <select> elements marked with data-role.
   --------------------------------------------------------- */
   function populateSelect(select, items, placeholder) {
     if (!select) return;
@@ -93,9 +89,8 @@
 
   /* ---------------------------------------------------------
      PHOTO CAROUSEL ("See the Impact")
-     No approved photos yet — shown as a single explanatory
-     slide. Phase 7 (Media.gs) will feed real approved photos
-     into this same track/dot structure.
+     data.js feeds real approved photos into this same track/dot
+     structure via window.__uafReinitCarousel.
   --------------------------------------------------------- */
   function initCarousel() {
     const track = document.querySelector(".carousel__track");
@@ -130,12 +125,6 @@
     });
   }
 
-  // Phase 7: data.js replaces the placeholder slide with real approved
-  // photos once they load (asynchronously, after this file's own
-  // DOMContentLoaded init already ran initCarousel() once against the
-  // single placeholder slide). Exposing the function lets data.js
-  // re-run the exact same init logic against the new slide markup
-  // without this file's carousel logic itself changing at all.
   window.__uafReinitCarousel = initCarousel;
 
   /* ---------------------------------------------------------
@@ -175,11 +164,13 @@
 
   /* ---------------------------------------------------------
      FORM STUBS
-     Donation and Data & Evidence stay UI-only until Phase 8/9
-     (MTN MoMo) and the evidence-review workflow are built.
-     The out-of-school report form is wired for real in Phase 4
-     — see data.js, which owns #report-form's submit handling.
+     data.js owns #report-form (Phase 4) and #donation-form
+     (Phase 8). Evidence form remains stubbed until Phase 10.
   --------------------------------------------------------- */
+  function initDonationForm() {
+    // Phase 8: data.js owns #donation-form submit handling
+  }
+
   function initContactForm() {
     const form = document.getElementById("evidence-form");
     if (!form) return;
@@ -200,9 +191,9 @@
     toast.textContent = message;
     toast.classList.add("is-visible");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 3200);
+    toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 3800);
   }
-  window.__uafShowToast = showToast; // used by data.js so both files share one toast
+  window.__uafShowToast = showToast; // shared across data.js and modules
 
   /* ---------------------------------------------------------
      OFFLINE STATUS
@@ -223,8 +214,6 @@
 
   /* ---------------------------------------------------------
      LAST UPDATED STAMPS
-     Placeholder default; data.js overwrites these with the
-     real API timestamp once live data loads successfully.
   --------------------------------------------------------- */
   function stampLastUpdated() {
     document.querySelectorAll("[data-last-updated]").forEach((el) => {
@@ -339,6 +328,7 @@
     initCarousel();
     initAmountChips();
     initPaymentMethods();
+    initDonationForm();
     initContactForm();
     initInstall();
     initSheets();
@@ -357,7 +347,7 @@
       });
     }
 
-    // data.js (Phase 2+4) hooks in after the shell is ready.
+    // data.js hooks in after the shell is ready.
     window.__uafDataInit && window.__uafDataInit();
 
     console.info("UAF Impact —", APP_VERSION);
