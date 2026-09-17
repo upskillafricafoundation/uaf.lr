@@ -34,7 +34,7 @@
       return;
     }
     try {
-      const res = await fetch(`${API_URL}?route=publicData`);
+      const res = await fetch(`${API_URL}?route=publicData`, { cache: "no-store" });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "Unknown API error");
       publicData = json;
@@ -57,7 +57,7 @@
   async function loadPublicPhotos() {
     if (!isConfigured) return;
     try {
-      const res = await fetch(`${API_URL}?route=publicPhotos`);
+      const res = await fetch(`${API_URL}?route=publicPhotos`, { cache: "no-store" });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "Unknown API error");
       publicPhotos = json.photos || [];
@@ -353,6 +353,7 @@
         const res = await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" }, // avoids CORS preflight to Apps Script
+          cache: "no-store", // Apps Script's redirect target is single-use/ephemeral — never let the browser reuse a cached one
           body: JSON.stringify(payload)
         });
         const json = await res.json();
