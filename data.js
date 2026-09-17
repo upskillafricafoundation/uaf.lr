@@ -369,6 +369,13 @@
         submitBtn?.removeAttribute("disabled");
       }
     });
+       window.__uafDataInit = function () {
+    initReportForm();
+    initDonationForm();
+    bindFilterListeners();
+    loadPublicData();
+    loadPublicPhotos();
+  };
   }
 
   /* ---------------------------------------------------------
@@ -387,6 +394,78 @@
     initReportForm();
     bindFilterListeners();
     loadPublicData();
+
+       /* ---------------------------------------------------------
+     DONATION FORM — real submission (Phase 8, manual MTN
+     transfer path only; MOMO is rejected server-side until
+     Phase 9 wires the live MTN Collection API)
+  --------------------------------------------------------- */
+  function initDonationForm() {
+    const form = document.getElementById("donation-form");
+    if (!form) return;
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (!isConfigured) {
+        window.__uafShowToast?.("Donations aren't connected yet — try again soon.");
+        return;
+      }
+
+      const selectedChip = document.querySelector(".amount-chip.is-selected");
+      const customInput = document.getElementById("custom-amount");
+      let amount = null;
+      if (selectedChip && selectedChip.dataset.amount !== "custom") {
+        amount = Number(selectedChip.dataset.amount);
+      } else if (customInput && !customInput.disabled) {
+        amount = Number(customInput.value);
+      }
+      if (!amount || amount <= 0) {
+        window.__uafShowToast?.("Please select or enter a donation amount.");
+        return;
+      }
+
+      const selectedMethod = document.querySelector(".payment-method.is-selected");
+      const method = selectedMethod?.dataset.method === "momo" ? "MOMO" : "MANUAL";
+
+      const payload = {
+        action: "submitDonation",
+        name: document.getElementById("don-name").value.trim(),
+        phone: document.getElementById("don-phone").value.trim(),
+        email: document.getElementById("don-email").value.trim(),
+        country: document.getElementById("don-country").value.trim(),
+        amount: amount,
+        paymentMethod: method,
+        anonymous: document.getElementById("don-anon").checked,
+        message: document.getElementById("don-message").value.trim(),
+        consent: document.getElementById("don-consent").checked
+      };
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      submitBtn?.setAttribute("disabled", "true");
+      try {
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          cache: "no-store",
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+        if (json.ok) {
+          window.__uafShowToast?.(json.message || "Thank you — your donation has been recorded.");
+          form.reset();
+          document.querySelectorAll(".amount-chip").forEach((c) => c.classList.remove("is-selected"));
+          if (customInput) customInput.setAttribute("disabled", "true");
+        } else {
+          window.__uafShowToast?.(json.error || "Couldn't record your donation — please check the form and try again.");
+        }
+      } catch (err) {
+        window.__uafShowToast?.("Couldn't reach the server. Please check your connection and try again.");
+      } finally {
+        submitBtn?.removeAttribute("disabled");
+      }
+    });
+  }
     loadPublicPhotos();
   };
 })();
