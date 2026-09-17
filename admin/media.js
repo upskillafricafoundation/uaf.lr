@@ -45,6 +45,7 @@
     const res = await fetch(API_URL, {
       method: "POST",
       headers: { "Content-Type": "text/plain;charset=utf-8" },
+      cache: "no-store", // Apps Script's redirect target is single-use/ephemeral — never let the browser reuse a cached one
       body: JSON.stringify(Object.assign({ action }, payload))
     });
     return res.json();
