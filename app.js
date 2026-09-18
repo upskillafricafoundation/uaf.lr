@@ -1,42 +1,50 @@
 /* =========================================================
-   UAF IMPACT — APP SHELL
-   PHASE 1: navigation, branding, PWA install, offline shell.
-   PHASE 2+4: live public data layer (see data.js).
-   PHASE 7: media carousel integration (see data.js/media.js).
-   PHASE 8: funding & donation wiring (see data.js/donations.js).
+   UAF IMPACT — APP SHELL (7-Screen Line-Art UI)
    ========================================================= */
 
 (() => {
   "use strict";
 
   /* ---------------------------------------------------------
-     CONFIG — county/year reference lists for the selectors.
+     CONFIG & COUNTIES
   --------------------------------------------------------- */
   const COUNTIES = [
     "Montserrado", "Margibi", "Bong", "Nimba", "Grand Bassa"
   ];
   const YEARS = ["2026", "2027"];
-
-  const APP_VERSION = "phase-8-consolidated";
+  const APP_VERSION = "2.0.0-ui-grid";
 
   /* ---------------------------------------------------------
-     ROUTER (home, works, report)
-     Aliasing legacy routes:
-       - impact / communities -> works
-       - more -> home
-       - support -> openDonateModal() on home
+     ROUTER (7 Distinct Screens)
+     1. menu (Default Home / Grid of Line-Art Icons)
+     2. donate (Image 2 style with USSD auto-dialer)
+     3. statistics (Communities stats, Funding gap, Stories)
+     4. impact-drive (Impact Overview, Directory, Programs)
+     5. request-data (Evidence & Data Request Form)
+     6. submit-ossc (Out-of-School Children Field Intake Form)
+     7. partners (UAF Partners & Collaborators Showcase)
   --------------------------------------------------------- */
-  const ROUTES = ["home", "works", "report"];
+  const ROUTES = [
+    "menu",
+    "donate",
+    "statistics",
+    "impact-drive",
+    "request-data",
+    "submit-ossc",
+    "partners"
+  ];
 
   function currentRoute() {
-    const raw = (location.hash || "#/home").replace(/^#\/?/, "");
-    if (raw === "impact" || raw === "communities") return "works";
-    if (raw === "more") return "home";
-    if (raw === "support") {
-      setTimeout(openDonateModal, 50);
-      return "home";
-    }
-    return ROUTES.includes(raw) ? raw : "home";
+    const raw = (location.hash || "#/menu").replace(/^#\/?/, "").toLowerCase();
+    if (!raw || raw === "home" || raw === "menu") return "menu";
+    if (raw === "support" || raw === "donate") return "donate";
+    if (raw === "statistics" || raw === "stats") return "statistics";
+    if (raw === "impact-drive" || raw === "impact" || raw === "communities" || raw === "works") return "impact-drive";
+    if (raw === "request-data" || raw === "request" || raw === "evidence") return "request-data";
+    if (raw === "submit-ossc" || raw === "report" || raw === "ossc") return "submit-ossc";
+    if (raw === "partners" || raw === "partner" || raw === "collaborators") return "partners";
+
+    return ROUTES.includes(raw) ? raw : "menu";
   }
 
   function renderRoute() {
@@ -45,121 +53,28 @@
     document.querySelectorAll(".screen").forEach((el) => {
       el.classList.toggle("is-active", el.dataset.screen === route);
     });
-    document.querySelectorAll(".bottom-nav__item").forEach((el) => {
-      el.classList.toggle("is-active", el.dataset.nav === route);
-    });
-    document.querySelectorAll(".nav-link").forEach((el) => {
+
+    document.querySelectorAll("[data-nav]").forEach((el) => {
       el.classList.toggle("is-active", el.dataset.nav === route);
     });
 
-    document.getElementById("app-main")?.scrollTo?.({ top: 0 });
+    // Scroll to top on route change
+    const main = document.getElementById("app-main");
+    if (main) main.scrollTop = 0;
     window.scrollTo(0, 0);
   }
 
   window.addEventListener("hashchange", renderRoute);
 
   function goTo(route) {
-    if (route === "support") {
-      openDonateModal();
-      return;
-    }
-    if (route === "impact" || route === "communities") {
-      route = "works";
-    } else if (route === "more") {
-      route = "home";
-    }
-    location.hash = `#/${route}`;
+    if (!route) route = "menu";
+    const clean = route.replace(/^#\/?/, "");
+    location.hash = `#/${clean}`;
   }
-  window.__uafGoTo = goTo; // used by inline CTA buttons
+  window.__uafGoTo = goTo;
 
   /* ---------------------------------------------------------
-     DONATE POPUP MODAL (Fixed Scroll-Locked Dialog)
-  --------------------------------------------------------- */
-  function openDonateModal() {
-    const backdrop = document.getElementById("donate-modal-backdrop");
-    if (!backdrop) return;
-    backdrop.classList.add("is-open");
-    backdrop.setAttribute("aria-hidden", "false");
-    document.body.classList.add("modal-open");
-    document.documentElement.classList.add("modal-open");
-  }
-
-  function closeDonateModal() {
-    const backdrop = document.getElementById("donate-modal-backdrop");
-    if (!backdrop) return;
-    backdrop.classList.remove("is-open");
-    backdrop.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("modal-open");
-    document.documentElement.classList.remove("modal-open");
-  }
-
-  window.__uafOpenDonateModal = openDonateModal;
-  window.__uafCloseDonateModal = closeDonateModal;
-
-  function initDonateModal() {
-    // Open buttons
-    document.querySelectorAll("[data-action='donate']").forEach((btn) => {
-      btn.addEventListener("click", (e) => {
-        e.preventDefault();
-        openDonateModal();
-      });
-    });
-
-    // Close button inside header
-    const closeBtn = document.getElementById("donate-modal-close");
-    if (closeBtn) {
-      closeBtn.addEventListener("click", closeDonateModal);
-    }
-
-    // Click outside window to dismiss
-    const backdrop = document.getElementById("donate-modal-backdrop");
-    if (backdrop) {
-      backdrop.addEventListener("click", (e) => {
-        if (e.target === backdrop) closeDonateModal();
-      });
-    }
-
-    // Escape key dismiss
-    document.addEventListener("keydown", (e) => {
-      if (e.key === "Escape" && backdrop?.classList.contains("is-open")) {
-        closeDonateModal();
-      }
-    });
-  }
-
-  /* ---------------------------------------------------------
-     USSD CODE COPY
-  --------------------------------------------------------- */
-  function initUssdCopy() {
-    const btn = document.getElementById("ussd-copy-btn");
-    if (!btn) return;
-    btn.addEventListener("click", async () => {
-      const code = btn.dataset.code || "*156*3*0889541712#";
-      try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          await navigator.clipboard.writeText(code);
-        } else {
-          const temp = document.createElement("textarea");
-          temp.value = code;
-          document.body.appendChild(temp);
-          temp.select();
-          document.execCommand("copy");
-          document.body.removeChild(temp);
-        }
-        const originalText = btn.textContent;
-        btn.textContent = "✓ Copied!";
-        showToast("USSD Code " + code + " copied to clipboard!");
-        setTimeout(() => {
-          btn.textContent = originalText;
-        }, 2500);
-      } catch (err) {
-        showToast("Dial " + code + " on your phone");
-      }
-    });
-  }
-
-  /* ---------------------------------------------------------
-     DONATION AMOUNT CHIPS & DYNAMIC SUBMIT BUTTON
+     DONATION AMOUNT CHIPS & DYNAMIC SUBMIT BUTTON (Image 2 Style)
   --------------------------------------------------------- */
   const CURRENCY_CONFIG = {
     USD: {
@@ -262,8 +177,59 @@
     updateDonateButtonText();
   }
 
+  /* ---------------------------------------------------------
+     DONATION CONTROLS (Currency, Tabs, USSD Dial, Frequency)
+  --------------------------------------------------------- */
   function initDonationControls() {
-    // Currency buttons
+    // 1. Payment Tabs (Manual Active vs Automated Coming Soon)
+    const tabAuto = document.getElementById("tab-auto-momo");
+    if (tabAuto) {
+      tabAuto.addEventListener("click", () => {
+        showToast("This Feature Coming Soon. Please use manual transfer for now.");
+      });
+    }
+
+    // 2. USSD Auto-Dialer Link
+    const dialLink = document.getElementById("ussd-dial-link");
+    if (dialLink) {
+      dialLink.addEventListener("click", () => {
+        const code = "*156*3*0889541712#";
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(code);
+          }
+        } catch (e) {}
+        showToast("Opening dial pad with " + code);
+      });
+    }
+
+    // 3. Desktop USSD Copy Button
+    const copyBtn = document.getElementById("ussd-copy-btn");
+    if (copyBtn) {
+      copyBtn.addEventListener("click", async () => {
+        const code = copyBtn.dataset.code || "*156*3*0889541712#";
+        try {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(code);
+          } else {
+            const temp = document.createElement("textarea");
+            temp.value = code;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+          }
+          const original = copyBtn.textContent;
+          copyBtn.textContent = "✓ Copied!";
+          showToast("USSD Code " + code + " copied to clipboard!");
+          setTimeout(() => { copyBtn.textContent = original; }, 2500);
+        } catch (err) {
+          showToast("Dial " + code + " on your phone");
+        }
+      });
+    }
+
+    // 4. Currency Buttons
     const currencyBtns = document.querySelectorAll(".currency-btn[data-currency]");
     currencyBtns.forEach((btn) => {
       btn.addEventListener("click", () => {
@@ -274,7 +240,7 @@
       });
     });
 
-    // Custom amount input
+    // 5. Custom amount input
     const customInput = document.getElementById("custom-amount");
     if (customInput) {
       customInput.addEventListener("input", () => {
@@ -288,8 +254,8 @@
       });
     }
 
-    // Frequency chips
-    const freqChips = document.querySelectorAll(".frequency-chip[data-frequency]");
+    // 6. Frequency chips
+    const freqChips = document.querySelectorAll(".freq-chip[data-frequency], .frequency-chip[data-frequency]");
     freqChips.forEach((chip) => {
       chip.addEventListener("click", () => {
         freqChips.forEach((c) => c.classList.remove("is-selected"));
@@ -297,80 +263,150 @@
       });
     });
 
+    // 7. Add Note toggle
+    const noteCheckbox = document.getElementById("don-add-note");
+    const noteContainer = document.getElementById("don-message-container");
+    if (noteCheckbox && noteContainer) {
+      noteCheckbox.addEventListener("change", () => {
+        if (noteCheckbox.checked) {
+          noteContainer.classList.remove("is-hidden");
+          const textarea = document.getElementById("don-message");
+          if (textarea) textarea.focus();
+        } else {
+          noteContainer.classList.add("is-hidden");
+        }
+      });
+    }
+
     renderAmountChips();
   }
 
   /* ---------------------------------------------------------
-     COMMUNITY / YEAR SELECTOR (Home + Works)
+     SEARCH DIALOG
   --------------------------------------------------------- */
-  function populateSelect(select, items, placeholder) {
-    if (!select) return;
-    select.innerHTML = "";
-    const optAll = document.createElement("option");
-    optAll.value = "";
-    optAll.textContent = placeholder;
-    select.appendChild(optAll);
-    items.forEach((item) => {
-      const opt = document.createElement("option");
-      opt.value = item;
-      opt.textContent = item;
-      select.appendChild(opt);
-    });
-  }
+  function initSearchDialog() {
+    const trigger = document.getElementById("header-search-btn");
+    const backdrop = document.getElementById("search-dialog-backdrop");
+    const closeBtn = document.getElementById("search-dialog-close");
+    const searchInput = document.getElementById("global-search-input");
+    const resultsContainer = document.getElementById("search-results-container");
 
-  function initSelectors() {
-    document.querySelectorAll('[data-role="county-select"]').forEach((el) =>
-      populateSelect(el, COUNTIES, "All counties")
-    );
-    document.querySelectorAll('[data-role="year-select"]').forEach((el) =>
-      populateSelect(el, YEARS, "All years")
-    );
-  }
+    if (!trigger || !backdrop) return;
 
-  function handleSelectorChange() {
-    const notice = document.getElementById("selector-notice");
-    if (notice) {
-      notice.classList.remove("is-hidden");
-    }
-  }
-
-  /* ---------------------------------------------------------
-     PHOTO CAROUSEL ("See the Impact")
-  --------------------------------------------------------- */
-  function initCarousel() {
-    const track = document.querySelector(".carousel__track");
-    const dotsWrap = document.querySelector(".carousel__controls");
-    if (!track) return;
-
-    const slides = track.querySelectorAll(".carousel__slide");
-    if (slides.length <= 1) return;
-
-    let index = 0;
-    const dots = [];
-    if (dotsWrap) dotsWrap.innerHTML = "";
-    slides.forEach((_, i) => {
-      const dot = document.createElement("button");
-      dot.className = "carousel__dot" + (i === 0 ? " is-active" : "");
-      dot.setAttribute("aria-label", `Show slide ${i + 1}`);
-      dot.addEventListener("click", () => setSlide(i));
-      dotsWrap?.appendChild(dot);
-      dots.push(dot);
-    });
-
-    function setSlide(i) {
-      index = i;
-      track.style.transform = `translateX(-${i * 100}%)`;
-      dots.forEach((d, di) => d.classList.toggle("is-active", di === i));
+    function openSearch() {
+      backdrop.classList.remove("is-hidden");
+      if (searchInput) {
+        searchInput.value = "";
+        searchInput.focus();
+      }
+      renderSearchResults("");
     }
 
-    let timer = setInterval(() => setSlide((index + 1) % slides.length), 5000);
-    track.addEventListener("mouseenter", () => clearInterval(timer));
-    track.addEventListener("mouseleave", () => {
-      timer = setInterval(() => setSlide((index + 1) % slides.length), 5000);
+    function closeSearch() {
+      backdrop.classList.add("is-hidden");
+    }
+
+    trigger.addEventListener("click", openSearch);
+    closeBtn?.addEventListener("click", closeSearch);
+    backdrop.addEventListener("click", (e) => {
+      if (e.target === backdrop) closeSearch();
+    });
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && !backdrop.classList.contains("is-hidden")) {
+        closeSearch();
+      }
+    });
+
+    const searchableItems = [
+      { title: "Donate to UAF", type: "Page", route: "donate", desc: "Support children re-enrollment with MTN Mobile Money" },
+      { title: "Communities Statistics", type: "Page", route: "statistics", desc: "View out-of-school counts, rates, and verified data" },
+      { title: "Funding Gap", type: "Feature", route: "statistics", desc: "Transparent breakdown of verified funds vs community need" },
+      { title: "Active Community Stories", type: "Feature", route: "statistics", desc: "Campaign priorities and student success stories" },
+      { title: "Impact Drive Overview", type: "Page", route: "impact-drive", desc: "8 core field metrics across all target counties" },
+      { title: "Community Data Directory", type: "Table", route: "impact-drive", desc: "Audit list of verified communities in Liberia" },
+      { title: "UAF Programs", type: "Interventions", route: "impact-drive", desc: "No Invisible Child, Education Access, Safeguarding, ALP" },
+      { title: "Request Data & Evidence", type: "Form", route: "request-data", desc: "Request research datasets and program evaluation records" },
+      { title: "Submit Out-of-School Children", type: "Form", route: "submit-ossc", desc: "Report children needing school intake and support" },
+      { title: "UAF Partners & Collaborators", type: "Page", route: "partners", desc: "Institutional partners, school alliances, child protection" },
+      { title: "Montserrado County", type: "County", route: "statistics", county: "Montserrado", desc: "West Point, Clara Town, Duala, Red Light, New Kru Town" },
+      { title: "Margibi County", type: "County", route: "statistics", county: "Margibi", desc: "Kakata, Harbel, Unification Town" },
+      { title: "Bong County", type: "County", route: "statistics", county: "Bong", desc: "Gbarnga, Totota, Suakoko" },
+      { title: "Nimba County", type: "County", route: "statistics", county: "Nimba", desc: "Ganta, Sanniquellie, Karnplay" },
+      { title: "Grand Bassa County", type: "County", route: "statistics", county: "Grand Bassa", desc: "Buchanan, Owensgrove" }
+    ];
+
+    function renderSearchResults(query) {
+      if (!resultsContainer) return;
+      const q = query.trim().toLowerCase();
+      if (!q) {
+        resultsContainer.innerHTML = `
+          <div style="font-size:12.5px; color:var(--ink-400); margin-top:8px;">
+            <p><strong>Quick Navigation:</strong></p>
+            <div style="display:flex; flex-wrap:wrap; gap:6px; margin-top:6px;">
+              <span class="search-tag" data-search-route="donate">Donate</span>
+              <span class="search-tag" data-search-route="statistics">Statistics</span>
+              <span class="search-tag" data-search-route="impact-drive">Impact Drive</span>
+              <span class="search-tag" data-search-route="submit-ossc">Submit OSSC</span>
+              <span class="search-tag" data-search-route="request-data">Request Data</span>
+              <span class="search-tag" data-search-route="partners">Partners</span>
+            </div>
+          </div>
+        `;
+        wireQuickTags();
+        return;
+      }
+
+      const matches = searchableItems.filter((item) => {
+        return (
+          item.title.toLowerCase().includes(q) ||
+          item.desc.toLowerCase().includes(q) ||
+          item.type.toLowerCase().includes(q)
+        );
+      });
+
+      if (!matches.length) {
+        resultsContainer.innerHTML = `<p style="padding:14px; text-align:center; color:var(--ink-400); font-size:13px;">No results found for "${query}".</p>`;
+        return;
+      }
+
+      resultsContainer.innerHTML = matches.map((item) => `
+        <div class="search-result-item" data-search-route="${item.route}" ${item.county ? `data-search-county="${item.county}"` : ""}>
+          <div>
+            <strong>${item.title}</strong>
+            <p>${item.desc}</p>
+          </div>
+          <span class="search-result-type">${item.type}</span>
+        </div>
+      `).join("");
+
+      wireQuickTags();
+    }
+
+    function wireQuickTags() {
+      resultsContainer.querySelectorAll("[data-search-route]").forEach((el) => {
+        el.addEventListener("click", () => {
+          const route = el.dataset.searchRoute;
+          const county = el.dataset.searchCounty;
+          closeSearch();
+          goTo(route);
+          if (county) {
+            setTimeout(() => {
+              const countySelect = document.getElementById("stats-county");
+              if (countySelect) {
+                countySelect.value = county;
+                countySelect.dispatchEvent(new Event("change"));
+              }
+            }, 100);
+          }
+        });
+      });
+    }
+
+    searchInput?.addEventListener("input", (e) => {
+      renderSearchResults(e.target.value);
     });
   }
-
-  window.__uafReinitCarousel = initCarousel;
 
   /* ---------------------------------------------------------
      TOAST
@@ -395,7 +431,7 @@
     if (navigator.onLine) {
       banner.classList.remove("is-visible");
     } else {
-      banner.querySelector("span").textContent =
+      banner.querySelector("span:last-child").textContent =
         "Offline — showing previously cached information.";
       banner.classList.add("is-visible");
     }
@@ -404,22 +440,11 @@
   window.addEventListener("offline", updateOnlineStatus);
 
   /* ---------------------------------------------------------
-     LAST UPDATED STAMPS
-  --------------------------------------------------------- */
-  function stampLastUpdated() {
-    document.querySelectorAll("[data-last-updated]").forEach((el) => {
-      el.textContent = "Last updated: not yet published";
-    });
-  }
-
-  /* ---------------------------------------------------------
      PWA INSTALL PROMPT
   --------------------------------------------------------- */
   let deferredPrompt = null;
   function initInstall() {
     const installBtns = document.querySelectorAll("[data-action='install']");
-    const sheet = document.getElementById("install-sheet");
-    const sheetBackdrop = document.getElementById("install-sheet-backdrop");
 
     window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
@@ -429,10 +454,7 @@
 
     installBtns.forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (!deferredPrompt) {
-          openSheet(sheet, sheetBackdrop);
-          return;
-        }
+        if (!deferredPrompt) return;
         deferredPrompt.prompt();
         await deferredPrompt.userChoice;
         deferredPrompt = null;
@@ -445,99 +467,59 @@
     });
   }
 
-  function openSheet(sheet, backdrop) {
-    if (!sheet || !backdrop) return;
-    backdrop.classList.add("is-visible");
-  }
-  function closeSheets() {
-    document.querySelectorAll(".sheet-backdrop").forEach((b) =>
-      b.classList.remove("is-visible")
-    );
-  }
-  function initSheets() {
-    document.querySelectorAll("[data-action='close-sheet']").forEach((btn) =>
-      btn.addEventListener("click", closeSheets)
-    );
-    document.querySelectorAll(".sheet-backdrop").forEach((backdrop) =>
-      backdrop.addEventListener("click", (e) => {
-        if (e.target === backdrop) closeSheets();
-      })
-    );
-  }
-
   /* ---------------------------------------------------------
-     LEGAL / INFO SHEETS
-  --------------------------------------------------------- */
-  function initInfoSheets() {
-    const sheet = document.getElementById("info-sheet");
-    const backdrop = document.getElementById("info-sheet-backdrop");
-    const titleEl = document.getElementById("info-sheet-title");
-    const bodyEl = document.getElementById("info-sheet-body");
-
-    document.querySelectorAll("[data-info]").forEach((item) => {
-      item.addEventListener("click", () => {
-        const key = item.dataset.info;
-        const content = INFO_CONTENT[key];
-        if (!content) return;
-        titleEl.textContent = content.title;
-        bodyEl.innerHTML = content.body;
-        backdrop.classList.add("is-visible");
-      });
-    });
-  }
-
-  const INFO_CONTENT = {
-    privacy: {
-      title: "Privacy Policy",
-      body: `<p>UAF Impact collects only the information needed to operate the platform: donation contact details, community submissions, and evidence requests. Data about individual children is never published publicly — only approved, aggregated community-level figures appear on this app.</p>
-      <p>Full privacy policy text will be published here before the platform leaves sandbox testing.</p>`
-    },
-    safeguarding: {
-      title: "Child Safeguarding",
-      body: `<p>UAF does not publish children's names, exact addresses, phone numbers, school records, or case histories. Any photograph involving a child is reviewed for consent and safeguarding risk before publication, and only appears once marked Approved.</p>
-      <p>If you have a child safeguarding concern related to UAF's work, please contact us directly — see the Contact section.</p>`
-    },
-    dataprotection: {
-      title: "Data Protection",
-      body: `<p>Data & Evidence Requests, donation records, and out-of-school submissions are reviewed before anything is added to public statistics or shared further. UAF applies data minimization: only what a program genuinely needs is collected.</p>
-      <p><em>"Transparency Without Compromising Child Privacy."</em></p>`
-    },
-    terms: {
-      title: "Terms of Use",
-      body: `<p>UAF Impact is provided by Upskill Africa Foundation to share verified, approved education-access information about its programs in Liberia. Statistics reflect only what UAF has verified — figures are never presented as official national data unless the methodology supports that claim.</p>
-      <p>Full terms will be published here ahead of production launch.</p>`
-    }
-  };
-
-  /* ---------------------------------------------------------
-     INIT
+     INIT ON DOM READY
   --------------------------------------------------------- */
   document.addEventListener("DOMContentLoaded", () => {
-    initSelectors();
-    document.querySelectorAll('[data-role="county-select"], [data-role="year-select"]')
-      .forEach((el) => el.addEventListener("change", handleSelectorChange));
-    initCarousel();
-    initDonateModal();
-    initUssdCopy();
     initDonationControls();
+    initSearchDialog();
     initInstall();
-    initSheets();
-    initInfoSheets();
     updateOnlineStatus();
-    stampLastUpdated();
     renderRoute();
 
-    document.querySelectorAll("[data-goto]").forEach((el) =>
-      el.addEventListener("click", () => goTo(el.dataset.goto))
-    );
+    // Wire up all [data-goto] elements
+    document.querySelectorAll("[data-goto]").forEach((el) => {
+      el.addEventListener("click", () => {
+        const impact = el.dataset.impact;
+        if (impact) {
+          const impactAreaSelect = document.getElementById("don-impact-area");
+          if (impactAreaSelect) {
+            for (let i = 0; i < impactAreaSelect.options.length; i++) {
+              if (impactAreaSelect.options[i].text.includes(impact) || impactAreaSelect.options[i].value.includes(impact)) {
+                impactAreaSelect.selectedIndex = i;
+                break;
+              }
+            }
+          }
+        }
+        goTo(el.dataset.goto);
+      });
+    });
+
+    // Story donate buttons specifically
+    document.querySelectorAll(".btn-story-donate").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const impact = btn.dataset.impact;
+        if (impact) {
+          const impactAreaSelect = document.getElementById("don-impact-area");
+          if (impactAreaSelect) {
+            for (let i = 0; i < impactAreaSelect.options.length; i++) {
+              if (impactAreaSelect.options[i].text.includes(impact) || impactAreaSelect.options[i].value.includes(impact)) {
+                impactAreaSelect.selectedIndex = i;
+                break;
+              }
+            }
+          }
+        }
+        goTo("donate");
+      });
+    });
 
     if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.register("./service-worker.js").catch(() => {
-        /* offline-first is best-effort; app still works without SW */
-      });
+      navigator.serviceWorker.register("./service-worker.js").catch(() => {});
     }
 
-    // data.js hooks in after the shell is ready.
+    // Call data.js init
     window.__uafDataInit && window.__uafDataInit();
 
     console.info("UAF Impact —", APP_VERSION);
