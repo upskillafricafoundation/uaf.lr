@@ -1,5 +1,5 @@
 /* =========================================================
-   UAF IMPACT — LIVE PUBLIC DATA (Phase 2 + 4 + 7 + 8)
+   UAF IMPACT — LIVE PUBLIC DATA (Phase 2 + 4 + 7 + 8 + 10)
    ---------------------------------------------------------
    Fetches CONFIG.API_URL, caches the result in memory, and
    populates live numbers/tables. Never invents a number:
@@ -9,7 +9,7 @@
    - Out-of-school reporting (#report-form) -> Phase 4
    - Public photo carousel (#publicPhotos) -> Phase 7
    - Funding summary & donation submission (#donation-form) -> Phase 8
-   - MTN MoMo server polling (#createMomoDonation) -> Phase 9
+   - Evidence & Data requests (#evidence-form) -> Phase 10
    ========================================================= */
 
 (() => {
@@ -185,10 +185,10 @@
   }
 
   /* ---------------------------------------------------------
-     RENDER — IMPACT DASHBOARD
+     RENDER — UAF WORKS DASHBOARD & COMMUNITY DIRECTORY
   --------------------------------------------------------- */
   function renderImpactDashboard() {
-    const screen = document.querySelector('[data-screen="impact"]');
+    const screen = document.querySelector('[data-screen="works"]') || document.querySelector('[data-screen="impact"]');
     if (!screen || !publicData) return;
 
     const filter = currentFilter(screen);
@@ -223,46 +223,25 @@
       stampMeta(screen, rows);
     }
 
-    renderCommunityTable(screen.querySelector(".data-table tbody"), rows, "impact");
+    renderCommunityTable(screen.querySelector(".data-table tbody"), rows);
   }
 
-  /* ---------------------------------------------------------
-     RENDER — COMMUNITIES SCREEN
-  --------------------------------------------------------- */
-  function renderCommunitiesScreen() {
-    const screen = document.querySelector('[data-screen="communities"]');
-    if (!screen || !publicData) return;
-
-    const filter = currentFilter(screen);
-    const rows = filterCommunities(filter);
-    renderCommunityTable(screen.querySelector(".data-table tbody"), rows, "communities");
-  }
-
-  function renderCommunityTable(tbody, rows, variant) {
+  function renderCommunityTable(tbody, rows) {
     if (!tbody) return;
     if (!rows.length) return;
 
     tbody.innerHTML = "";
     rows.forEach((r) => {
       const tr = document.createElement("tr");
-      if (variant === "impact") {
-        const gap = Math.max(0, (r.amountNeeded || 0) - (r.amountGenerated || 0));
-        tr.innerHTML = `
-          <td>${escapeHtml_(r.community)}</td>
-          <td>${fmt(r.outOfSchoolIdentified)}</td>
-          <td>${fmt(r.supportedReenrolled)}</td>
-          <td>${fmt(r.yetToEnroll)}</td>
-          <td>${fmtUSD(r.amountGenerated)}</td>
-          <td>${fmtUSD(r.amountNeeded)}</td>
-          <td>${fmtUSD(gap)}</td>`;
-      } else {
-        tr.innerHTML = `
-          <td>${escapeHtml_(r.community)}</td>
-          <td>${escapeHtml_(r.county)}</td>
-          <td>${fmt(r.outOfSchoolIdentified)}</td>
-          <td>${fmt(r.supportedReenrolled)}</td>
-          <td><span class="pill pill--verified">${escapeHtml_(r.status)}</span></td>`;
-      }
+      const gap = Math.max(0, (r.amountNeeded || 0) - (r.amountGenerated || 0));
+      tr.innerHTML = `
+        <td><strong>${escapeHtml_(r.community)}</strong></td>
+        <td>${escapeHtml_(r.county)}</td>
+        <td>${fmt(r.outOfSchoolIdentified)}</td>
+        <td>${fmt(r.supportedReenrolled)}</td>
+        <td>${fmt(r.yetToEnroll)}</td>
+        <td>${fmtUSD(r.amountGenerated)}</td>
+        <td>${fmtUSD(gap)}</td>`;
       tbody.appendChild(tr);
     });
   }
@@ -276,7 +255,6 @@
     if (!card) return;
 
     const f = publicData.funding;
-    // Spec §8.5: Use verified total from fundingSummary if available
     const verifiedTotal = (fundingSummary && typeof fundingSummary.totalVerifiedUSD === "number")
       ? fundingSummary.totalVerifiedUSD
       : f.totalGeneratedUSD;
@@ -315,7 +293,6 @@
   function renderAll() {
     renderHomeSnapshot();
     renderImpactDashboard();
-    renderCommunitiesScreen();
     renderFundingGap();
   }
 
@@ -351,7 +328,7 @@
         community: form.community.value.trim(),
         childCount: Number(form.childCount.value),
         notes: form.notes.value.trim(),
-        consent: document.getElementById("rep-consent").checked
+        consent: document.getElementById("rep-consent")?.checked || false
       };
 
       submitBtn?.setAttribute("disabled", "true");
@@ -377,7 +354,68 @@
   }
 
   /* ---------------------------------------------------------
-     DONATION FORM — REAL SUBMISSION (Phase 8 + 9)
+     DATA & EVIDENCE REQUEST FORM (Phase 10)
+  --------------------------------------------------------- */
+  function initEvidenceForm() {
+    const form = document.getElementById("evidence-form");
+    if (!form) return;
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (!isConfigured) {
+        window.__uafShowToast?.("Evidence request server is not configured yet.");
+        return;
+      }
+
+      const submitBtn = form.querySelector('button[type="submit"]');
+      const name = document.getElementById("ev-name")?.value.trim() || "";
+      const email = document.getElementById("ev-email")?.value.trim() || "";
+      const organization = document.getElementById("ev-org")?.value.trim() || "";
+      const requestDetails = document.getElementById("ev-request")?.value.trim() || "";
+
+      if (!name || !email || !requestDetails) {
+        window.__uafShowToast?.("Please complete all required evidence request fields.");
+        return;
+      }
+
+      submitBtn?.setAttribute("disabled", "true");
+      const originalText = submitBtn.textContent;
+      submitBtn.textContent = "Submitting Request...";
+
+      try {
+        const payload = {
+          action: "submitEvidenceRequest",
+          name,
+          email,
+          organization,
+          requestDetails
+        };
+
+        const res = await fetch(API_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        const json = await res.json();
+
+        if (json.ok) {
+          window.__uafShowToast?.(json.message || "Evidence request submitted. A UAF verifier will review it.");
+          form.reset();
+        } else {
+          window.__uafShowToast?.(json.error || "Failed to submit evidence request. Please try again.");
+        }
+      } catch (err) {
+        window.__uafShowToast?.("Network error. Please check your connection and try again.");
+      } finally {
+        submitBtn?.removeAttribute("disabled");
+        submitBtn.textContent = originalText;
+      }
+    });
+  }
+
+  /* ---------------------------------------------------------
+     DONATION FORM — MANUAL TRANSFER & DATA CAPTURE
   --------------------------------------------------------- */
   function initDonationForm() {
     const form = document.getElementById("donation-form");
@@ -391,14 +429,16 @@
         return;
       }
 
-      const submitBtn = form.querySelector('button[type="submit"]');
+      const submitBtn = document.getElementById("don-submit-btn") || form.querySelector('button[type="submit"]');
 
-      // Amount: selected chip or custom input
+      // 1. Amount selection
       let amount = 0;
-      const selectedChip = document.querySelector(".amount-chip.is-selected");
-      if (selectedChip) {
+      const selectedChip = document.querySelector(".amount-chip--classic.is-selected, .amount-chip.is-selected");
+      const customInput = document.getElementById("custom-amount");
+      if (customInput && customInput.value && Number(customInput.value) > 0) {
+        amount = Number(customInput.value);
+      } else if (selectedChip) {
         if (selectedChip.dataset.amount === "custom") {
-          const customInput = document.getElementById("custom-amount");
           amount = Number(customInput?.value || 0);
         } else {
           amount = Number(selectedChip.dataset.amount || 0);
@@ -410,34 +450,49 @@
         return;
       }
 
-      // Payment method
-      const selectedMethodEl = document.querySelector(".payment-method.is-selected");
-      const paymentMethod = selectedMethodEl?.dataset.method || "momo";
+      // 2. Currency & Frequency
+      const activeCurrencyBtn = document.querySelector(".currency-btn.is-active");
+      const currency = activeCurrencyBtn?.dataset.currency || "USD";
 
+      const activeFreqChip = document.querySelector(".frequency-chip.is-selected");
+      const frequency = activeFreqChip?.dataset.frequency || "Once";
+
+      // 3. Donor Details
       const name = document.getElementById("don-name")?.value.trim() || "";
       const phone = document.getElementById("don-phone")?.value.trim() || "";
       const email = document.getElementById("don-email")?.value.trim() || "";
+      const address = document.getElementById("don-address")?.value.trim() || "";
       const country = document.getElementById("don-country")?.value.trim() || "Liberia";
       const message = document.getElementById("don-message")?.value.trim() || "";
       const anonymous = document.getElementById("don-anon")?.checked || false;
       const consent = document.getElementById("don-consent")?.checked || false;
 
-      if (!name || !phone || !consent) {
-        window.__uafShowToast?.("Full name, phone, and communication consent are required.");
+      if (!name || !phone || !address || !consent) {
+        window.__uafShowToast?.("Full name, phone, home address, and communication consent are required.");
         return;
       }
 
       submitBtn?.setAttribute("disabled", "true");
-      const originalText = submitBtn.textContent;
-      submitBtn.textContent = "Processing...";
+      const span = submitBtn.querySelector("span");
+      const originalText = span ? span.textContent : submitBtn.textContent;
+      if (span) span.textContent = "Recording Transfer...";
+      else submitBtn.textContent = "Recording Transfer...";
 
       try {
-        const actionName = paymentMethod === "momo" ? "createMomoDonation" : "createDonation";
         const payload = {
-          action: actionName,
-          name, phone, email, country,
-          amount, paymentMethod,
-          message, anonymous, consent
+          action: "createDonation",
+          name,
+          phone,
+          email,
+          address,
+          country,
+          amount,
+          currency,
+          frequency,
+          paymentMethod: "manual_momo",
+          message,
+          anonymous,
+          consent
         };
 
         const res = await fetch(API_URL, {
@@ -449,59 +504,31 @@
 
         if (json.ok) {
           form.reset();
-          document.querySelectorAll(".amount-chip").forEach((c) => c.classList.remove("is-selected"));
-          const customInput = document.getElementById("custom-amount");
-          if (customInput) {
-            customInput.value = "";
-            customInput.setAttribute("disabled", "true");
+          document.querySelectorAll(".amount-chip--classic, .amount-chip").forEach((c) => c.classList.remove("is-selected"));
+          const customEl = document.getElementById("custom-amount");
+          if (customEl) {
+            customEl.value = "";
+            customEl.setAttribute("disabled", "true");
           }
 
-          if (json.pendingMomo && json.transactionId) {
-            window.__uafShowToast?.("Prompt sent to phone. Ref: " + json.transactionId);
-            pollMomoPaymentStatus(json.transactionId, phone);
-          } else {
-            window.__uafShowToast?.(json.message || `Donation Ref: ${json.transactionId}. Awaiting verification.`);
-          }
+          window.__uafShowToast?.(json.message || `Donation Ref: ${json.transactionId}. Awaiting UAF verification.`);
           loadFundingSummary();
+
+          // Close modal gracefully after brief confirmation
+          setTimeout(() => {
+            window.__uafCloseDonateModal?.();
+          }, 2000);
         } else {
-          window.__uafShowToast?.(json.error || "Could not submit donation. Please try again.");
+          window.__uafShowToast?.(json.error || "Could not submit donation record. Please try again.");
         }
       } catch (err) {
         window.__uafShowToast?.("Network error. Please check your connection and try again.");
       } finally {
         submitBtn?.removeAttribute("disabled");
-        submitBtn.textContent = originalText;
+        if (span) span.textContent = originalText;
+        else submitBtn.textContent = originalText;
       }
     });
-  }
-
-  function pollMomoPaymentStatus(transactionId, phone) {
-    let attempts = 0;
-    const maxAttempts = 15;
-    const interval = setInterval(async () => {
-      attempts++;
-      if (attempts > maxAttempts) {
-        clearInterval(interval);
-        window.__uafShowToast?.("Verification pending. Check reference: " + transactionId);
-        return;
-      }
-      try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "checkMomoStatus", transactionId, phone })
-        });
-        const json = await res.json();
-        if (json.ok && json.status === "VERIFIED") {
-          clearInterval(interval);
-          window.__uafShowToast?.("Donation verified! Thank you for supporting a child.");
-          loadFundingSummary();
-        } else if (json.ok && json.status === "FAILED") {
-          clearInterval(interval);
-          window.__uafShowToast?.("Payment declined or timed out on mobile.");
-        }
-      } catch (e) {}
-    }, 4000);
   }
 
   /* ---------------------------------------------------------
@@ -518,6 +545,7 @@
   --------------------------------------------------------- */
   window.__uafDataInit = function () {
     initReportForm();
+    initEvidenceForm();
     initDonationForm();
     bindFilterListeners();
     loadPublicData();

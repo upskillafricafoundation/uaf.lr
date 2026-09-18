@@ -33,10 +33,9 @@
     </div>
     <nav class="app-header__nav" aria-label="Primary">
       <button class="nav-link" data-nav="home" data-goto="home">Home</button>
-      <button class="nav-link" data-nav="impact" data-goto="impact">Impact</button>
-      <button class="nav-link" data-nav="communities" data-goto="communities">Communities</button>
-      <button class="nav-link" data-nav="support" data-goto="support">Support</button>
-      <button class="nav-link" data-nav="more" data-goto="more">More</button>
+      <button class="nav-link" data-nav="works" data-goto="works">UAF Works</button>
+      <button class="nav-link" data-nav="report" data-goto="report">Report Child</button>
+      <button class="nav-link" data-action="donate" style="background:var(--green-700); color:#fff; border-radius:999px; padding:6px 16px; margin-left:8px; font-weight:700;">❤️ Donate</button>
     </nav>
     <div class="app-header__spacer"></div>
     <button class="app-header__action is-hidden" data-action="install">Install App</button>
@@ -60,6 +59,20 @@
         <h1 style="color:#fff">UAF Impact</h1>
         <div class="hero__tagline">MONITOR. UNDERSTAND. ACT.</div>
         <p class="hero__mission">Protecting Children. Promoting Education. Empowering Communities. Every child deserves the opportunity to learn, grow and thrive.</p>
+      </div>
+
+      <!-- QUICK ACTIONS -->
+      <div class="action-banner-grid" style="margin: -16px 16px 20px;">
+        <div class="action-card action-card--accent" data-action="donate">
+          <div class="action-card__icon">❤️</div>
+          <div class="action-card__title">Donate Now</div>
+          <div class="action-card__sub">Support out-of-school children</div>
+        </div>
+        <div class="action-card" data-goto="report">
+          <div class="action-card__icon">🎒</div>
+          <div class="action-card__title">Report Child</div>
+          <div class="action-card__sub">Help identify children in need</div>
+        </div>
       </div>
 
       <div class="selector">
@@ -110,7 +123,7 @@
         </div>
 
         <div style="margin-top:16px;">
-          <button class="btn btn--primary btn--full" data-goto="impact">See the Impact</button>
+          <button class="btn btn--primary btn--full" data-goto="works">Explore UAF Works &amp; Impact</button>
         </div>
       </div>
 
@@ -134,7 +147,7 @@
       <div class="section">
         <div class="section__eyebrow">Flagship initiative</div>
         <h2>No Invisible Child</h2>
-        <p class="section__desc">"No child should remain invisible to the education system." UAF's No Invisible Child Initiative (NIC 2026/2027) works to:</p>
+        <p class="section__desc">"No child should remain invisible to the education system." UAF's No Invisible Child Initiative (NIC 2026/2027) works across 7 core phases:</p>
         <div class="nic-block">
           <div class="nic-block__steps">
             <div class="nic-step"><span class="nic-step__index">01</span><p>Identify children outside education.</p></div>
@@ -147,45 +160,10 @@
           </div>
         </div>
 
-        <!-- OUT-OF-SCHOOL DATA SUBMISSION -->
         <div class="report-callout">
           <h3 style="font-size:15px;">Know a child who is out of school?</h3>
-          <p style="font-size:13.5px;">Submit what you know. A UAF verifier reviews every submission before anything is added to public statistics — nothing is published automatically.</p>
-          <form id="report-form">
-            <div class="selector__row" style="margin-bottom:4px;">
-              <div class="form-field">
-                <label for="rep-name">Your name</label>
-                <input type="text" id="rep-name" name="reporterName" required />
-              </div>
-              <div class="form-field">
-                <label for="rep-phone">Phone number</label>
-                <input type="tel" id="rep-phone" name="reporterPhone" required />
-              </div>
-            </div>
-            <div class="selector__row" style="margin-bottom:4px;">
-              <div class="form-field">
-                <label for="rep-county">County</label>
-                <select id="rep-county" name="county" data-role="county-select" required></select>
-              </div>
-              <div class="form-field">
-                <label for="rep-community">Community</label>
-                <input type="text" id="rep-community" name="community" required />
-              </div>
-            </div>
-            <div class="form-field">
-              <label for="rep-count">Approximate number of children</label>
-              <input type="number" id="rep-count" name="childCount" min="1" required />
-            </div>
-            <div class="form-field">
-              <label for="rep-notes">What should UAF know? (no names or exact addresses, please)</label>
-              <textarea id="rep-notes" name="notes" placeholder="Age range, general area, reason they are out of school, any support already received..."></textarea>
-            </div>
-            <div class="form-check">
-              <input type="checkbox" id="rep-consent" required />
-              <label for="rep-consent">I understand this submission will be reviewed by a UAF verifier before any data is published, and I will not share a child's name or exact address here.</label>
-            </div>
-            <button type="submit" class="btn btn--primary btn--full">Submit for verification</button>
-          </form>
+          <p style="font-size:13.5px; margin-bottom:14px;">Submit what you know. A UAF verifier reviews every submission before anything is added to public statistics.</p>
+          <button type="button" class="btn btn--primary btn--full" data-goto="report">Open Out-of-School Intake Form</button>
         </div>
       </div>
 
@@ -198,8 +176,89 @@
           <div class="funding-bar-track"><div class="funding-bar-fill" style="width:0%"></div></div>
           <div class="funding-row"><span>Amount needed</span><strong>—</strong></div>
           <div class="data-meta"><span data-last-updated>Last updated: —</span></div>
-          <p style="margin-top:12px; font-size:13px;">Only donations MTN has verified count toward the total above — pending, failed and unverified amounts never do.</p>
-          <button class="btn btn--accent btn--full" data-goto="support">Help a Child Return to School</button>
+          <p style="margin-top:12px; font-size:13px;">Only donations verified count toward the total above — pending and unverified amounts never do.</p>
+          <button class="btn btn--accent btn--full" data-action="donate">Help a Child Return to School</button>
+        </div>
+      </div>
+
+      <!-- UAF PROGRAMS (SQUARE CARDS) -->
+      <div class="section">
+        <div class="section__eyebrow">Our Mission in Action</div>
+        <h2>UAF Programs</h2>
+        <p class="section__desc">Key initiatives driving education access, rights advocacy, community empowerment, and digital transformation across Liberia.</p>
+
+        <div class="square-grid">
+          <div class="square-card" data-goto="report">
+            <div>
+              <div class="square-card__icon">🎒</div>
+              <div class="square-card__title">No Invisible Child</div>
+              <p class="square-card__desc">Identifying, supporting, and re-enrolling out-of-school children (NIC 2026/2027).</p>
+            </div>
+            <span class="square-card__tag">Flagship</span>
+          </div>
+
+          <div class="square-card" data-action="donate">
+            <div>
+              <div class="square-card__icon">🏫</div>
+              <div class="square-card__title">Education Access</div>
+              <p class="square-card__desc">Household-level enrollment and retention support for vulnerable learners.</p>
+            </div>
+            <span class="square-card__tag">Access</span>
+          </div>
+
+          <div class="square-card" data-goto="works">
+            <div>
+              <div class="square-card__icon">⚖️</div>
+              <div class="square-card__title">Rights Advocacy</div>
+              <p class="square-card__desc">Advocating for educational rights and policy awareness across communities.</p>
+            </div>
+            <span class="square-card__tag">Advocacy</span>
+          </div>
+
+          <div class="square-card" data-info="safeguarding">
+            <div>
+              <div class="square-card__icon">🛡️</div>
+              <div class="square-card__title">Child Protection</div>
+              <p class="square-card__desc">Safeguarding, child protection standards, and secure learning spaces.</p>
+            </div>
+            <span class="square-card__tag">Protection</span>
+          </div>
+
+          <div class="square-card" data-action="donate">
+            <div>
+              <div class="square-card__icon">🧼</div>
+              <div class="square-card__title">Women &amp; Households</div>
+              <p class="square-card__desc">Soap making, tie-dye, cake baking, and income generation to support school fees.</p>
+            </div>
+            <span class="square-card__tag">Livelihoods</span>
+          </div>
+
+          <div class="square-card" data-action="donate">
+            <div>
+              <div class="square-card__icon">🌱</div>
+              <div class="square-card__title">Women &amp; Youth</div>
+              <p class="square-card__desc">Mentorship, leadership training, and economic self-reliance programs.</p>
+            </div>
+            <span class="square-card__tag">Empowerment</span>
+          </div>
+
+          <div class="square-card" onclick="window.open('https://uafalp.blogspot.com/','_blank')">
+            <div>
+              <div class="square-card__icon">💻</div>
+              <div class="square-card__title">Alternative Learning</div>
+              <p class="square-card__desc">Computer literacy, web design, office tools, and career guidance (ALP).</p>
+            </div>
+            <span class="square-card__tag">Digital Skills</span>
+          </div>
+
+          <div class="square-card" data-goto="works">
+            <div>
+              <div class="square-card__icon">🚀</div>
+              <div class="square-card__title">Youth Innovation</div>
+              <p class="square-card__desc">Digital transformation, tech readiness, and community problem-solving.</p>
+            </div>
+            <span class="square-card__tag">Innovation</span>
+          </div>
         </div>
       </div>
 
@@ -211,44 +270,6 @@
         <div class="empty-state" style="margin-top:14px;">
           <strong>No published stories yet.</strong>
           Approved community stories will appear here as UAF publishes them.
-        </div>
-      </div>
-
-      <!-- DATA & EVIDENCE -->
-      <div class="section">
-        <div class="section__eyebrow">Transparency</div>
-        <h2>Data &amp; Evidence</h2>
-        <p class="section__desc">Transparency without compromising child privacy. Request approved data or evidence about UAF's work, and a verifier will review it.</p>
-        <form id="evidence-form" class="card" style="margin-top:14px;">
-          <div class="form-field">
-            <label for="ev-name">Your name</label>
-            <input type="text" id="ev-name" required />
-          </div>
-          <div class="selector__row" style="margin-bottom:4px;">
-            <div class="form-field">
-              <label for="ev-email">Email</label>
-              <input type="email" id="ev-email" required />
-            </div>
-            <div class="form-field">
-              <label for="ev-org">Organization (optional)</label>
-              <input type="text" id="ev-org" />
-            </div>
-          </div>
-          <div class="form-field">
-            <label for="ev-request">What data or evidence are you requesting?</label>
-            <textarea id="ev-request" required></textarea>
-          </div>
-          <button type="submit" class="btn btn--outline btn--full">Submit request</button>
-        </form>
-      </div>
-
-      <!-- UAF PARTNERS -->
-      <div class="section">
-        <div class="section__eyebrow">Collaboration</div>
-        <h2>UAF Partners &amp; Collaborators</h2>
-        <div class="empty-state" style="margin-top:14px;">
-          <strong>No confirmed partners published yet.</strong>
-          Only confirmed UAF partners and collaborators will be listed here.
         </div>
       </div>
 
@@ -271,20 +292,62 @@
         <p style="margin-top:12px; font-size:12px; color:var(--ink-300);">Sourced awareness content with citations will be published here as UAF's Awareness Center goes live.</p>
       </div>
 
+      <!-- UAF PARTNERS -->
+      <div class="section">
+        <div class="section__eyebrow">Collaboration</div>
+        <h2>UAF Partners &amp; Collaborators</h2>
+        <div class="empty-state" style="margin-top:14px;">
+          <strong>No confirmed partners published yet.</strong>
+          Only confirmed UAF partners and collaborators will be listed here.
+        </div>
+      </div>
+
+      <!-- CONTACT & CHANNELS -->
+      <div class="section">
+        <div class="section__eyebrow">Connect with UAF</div>
+        <h2>Contact &amp; Channels</h2>
+        <div class="contact-grid" style="margin-top:14px;">
+          <a class="contact-row" href="mailto:upskillafrica.lr@gmail.com">✉️ upskillafrica.lr@gmail.com</a>
+          <a class="contact-row" href="tel:+231889541712">📞 +231 (0) 889 541 712</a>
+          <a class="contact-row" href="tel:+231770044011">📞 +231 (0) 770 044 011</a>
+          <a class="contact-row" href="https://wa.me/231889541712" target="_blank" rel="noopener">💬 WhatsApp +231 (0) 889 541 712</a>
+          <a class="contact-row" href="https://www.facebook.com/profile.php?id=100094538285249" target="_blank" rel="noopener">📘 Facebook — Upskill Africa Foundation</a>
+          <a class="contact-row" href="https://uafalp.blogspot.com/" target="_blank" rel="noopener">📚 Learning Alternative Program blog</a>
+        </div>
+      </div>
+
+      <!-- LEGAL & TRUST -->
+      <div class="section" style="padding-top:10px;">
+        <div class="section__eyebrow">Governance &amp; Trust</div>
+        <h2>Legal &amp; Child Safeguarding</h2>
+        <div class="more-list" style="margin-top:14px;">
+          <button class="more-item" data-info="privacy"><span>Privacy Policy</span><span class="chev">›</span></button>
+          <button class="more-item" data-info="safeguarding"><span>Child Safeguarding Policy</span><span class="chev">›</span></button>
+          <button class="more-item" data-info="dataprotection"><span>Data Protection Guidelines</span><span class="chev">›</span></button>
+          <button class="more-item" data-info="terms"><span>Terms of Use</span><span class="chev">›</span></button>
+        </div>
+        <p style="font-size:11.5px; color:var(--ink-300); margin-top:14px; text-align:center;">Upskill Africa Foundation · Paynesville, Montserrado County, Liberia · Not affiliated with any government statistics agency.</p>
+      </div>
+
     </section>
 
     <!-- =================================================
-         IMPACT
+         UAF WORKS (Impact & Communities Combined + Evidence)
     ================================================== -->
-    <section class="screen" data-screen="impact">
+    <section class="screen" data-screen="works">
+      <div class="hero" style="padding:28px 16px;">
+        <h1 style="color:#fff; font-size:24px;">UAF Works: Impact &amp; Communities</h1>
+        <p class="hero__mission">Transparent, verified field metrics across Montserrado, Margibi, Bong, Nimba, and Grand Bassa counties.</p>
+      </div>
+
       <div class="section">
-        <div class="section__eyebrow">Public dashboard</div>
-        <h2>Impact Dashboard</h2>
+        <div class="section__eyebrow">Verified Public Dashboard</div>
+        <h2>Impact Overview</h2>
         <p class="section__desc">Only verified, published figures appear here. Figures are never shown live from unverified submissions.</p>
 
         <div class="filter-bar" style="margin-top:16px;">
           <select data-role="county-select"></select>
-          <select><option value="">All communities</option></select>
+          <select data-role="community-select"><option value="">All communities</option></select>
           <select data-role="year-select"></select>
           <select><option value="">All programs</option></select>
         </div>
@@ -302,14 +365,17 @@
         <div class="data-meta"><span data-last-updated>Last updated: —</span><span>Reporting period: —</span></div>
       </div>
 
+      <!-- COMMUNITY DATA DIRECTORY TABLE -->
       <div class="section">
-        <h2 style="font-size:17px;">Community Data</h2>
-        <div class="table-scroll">
+        <div class="section__eyebrow">Field Verification Directory</div>
+        <h2 style="font-size:17px;">Community Data Directory</h2>
+        <p class="section__desc">Breakdown of education access, re-enrollment status, and funding gap by community.</p>
+        <div class="table-scroll" style="margin-top:14px;">
           <table class="data-table">
             <thead>
               <tr>
-                <th>Community</th><th>Identified</th><th>Supported / Re-enrolled</th>
-                <th>Yet to Enroll</th><th>Amount Generated</th><th>Amount Needed</th><th>Funding Gap</th>
+                <th>Community</th><th>County</th><th>Identified</th><th>Supported / Re-enrolled</th>
+                <th>Yet to Enroll</th><th>Amount Generated</th><th>Funding Gap</th>
               </tr>
             </thead>
             <tbody>
@@ -318,178 +384,94 @@
           </table>
         </div>
       </div>
-    </section>
 
-    <!-- =================================================
-         COMMUNITIES
-    ================================================== -->
-    <section class="screen" data-screen="communities">
+      <!-- DATA & EVIDENCE REQUEST FORM -->
       <div class="section">
-        <div class="section__eyebrow">Where UAF works</div>
-        <h2>Communities</h2>
-        <p class="section__desc">Browse counties and communities where UAF has verified education-access data.</p>
-
-        <div class="selector__row" style="margin-top:14px; margin-bottom:16px;">
+        <div class="section__eyebrow">Institutional Transparency</div>
+        <h2>Request Data &amp; Evidence</h2>
+        <p class="section__desc">Transparency without compromising child privacy. Request approved datasets or verifiable evidence about UAF's field programs.</p>
+        <form id="evidence-form" class="card" style="margin-top:14px;">
           <div class="form-field">
-            <label>County</label>
-            <select data-role="county-select"></select>
-          </div>
-          <div class="form-field">
-            <label>Year</label>
-            <select data-role="year-select"></select>
-          </div>
-        </div>
-
-        <div class="table-scroll">
-          <table class="data-table">
-            <thead>
-              <tr><th>Community</th><th>County</th><th>Identified</th><th>Supported</th><th>Status</th></tr>
-            </thead>
-            <tbody>
-              <tr><td colspan="5" style="color:var(--ink-300); text-align:center; padding:22px 8px;">No verified community data published yet.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- =================================================
-         SUPPORT
-    ================================================== -->
-    <section class="screen" data-screen="support">
-      <div class="hero" style="padding:28px 16px;">
-        <h1 style="color:#fff; font-size:22px;">Help a Child Return to School</h1>
-        <p class="hero__mission">Your support helps UAF identify, re-enroll and monitor children who are out of school in Liberia.</p>
-      </div>
-
-      <div class="section">
-        <h2 style="font-size:16px;">Donate Now</h2>
-        <div class="amount-grid">
-          <button class="amount-chip" data-amount="5">$5</button>
-          <button class="amount-chip" data-amount="10">$10</button>
-          <button class="amount-chip" data-amount="25">$25</button>
-          <button class="amount-chip" data-amount="50">$50</button>
-          <button class="amount-chip" data-amount="100">$100</button>
-          <button class="amount-chip" data-amount="custom">Custom</button>
-        </div>
-        <div class="form-field">
-          <label for="custom-amount">Custom amount (USD)</label>
-          <input type="number" id="custom-amount" min="1" disabled placeholder="Select &quot;Custom&quot; above" />
-        </div>
-
-        <h3 style="font-size:14px; margin-top:18px;">Payment method</h3>
-        <div class="payment-methods">
-          <div class="payment-method is-selected" data-method="momo">
-            <span>📱</span>
-            <span>MTN Mobile Money — <span style="color:var(--ink-500);">automatic prompt to phone</span></span>
-          </div>
-          <div class="payment-method" data-method="manual">
-            <span>🏦</span>
-            <span>Manual MTN transfer, verified by UAF staff</span>
-          </div>
-        </div>
-
-        <form id="donation-form">
-          <div class="selector__row" style="margin-bottom:4px;">
-            <div class="form-field"><label for="don-name">Full name</label><input type="text" id="don-name" required /></div>
-            <div class="form-field"><label for="don-phone">Phone</label><input type="tel" id="don-phone" required /></div>
+            <label for="ev-name">Your name *</label>
+            <input type="text" id="ev-name" required />
           </div>
           <div class="selector__row" style="margin-bottom:4px;">
-            <div class="form-field"><label for="don-email">Email</label><input type="email" id="don-email" /></div>
-            <div class="form-field"><label for="don-country">Country</label><input type="text" id="don-country" /></div>
+            <div class="form-field">
+              <label for="ev-email">Email *</label>
+              <input type="email" id="ev-email" required />
+            </div>
+            <div class="form-field">
+              <label for="ev-org">Organization (optional)</label>
+              <input type="text" id="ev-org" placeholder="e.g. NGO, donor, researcher" />
+            </div>
           </div>
           <div class="form-field">
-            <label for="don-message">Message (optional)</label>
-            <textarea id="don-message"></textarea>
+            <label for="ev-request">What data or evidence are you requesting? *</label>
+            <textarea id="ev-request" placeholder="Specify community, program period, indicators, or verification scope..." required></textarea>
           </div>
-          <div class="form-check">
-            <input type="checkbox" id="don-anon" />
-            <label for="don-anon">Give anonymously</label>
-          </div>
-          <div class="form-check">
-            <input type="checkbox" id="don-consent" required />
-            <label for="don-consent">I agree UAF may contact me about this donation.</label>
-          </div>
-          <button type="submit" class="btn btn--accent btn--full">Continue to Payment</button>
+          <button type="submit" class="btn btn--outline btn--full">Submit Evidence Request</button>
         </form>
-        <p style="font-size:11.5px; color:var(--ink-300); margin-top:10px;">Payments are processed through MTN Mobile Money and verified server-side. A screenshot alone is never treated as proof of payment.</p>
-      </div>
-    </section>
-
-    <!-- =================================================
-         MORE
-    ================================================== -->
-    <section class="screen" data-screen="more">
-      <div class="section">
-        <div class="org-card">
-          <img src="assets/uaf-logo.png" alt="Upskill Africa Foundation logo" />
-          <div>
-            <h3>Upskill Africa Foundation</h3>
-            <p>Paynesville, Montserrado County, Liberia</p>
-          </div>
-        </div>
-
-        <div class="more-group">
-          <div class="more-group__title">About</div>
-          <div class="more-list">
-            <div class="more-item"><span>Mission, Vision &amp; Values</span><span class="chev">›</span></div>
-          </div>
-          <p style="font-size:13px; margin-top:10px;">&quot;Protecting Children. Promoting Education. Empowering Communities.&quot; Full mission, vision and values statements will be published here.</p>
-        </div>
-
-        <div class="more-group">
-          <div class="more-group__title">Programs</div>
-          <div class="story-list">
-            <div class="story-card"><div class="story-card__thumb"></div><div class="story-card__body"><h4>No Invisible Child Initiative</h4><p>NIC 2026/2027</p></div></div>
-            <div class="story-card"><div class="story-card__thumb"></div><div class="story-card__body"><h4>Education Access &amp; Re-enrollment</h4></div></div>
-            <div class="story-card"><div class="story-card__thumb"></div><div class="story-card__body"><h4>Education Rights Advocacy</h4></div></div>
-            <div class="story-card"><div class="story-card__thumb"></div><div class="story-card__body"><h4>Child Protection</h4></div></div>
-            <div class="story-card"><div class="story-card__thumb"></div><div class="story-card__body"><h4>Women &amp; Households Empowerment Initiative</h4><p>Soap making, tie dye, cake making, business skills, household income generation, mentorship</p></div></div>
-            <div class="story-card"><div class="story-card__thumb"></div><div class="story-card__body"><h4>Women &amp; Youth Empowerment</h4></div></div>
-            <div class="story-card"><div class="story-card__thumb"></div><div class="story-card__body"><h4>Learning Alternative Program</h4><p>Computer literacy, graphic design, office automation, website development, small business management, career guidance, personal development, communication, CV/resume development, work readiness</p></div></div>
-            <div class="story-card"><div class="story-card__thumb"></div><div class="story-card__body"><h4>Youth Innovation / Digital Transformation</h4></div></div>
-          </div>
-        </div>
-
-        <div class="more-group">
-          <div class="more-group__title">Partners</div>
-          <div class="empty-state">No confirmed partners published yet.</div>
-        </div>
-
-        <div class="more-group">
-          <div class="more-group__title">Contact</div>
-          <div class="contact-grid">
-            <a class="contact-row" href="mailto:upskillafrica.lr@gmail.com">✉️ upskillafrica.lr@gmail.com</a>
-            <a class="contact-row" href="tel:+231889541712">📞 +231 (0) 889 541 712</a>
-            <a class="contact-row" href="tel:+231770044011">📞 +231 (0) 770 044 011</a>
-            <a class="contact-row" href="https://wa.me/231889541712" target="_blank" rel="noopener">💬 WhatsApp +231 (0) 889 541 712</a>
-            <a class="contact-row" href="https://www.facebook.com/profile.php?id=100094538285249" target="_blank" rel="noopener">📘 Facebook — Upskill Africa Foundation</a>
-            <div class="contact-row" style="cursor:default;">🔗 LinkedIn — Upskill Africa Foundation</div>
-            <a class="contact-row" href="https://uafalp.blogspot.com/" target="_blank" rel="noopener">📚 Learning Alternative Program blog</a>
-          </div>
-        </div>
-
-        <div class="more-group">
-          <div class="more-group__title">Legal &amp; Trust</div>
-          <div class="more-list">
-            <button class="more-item" data-info="privacy"><span>Privacy Policy</span><span class="chev">›</span></button>
-            <button class="more-item" data-info="safeguarding"><span>Child Safeguarding</span><span class="chev">›</span></button>
-            <button class="more-item" data-info="dataprotection"><span>Data Protection</span><span class="chev">›</span></button>
-            <button class="more-item" data-info="terms"><span>Terms of Use</span><span class="chev">›</span></button>
-          </div>
-        </div>
-
-        <div class="more-group">
-          <div class="more-group__title">App</div>
-          <div class="more-list">
-            <button class="more-item is-hidden" data-action="install"><span>Install UAF Impact</span><span class="chev">⭳</span></button>
-          </div>
-          <p style="font-size:11.5px; color:var(--ink-300); margin-top:10px;">UAF Impact — Phase 1 build. Data shown is illustrative until UAF publishes verified figures.</p>
-        </div>
       </div>
 
       <div class="app-footer">
         Upskill Africa Foundation · Paynesville, Montserrado County, Liberia · Not affiliated with any government statistics agency.
+      </div>
+    </section>
+
+    <!-- =================================================
+         REPORT (No Invisible Child Intake)
+    ================================================== -->
+    <section class="screen" data-screen="report">
+      <div class="hero" style="padding:28px 16px;">
+        <h1 style="color:#fff; font-size:24px;">Report an Out-of-School Child</h1>
+        <p class="hero__mission">No child should remain invisible to the education system. Help UAF's field team locate and support children outside school.</p>
+      </div>
+
+      <div class="section">
+        <div class="report-callout" style="margin-top:0;">
+          <h3 style="font-size:16px;">Community Out-of-School Intake Form</h3>
+          <p style="font-size:13.5px; margin-bottom:16px;">Submit what you know. A UAF field verifier reviews every submission before anything is added to public statistics — nothing is published automatically or without verification.</p>
+          
+          <form id="report-form">
+            <div class="selector__row" style="margin-bottom:4px;">
+              <div class="form-field">
+                <label for="rep-name">Your name *</label>
+                <input type="text" id="rep-name" name="reporterName" required />
+              </div>
+              <div class="form-field">
+                <label for="rep-phone">Phone number *</label>
+                <input type="tel" id="rep-phone" name="reporterPhone" placeholder="088..." required />
+              </div>
+            </div>
+            <div class="selector__row" style="margin-bottom:4px;">
+              <div class="form-field">
+                <label for="rep-county">County *</label>
+                <select id="rep-county" name="county" data-role="county-select" required></select>
+              </div>
+              <div class="form-field">
+                <label for="rep-community">Community / Town *</label>
+                <input type="text" id="rep-community" name="community" placeholder="e.g. Duport Road, Red Light" required />
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="rep-count">Approximate number of children *</label>
+              <input type="number" id="rep-count" name="childCount" min="1" required />
+            </div>
+            <div class="form-field">
+              <label for="rep-notes">What should UAF know? (no names or exact house addresses, please)</label>
+              <textarea id="rep-notes" name="notes" placeholder="Age range, general area, reason they are out of school, any support already received..."></textarea>
+            </div>
+            <div class="form-check">
+              <input type="checkbox" id="rep-consent" required checked />
+              <label for="rep-consent">I understand this submission will be reviewed by a UAF verifier before any data is published, and I will not share a child's full name or exact private address here.</label>
+            </div>
+            <button type="submit" class="btn btn--primary btn--full">Submit for Field Verification</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="app-footer">
+        Upskill Africa Foundation · Paynesville, Montserrado County, Liberia
       </div>
     </section>
 
@@ -501,24 +483,144 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
       Home
     </button>
-    <button class="bottom-nav__item" data-nav="impact" data-goto="impact">
+    <button class="bottom-nav__item" data-nav="works" data-goto="works">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V9M12 19V4M20 19v-6"/></svg>
-      Impact
+      UAF Works
     </button>
-    <button class="bottom-nav__item" data-nav="communities" data-goto="communities">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3"/><path d="M5 21c0-4 3-7 7-7s7 3 7 7"/></svg>
-      Communities
+    <button class="bottom-nav__item" data-nav="report" data-goto="report">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+      Report
     </button>
-    <button class="bottom-nav__item" data-nav="support" data-goto="support">
+    <button class="bottom-nav__item" data-action="donate" style="color:var(--green-700);">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.8 4.6a5 5 0 00-7.1 0L12 6.3l-1.7-1.7a5 5 0 00-7.1 7.1L12 20.3l8.8-8.8a5 5 0 000-6.9z"/></svg>
-      Support
-    </button>
-    <button class="bottom-nav__item" data-nav="more" data-goto="more">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>
-      More
+      Donate
     </button>
   </nav>
 
+</div>
+
+<!-- ============ DONATE POPUP MODAL (Fixed Scroll-Locked Dialog) ============ -->
+<div class="donate-modal-backdrop" id="donate-modal-backdrop" aria-hidden="true" role="dialog" aria-modal="true">
+  <div class="donate-modal-window">
+    <div class="donate-modal-header">
+      <h3><span>❤️</span> Support UAF Impact</h3>
+      <button type="button" class="donate-modal-close" id="donate-modal-close" aria-label="Close modal">×</button>
+    </div>
+    <div class="donate-modal-body">
+      <p style="font-size:13px; color:var(--ink-700); margin-top:0; margin-bottom:14px; line-height:1.45;">Your contribution empowers UAF field verifiers to identify, re-enroll, and monitor vulnerable children outside education in Liberia.</p>
+
+      <!-- 1. Payment Methods -->
+      <div style="font-size:11.5px; font-weight:700; color:var(--ink-500); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:6px;">Select Payment Method</div>
+
+      <!-- Automated MTN (Coming Soon) -->
+      <div class="payment-method-card payment-method-card--disabled">
+        <span class="payment-method-badge payment-method-badge--soon">Feature Coming Soon</span>
+        <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:var(--ink-700); font-size:13.5px;">
+          <span>📱</span>
+          <span>Automated MTN MoMo Prompt</span>
+        </div>
+        <p style="font-size:12px; color:var(--ink-500); margin:4px 0 0;">This Feature Coming Soon, Please use manual transfer below for now.</p>
+      </div>
+
+      <!-- Manual MTN Transfer (Active) -->
+      <div class="payment-method-card payment-method-card--active">
+        <span class="payment-method-badge payment-method-badge--live">Active &amp; Recommended</span>
+        <div style="display:flex; align-items:center; gap:8px; font-weight:700; color:var(--green-900, #0a4328); font-size:14px;">
+          <span>🏦</span>
+          <span>Manual MTN Mobile Money Transfer</span>
+        </div>
+        
+        <div class="ussd-box">
+          <span>*156*3*0889541712#</span>
+          <button type="button" class="ussd-copy-btn" id="ussd-copy-btn" data-code="*156*3*0889541712#">Copy Code</button>
+        </div>
+
+        <ol class="ussd-steps">
+          <li>On your phone, dial <strong>*156*3*0889541712#</strong></li>
+          <li>Select Currency, Enter Amount</li>
+          <li>Verify that you are transferring to <strong>"Upskill Africa Foundation (UAF)"</strong></li>
+          <li>ENTER PIN and OK</li>
+          <li>Fill in your details below so UAF staff can verify and issue your receipt!</li>
+        </ol>
+      </div>
+
+      <!-- 2. Currency & Amount Selection -->
+      <div class="currency-bar">
+        <label>Select Amount</label>
+        <div class="currency-toggle" id="currency-toggle">
+          <button type="button" class="currency-btn is-active" data-currency="USD">USD ($)</button>
+          <button type="button" class="currency-btn" data-currency="LRD">LRD (L$)</button>
+        </div>
+      </div>
+
+      <div class="amount-grid--classic" id="amount-grid">
+        <button type="button" class="amount-chip--classic" data-amount="5">$5</button>
+        <button type="button" class="amount-chip--classic" data-amount="10">$10</button>
+        <button type="button" class="amount-chip--classic is-selected" data-amount="25">$25</button>
+        <button type="button" class="amount-chip--classic" data-amount="50">$50</button>
+        <button type="button" class="amount-chip--classic" data-amount="100">$100</button>
+        <button type="button" class="amount-chip--classic" data-amount="custom">Custom</button>
+      </div>
+
+      <div class="form-field" style="margin-bottom:14px;">
+        <label for="custom-amount" style="font-size:12px;">Custom amount (<span id="currency-symbol-label">USD $</span>)</label>
+        <input type="number" id="custom-amount" min="1" disabled placeholder="Select \"Custom\" above" />
+      </div>
+
+      <!-- 3. Donation Frequency / Category -->
+      <div class="form-field" style="margin-bottom:8px;">
+        <label style="font-size:12px;">Donation Category / Frequency</label>
+        <div class="frequency-grid" id="frequency-grid">
+          <button type="button" class="frequency-chip is-selected" data-frequency="Once">Once</button>
+          <button type="button" class="frequency-chip" data-frequency="Weekly">Weekly</button>
+          <button type="button" class="frequency-chip" data-frequency="Monthly">Monthly</button>
+          <button type="button" class="frequency-chip" data-frequency="Yearly">Yearly</button>
+          <button type="button" class="frequency-chip" data-frequency="Occasionally">Occasionally</button>
+        </div>
+      </div>
+
+      <!-- 4. Donor Form -->
+      <form id="donation-form">
+        <div class="selector__row" style="margin-bottom:4px;">
+          <div class="form-field"><label for="don-name">Full name *</label><input type="text" id="don-name" required /></div>
+          <div class="form-field"><label for="don-phone">Phone number *</label><input type="tel" id="don-phone" placeholder="088..." required /></div>
+        </div>
+        <div class="form-field"><label for="don-email">Email (for electronic receipt)</label><input type="email" id="don-email" /></div>
+        
+        <div class="form-field">
+          <label for="don-address">Home address (Street / Community) *</label>
+          <input type="text" id="don-address" placeholder="e.g. Duport Road, Paynesville" required />
+        </div>
+
+        <div class="form-field">
+          <label for="don-country">Country</label>
+          <input type="text" id="don-country" value="Liberia" />
+        </div>
+
+        <div class="form-field">
+          <label for="don-message">Message or dedication (optional)</label>
+          <textarea id="don-message" placeholder="In honor of... / General support"></textarea>
+        </div>
+
+        <div class="form-check">
+          <input type="checkbox" id="don-anon" />
+          <label for="don-anon">Make my donation anonymous on public impact reports</label>
+        </div>
+
+        <div class="form-check">
+          <input type="checkbox" id="don-consent" required checked />
+          <label for="don-consent">I consent to UAF contacting me regarding verification and project impact updates.</label>
+        </div>
+
+        <div style="margin-top:14px;">
+          <button type="submit" id="don-submit-btn" class="btn--donate-submit">
+            <span>Donate $25 to UAF</span>
+          </button>
+        </div>
+      </form>
+
+    </div>
+  </div>
 </div>
 
 <!-- ============ INSTALL SHEET (iOS / fallback) ============ -->

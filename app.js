@@ -17,16 +17,26 @@
   ];
   const YEARS = ["2026", "2027"];
 
-  const APP_VERSION = "phase-8";
+  const APP_VERSION = "phase-8-consolidated";
 
   /* ---------------------------------------------------------
-     ROUTER
+     ROUTER (home, works, report)
+     Aliasing legacy routes:
+       - impact / communities -> works
+       - more -> home
+       - support -> openDonateModal() on home
   --------------------------------------------------------- */
-  const ROUTES = ["home", "impact", "communities", "support", "more"];
+  const ROUTES = ["home", "works", "report"];
 
   function currentRoute() {
-    const hash = (location.hash || "#/home").replace("#/", "");
-    return ROUTES.includes(hash) ? hash : "home";
+    const raw = (location.hash || "#/home").replace(/^#\/?/, "");
+    if (raw === "impact" || raw === "communities") return "works";
+    if (raw === "more") return "home";
+    if (raw === "support") {
+      setTimeout(openDonateModal, 50);
+      return "home";
+    }
+    return ROUTES.includes(raw) ? raw : "home";
   }
 
   function renderRoute() {
@@ -42,19 +52,256 @@
       el.classList.toggle("is-active", el.dataset.nav === route);
     });
 
-    document.getElementById("app-main").scrollTo?.({ top: 0 });
+    document.getElementById("app-main")?.scrollTo?.({ top: 0 });
     window.scrollTo(0, 0);
   }
 
   window.addEventListener("hashchange", renderRoute);
 
   function goTo(route) {
+    if (route === "support") {
+      openDonateModal();
+      return;
+    }
+    if (route === "impact" || route === "communities") {
+      route = "works";
+    } else if (route === "more") {
+      route = "home";
+    }
     location.hash = `#/${route}`;
   }
   window.__uafGoTo = goTo; // used by inline CTA buttons
 
   /* ---------------------------------------------------------
-     COMMUNITY / YEAR SELECTOR (Home + Communities + Impact)
+     DONATE POPUP MODAL (Fixed Scroll-Locked Dialog)
+  --------------------------------------------------------- */
+  function openDonateModal() {
+    const backdrop = document.getElementById("donate-modal-backdrop");
+    if (!backdrop) return;
+    backdrop.classList.add("is-open");
+    backdrop.setAttribute("aria-hidden", "false");
+    document.body.classList.add("modal-open");
+    document.documentElement.classList.add("modal-open");
+  }
+
+  function closeDonateModal() {
+    const backdrop = document.getElementById("donate-modal-backdrop");
+    if (!backdrop) return;
+    backdrop.classList.remove("is-open");
+    backdrop.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("modal-open");
+    document.documentElement.classList.remove("modal-open");
+  }
+
+  window.__uafOpenDonateModal = openDonateModal;
+  window.__uafCloseDonateModal = closeDonateModal;
+
+  function initDonateModal() {
+    // Open buttons
+    document.querySelectorAll("[data-action='donate']").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        openDonateModal();
+      });
+    });
+
+    // Close button inside header
+    const closeBtn = document.getElementById("donate-modal-close");
+    if (closeBtn) {
+      closeBtn.addEventListener("click", closeDonateModal);
+    }
+
+    // Click outside window to dismiss
+    const backdrop = document.getElementById("donate-modal-backdrop");
+    if (backdrop) {
+      backdrop.addEventListener("click", (e) => {
+        if (e.target === backdrop) closeDonateModal();
+      });
+    }
+
+    // Escape key dismiss
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && backdrop?.classList.contains("is-open")) {
+        closeDonateModal();
+      }
+    });
+  }
+
+  /* ---------------------------------------------------------
+     USSD CODE COPY
+  --------------------------------------------------------- */
+  function initUssdCopy() {
+    const btn = document.getElementById("ussd-copy-btn");
+    if (!btn) return;
+    btn.addEventListener("click", async () => {
+      const code = btn.dataset.code || "*156*3*0889541712#";
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(code);
+        } else {
+          const temp = document.createElement("textarea");
+          temp.value = code;
+          document.body.appendChild(temp);
+          temp.select();
+          document.execCommand("copy");
+          document.body.removeChild(temp);
+        }
+        const originalText = btn.textContent;
+        btn.textContent = "✓ Copied!";
+        showToast("USSD Code " + code + " copied to clipboard!");
+        setTimeout(() => {
+          btn.textContent = originalText;
+        }, 2500);
+      } catch (err) {
+        showToast("Dial " + code + " on your phone");
+      }
+    });
+  }
+
+  /* ---------------------------------------------------------
+     DONATION AMOUNT CHIPS & DYNAMIC SUBMIT BUTTON
+  --------------------------------------------------------- */
+  const CURRENCY_CONFIG = {
+    USD: {
+      symbol: "$",
+      label: "USD $",
+      chips: [
+        { label: "$5", amount: 5 },
+        { label: "$10", amount: 10 },
+        { label: "$25", amount: 25, defaultSelected: true },
+        { label: "$50", amount: 50 },
+        { label: "$100", amount: 100 },
+        { label: "Custom", amount: "custom" }
+      ]
+    },
+    LRD: {
+      symbol: "L$",
+      label: "LRD L$",
+      chips: [
+        { label: "L$1,000", amount: 1000 },
+        { label: "L$2,500", amount: 2500 },
+        { label: "L$5,000", amount: 5000, defaultSelected: true },
+        { label: "L$10,000", amount: 10000 },
+        { label: "L$20,000", amount: 20000 },
+        { label: "Custom", amount: "custom" }
+      ]
+    }
+  };
+
+  let activeCurrency = "USD";
+
+  function getSelectedAmount() {
+    const customInput = document.getElementById("custom-amount");
+    const activeChip = document.querySelector(".amount-chip--classic.is-selected, .amount-chip.is-selected");
+    if (activeChip && activeChip.dataset.amount === "custom") {
+      const val = Number(customInput?.value);
+      return val > 0 ? val : 0;
+    }
+    if (activeChip) {
+      return Number(activeChip.dataset.amount) || 0;
+    }
+    if (customInput && customInput.value) {
+      return Number(customInput.value) || 0;
+    }
+    return 0;
+  }
+
+  function updateDonateButtonText() {
+    const submitBtn = document.getElementById("don-submit-btn");
+    if (!submitBtn) return;
+    const amount = getSelectedAmount();
+    const config = CURRENCY_CONFIG[activeCurrency] || CURRENCY_CONFIG.USD;
+    const span = submitBtn.querySelector("span") || submitBtn;
+    if (amount > 0) {
+      const formatted = Number(amount).toLocaleString("en-US");
+      span.textContent = `Donate ${config.symbol}${formatted} to UAF`;
+    } else {
+      span.textContent = "Donate to UAF";
+    }
+  }
+
+  function renderAmountChips() {
+    const grid = document.getElementById("amount-grid");
+    if (!grid) return;
+    const config = CURRENCY_CONFIG[activeCurrency] || CURRENCY_CONFIG.USD;
+    const symbolLabel = document.getElementById("currency-symbol-label");
+    if (symbolLabel) {
+      symbolLabel.textContent = config.label;
+    }
+
+    grid.innerHTML = "";
+    config.chips.forEach((c) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "amount-chip--classic" + (c.defaultSelected ? " is-selected" : "");
+      btn.dataset.amount = String(c.amount);
+      btn.textContent = c.label;
+      btn.addEventListener("click", () => {
+        grid.querySelectorAll(".amount-chip--classic, .amount-chip").forEach((x) => x.classList.remove("is-selected"));
+        btn.classList.add("is-selected");
+        const customInput = document.getElementById("custom-amount");
+        if (c.amount === "custom") {
+          customInput?.removeAttribute("disabled");
+          customInput?.focus();
+        } else {
+          if (customInput) {
+            customInput.value = "";
+            customInput.setAttribute("disabled", "true");
+          }
+        }
+        updateDonateButtonText();
+      });
+      grid.appendChild(btn);
+    });
+
+    const customInput = document.getElementById("custom-amount");
+    if (customInput) {
+      customInput.value = "";
+      customInput.setAttribute("disabled", "true");
+    }
+    updateDonateButtonText();
+  }
+
+  function initDonationControls() {
+    // Currency buttons
+    const currencyBtns = document.querySelectorAll(".currency-btn[data-currency]");
+    currencyBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        currencyBtns.forEach((b) => b.classList.remove("is-active"));
+        btn.classList.add("is-active");
+        activeCurrency = btn.dataset.currency || "USD";
+        renderAmountChips();
+      });
+    });
+
+    // Custom amount input
+    const customInput = document.getElementById("custom-amount");
+    if (customInput) {
+      customInput.addEventListener("input", () => {
+        const grid = document.getElementById("amount-grid");
+        const customChip = grid?.querySelector('[data-amount="custom"]');
+        if (customChip && !customChip.classList.contains("is-selected")) {
+          grid.querySelectorAll(".amount-chip--classic, .amount-chip").forEach((x) => x.classList.remove("is-selected"));
+          customChip.classList.add("is-selected");
+        }
+        updateDonateButtonText();
+      });
+    }
+
+    // Frequency chips
+    const freqChips = document.querySelectorAll(".frequency-chip[data-frequency]");
+    freqChips.forEach((chip) => {
+      chip.addEventListener("click", () => {
+        freqChips.forEach((c) => c.classList.remove("is-selected"));
+        chip.classList.add("is-selected");
+      });
+    });
+
+    renderAmountChips();
+  }
+
+  /* ---------------------------------------------------------
+     COMMUNITY / YEAR SELECTOR (Home + Works)
   --------------------------------------------------------- */
   function populateSelect(select, items, placeholder) {
     if (!select) return;
@@ -89,8 +336,6 @@
 
   /* ---------------------------------------------------------
      PHOTO CAROUSEL ("See the Impact")
-     data.js feeds real approved photos into this same track/dot
-     structure via window.__uafReinitCarousel.
   --------------------------------------------------------- */
   function initCarousel() {
     const track = document.querySelector(".carousel__track");
@@ -98,17 +343,17 @@
     if (!track) return;
 
     const slides = track.querySelectorAll(".carousel__slide");
-    if (slides.length <= 1) return; // nothing to rotate
+    if (slides.length <= 1) return;
 
     let index = 0;
     const dots = [];
-    dotsWrap.innerHTML = "";
+    if (dotsWrap) dotsWrap.innerHTML = "";
     slides.forEach((_, i) => {
       const dot = document.createElement("button");
       dot.className = "carousel__dot" + (i === 0 ? " is-active" : "");
       dot.setAttribute("aria-label", `Show slide ${i + 1}`);
       dot.addEventListener("click", () => setSlide(i));
-      dotsWrap.appendChild(dot);
+      dotsWrap?.appendChild(dot);
       dots.push(dot);
     });
 
@@ -128,60 +373,6 @@
   window.__uafReinitCarousel = initCarousel;
 
   /* ---------------------------------------------------------
-     DONATION AMOUNT CHIPS
-  --------------------------------------------------------- */
-  function initAmountChips() {
-    const chips = document.querySelectorAll(".amount-chip[data-amount]");
-    const customInput = document.getElementById("custom-amount");
-    if (!chips.length) return;
-
-    chips.forEach((chip) => {
-      chip.addEventListener("click", () => {
-        chips.forEach((c) => c.classList.remove("is-selected"));
-        chip.classList.add("is-selected");
-        if (chip.dataset.amount === "custom") {
-          customInput?.removeAttribute("disabled");
-          customInput?.focus();
-        } else {
-          if (customInput) {
-            customInput.value = "";
-            customInput.setAttribute("disabled", "true");
-          }
-        }
-      });
-    });
-  }
-
-  function initPaymentMethods() {
-    const methods = document.querySelectorAll(".payment-method[data-method]");
-    methods.forEach((m) => {
-      m.addEventListener("click", () => {
-        methods.forEach((x) => x.classList.remove("is-selected"));
-        m.classList.add("is-selected");
-      });
-    });
-  }
-
-  /* ---------------------------------------------------------
-     FORM STUBS
-     data.js owns #report-form (Phase 4) and #donation-form
-     (Phase 8). Evidence form remains stubbed until Phase 10.
-  --------------------------------------------------------- */
-  function initDonationForm() {
-    // Phase 8: data.js owns #donation-form submit handling
-  }
-
-  function initContactForm() {
-    const form = document.getElementById("evidence-form");
-    if (!form) return;
-    form.addEventListener("submit", (e) => {
-      e.preventDefault();
-      showToast("Data & Evidence requests open soon — not sent yet.");
-      form.reset();
-    });
-  }
-
-  /* ---------------------------------------------------------
      TOAST
   --------------------------------------------------------- */
   let toastTimer;
@@ -193,7 +384,7 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => toast.classList.remove("is-visible"), 3800);
   }
-  window.__uafShowToast = showToast; // shared across data.js and modules
+  window.__uafShowToast = showToast;
 
   /* ---------------------------------------------------------
      OFFLINE STATUS
@@ -275,7 +466,7 @@
   }
 
   /* ---------------------------------------------------------
-     MORE SCREEN — legal / info sheets
+     LEGAL / INFO SHEETS
   --------------------------------------------------------- */
   function initInfoSheets() {
     const sheet = document.getElementById("info-sheet");
@@ -326,10 +517,9 @@
     document.querySelectorAll('[data-role="county-select"], [data-role="year-select"]')
       .forEach((el) => el.addEventListener("change", handleSelectorChange));
     initCarousel();
-    initAmountChips();
-    initPaymentMethods();
-    initDonationForm();
-    initContactForm();
+    initDonateModal();
+    initUssdCopy();
+    initDonationControls();
     initInstall();
     initSheets();
     initInfoSheets();
