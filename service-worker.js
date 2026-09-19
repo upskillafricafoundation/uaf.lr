@@ -6,7 +6,7 @@
    the /api path check, same rule Phase 1 set.
    ========================================================= */
 
-const CACHE_VERSION = "uaf-impact-shell-v5";
+const CACHE_VERSION = "uaf-impact-shell-v6";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -17,6 +17,10 @@ const APP_SHELL = [
   "./manifest.json",
   "./assets/uaf-logo.png",
   "./assets/nic-logo.png",
+  "./assets/icon-impact.jpg",
+  "./assets/icon-request.png",
+  "./assets/icon-donate.webp",
+  "./assets/icon-partners.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png",
@@ -44,11 +48,6 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-/* Rule: never intercept /admin or /api paths here in later phases,
-   and never intercept requests to a different origin (the Apps
-   Script API lives on script.google.com, not this origin) — the
-   origin check below already excludes it, but the path check stays
-   as defense in depth if the API is ever proxied same-origin. */
 self.addEventListener("fetch", (event) => {
   const req = event.request;
 
