@@ -30,6 +30,14 @@
     </div>
     <div class="app-header__spacer"></div>
     <div class="app-header__actions">
+      <button type="button" class="btn-header-install" id="header-install-btn" data-action="install" aria-label="Install UAF Impact App">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        <span>Install</span>
+      </button>
       <button type="button" class="btn-header-donate" data-goto="donate">Donate</button>
       <button type="button" class="btn-header-search" id="header-search-btn" aria-label="Search">
         <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -50,26 +58,17 @@
   <main class="app-main" id="app-main">
 
     <!-- =========================================================
-         SCREEN 1: MENU (Image 1 Style Grid)
+         SCREEN 1: MENU (Image 1 Style Grid with Uploaded Icons)
          ========================================================= -->
     <section class="screen is-active" data-screen="menu">
       <div class="menu-container">
         <h1 class="menu-title">MENU</h1>
 
         <div class="menu-grid">
-          <!-- 1. Impact Drive -->
+          <!-- 1. Impact Drive (Uploaded Target Icon) -->
           <div class="menu-card" data-goto="impact-drive">
             <div class="menu-card__icon">
-              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="32" cy="22" r="13"/>
-                <path d="M22 22c0 5 4.5 9 10 9s10-4 10-9"/>
-                <path d="M32 9v26"/>
-                <path d="M20 17c3.5 2 7.5 3 12 3s8.5-1 12-3"/>
-                <path d="M15 42l5-5c2-2 4.5-3 7.5-3h9c3 0 5.5 1 7.5 3l5 5"/>
-                <path d="M16 42v8c0 2 1.5 4 3.5 4h25c2 0 3.5-2 3.5-4v-8"/>
-                <path d="M18 35c-2 2-3 5-3 7"/>
-                <path d="M46 35c2 2 3 5 3 7"/>
-              </svg>
+              <img src="assets/icon-impact.jpg" alt="Impact Drive" class="menu-card__custom-icon" />
             </div>
             <div class="menu-card__label">Impact Drive</div>
           </div>
@@ -91,67 +90,41 @@
             <div class="menu-card__label">Statistics</div>
           </div>
 
-          <!-- 3. Request Data -->
+          <!-- 3. Request Data (Uploaded Question Bubble Icon) -->
           <div class="menu-card" data-goto="request-data">
             <div class="menu-card__icon">
-              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M32 10L12 21h40L32 10z"/>
-                <rect x="12" y="21" width="40" height="4"/>
-                <line x1="18" y1="25" x2="18" y2="47"/>
-                <line x1="27" y1="25" x2="27" y2="47"/>
-                <line x1="37" y1="25" x2="37" y2="47"/>
-                <line x1="46" y1="25" x2="46" y2="47"/>
-                <rect x="10" y="47" width="44" height="4"/>
-                <rect x="6" y="51" width="52" height="4"/>
-              </svg>
+              <img src="assets/icon-request.png" alt="Request Data" class="menu-card__custom-icon" />
             </div>
             <div class="menu-card__label">Request Data</div>
           </div>
 
-          <!-- 4. Donate -->
+          <!-- 4. Donate (Uploaded Donate Button Icon) -->
           <div class="menu-card" data-goto="donate">
             <div class="menu-card__icon">
-              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="32" cy="14" r="5"/>
-                <path d="M26 23h12v7H26z"/>
-                <path d="M23 30h18v14H23z"/>
-                <circle cx="16" cy="46" r="4"/>
-                <circle cx="32" cy="49" r="4"/>
-                <circle cx="48" cy="46" r="4"/>
-                <path d="M10 56c0-3 3-5 6-5s6 2 6 5"/>
-                <path d="M26 59c0-3 3-5 6-5s6 2 6 5"/>
-                <path d="M42 56c0-3 3-5 6-5s6 2 6 5"/>
-              </svg>
+              <img src="assets/icon-donate.webp" alt="Donate" class="menu-card__custom-icon" />
             </div>
             <div class="menu-card__label">Donate</div>
           </div>
 
-          <!-- 5. Partners -->
+          <!-- 5. Partners (Uploaded Handshake Icon) -->
           <div class="menu-card" data-goto="partners">
             <div class="menu-card__icon">
-              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M14 27a18 18 0 0136 0c0 0-6-3.5-12-3.5s-6 3.5-6 3.5-1-3.5-6-3.5S14 27 14 27z"/>
-                <line x1="15" y1="27" x2="25" y2="40"/>
-                <line x1="25" y1="25" x2="29" y2="40"/>
-                <line x1="39" y1="25" x2="35" y2="40"/>
-                <line x1="49" y1="27" x2="39" y2="40"/>
-                <rect x="24" y="40" width="16" height="16" rx="2"/>
-                <path d="M32 44v8M28 48h8"/>
-              </svg>
+              <img src="assets/icon-partners.png" alt="Partners" class="menu-card__custom-icon" />
             </div>
             <div class="menu-card__label">Partners</div>
           </div>
 
-          <!-- 6. Submit OSSC -->
+          <!-- 6. Identify OSSC (Child Search Icon) -->
           <div class="menu-card" data-goto="submit-ossc">
             <div class="menu-card__icon">
               <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="32" cy="24" r="14"/>
-                <path d="M32 15l2 4.5 5 .7-3.6 3.5.9 4.8-4.3-2.3-4.3 2.3.9-4.8-3.6-3.5 5-.7z"/>
-                <path d="M25 36l-3.5 16 10.5-5 10.5 5L39 36"/>
+                <circle cx="28" cy="28" r="14"/>
+                <path d="M38 38l12 12"/>
+                <circle cx="28" cy="24" r="4"/>
+                <path d="M21 33c0-3.5 3-6 7-6s7 2.5 7 6"/>
               </svg>
             </div>
-            <div class="menu-card__label">Submit OSSC</div>
+            <div class="menu-card__label">Identify OSSC</div>
           </div>
         </div>
 
@@ -737,6 +710,8 @@
           </div>
 
           <form id="report-form" style="margin-top:16px;">
+            <!-- 1. Reporter / Verifier Information -->
+            <div class="form-section-title">1. Reporter Information</div>
             <div class="form-row-2">
               <div class="form-field">
                 <label for="rep-name">Your name *</label>
@@ -750,31 +725,109 @@
 
             <div class="form-row-2">
               <div class="form-field">
-                <label for="rep-county">County *</label>
-                <select id="rep-county" name="county" data-role="county-select" required></select>
-              </div>
-              <div class="form-field">
                 <label for="rep-community">Community / Town *</label>
                 <input type="text" id="rep-community" name="community" placeholder="e.g. Duport Road, Red Light" required />
               </div>
+              <div class="form-field">
+                <label for="rep-county">County *</label>
+                <select id="rep-county" name="county" data-role="county-select" required></select>
+              </div>
             </div>
 
             <div class="form-field">
-              <label for="rep-count">Approximate number of children *</label>
-              <input type="number" id="rep-count" name="childCount" min="1" placeholder="e.g. 3" required />
+              <label for="rep-count">Approximate number of Children out of school *</label>
+              <input type="number" id="rep-count" name="childCount" min="1" placeholder="e.g. 1, 3, 5" required />
+            </div>
+
+            <!-- 2. Child Case Profile & Details -->
+            <div class="form-section-title" style="margin-top:20px;">2. Child Profile &amp; Case Details</div>
+
+            <div class="form-row-2">
+              <div class="form-field">
+                <label for="rep-child-name">Child name *</label>
+                <input type="text" id="rep-child-name" name="childName" placeholder="Full name of child" required />
+              </div>
+              <div class="form-field">
+                <label for="rep-child-gender">Gender *</label>
+                <select id="rep-child-gender" name="gender" required>
+                  <option value="">Select gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-field">
+                <label for="rep-child-community">Child's Community / Town *</label>
+                <input type="text" id="rep-child-community" name="childCommunity" placeholder="e.g. West Point, Clara Town" required />
+              </div>
+              <div class="form-field">
+                <label for="rep-child-county">Child's County *</label>
+                <select id="rep-child-county" name="childCounty" required>
+                  <option value="Montserrado">Montserrado</option>
+                  <option value="Margibi">Margibi</option>
+                  <option value="Bong">Bong</option>
+                  <option value="Nimba">Nimba</option>
+                  <option value="Grand Bassa">Grand Bassa</option>
+                </select>
+              </div>
             </div>
 
             <div class="form-field">
-              <label for="rep-notes">What should UAF know? (no private names or exact house addresses, please)</label>
-              <textarea id="rep-notes" name="notes" placeholder="General area, age ranges, why they are out of school, barriers faced..." rows="3"></textarea>
+              <label for="rep-child-photo">Child Photo (Optional)</label>
+              <input type="file" id="rep-child-photo" name="childPhoto" accept="image/*" />
+              <span style="font-size:11.5px; color:var(--ink-400); margin-top:3px;">Used exclusively by field verifiers for identification under Child Safeguarding Protocol.</span>
             </div>
 
-            <div class="form-check" style="margin-top:8px;">
+            <div class="form-row-2">
+              <div class="form-field">
+                <label for="rep-years-out"># of years out of school *</label>
+                <input type="number" id="rep-years-out" name="yearsOut" min="0" max="15" placeholder="e.g. 1 or 2" required />
+              </div>
+              <div class="form-field">
+                <label for="rep-current-class">Current Class / Last Grade Attended *</label>
+                <input type="text" id="rep-current-class" name="currentClass" placeholder="e.g. Never enrolled, Grade 2, Grade 5" required />
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="rep-cause">Cause of Exclusion *</label>
+              <select id="rep-cause" name="causeOfExclusion" required>
+                <option value="">Select primary cause</option>
+                <option value="Financial / School Fees">Financial / Inability to afford school fees</option>
+                <option value="Lack of Uniform / Learning Supplies">Lack of uniform or learning supplies</option>
+                <option value="Child Labor / Petty Trading">Child labor or petty trading to support household</option>
+                <option value="Distance / No School Nearby">Distance / No school nearby</option>
+                <option value="Loss of Parent / Guardian">Loss of parent or primary caregiver</option>
+                <option value="Teen Pregnancy / Young Caretaker">Teen pregnancy or young caretaker responsibilities</option>
+                <option value="Disability / Special Needs">Disability / Special educational needs</option>
+                <option value="Other">Other reason</option>
+              </select>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-field">
+                <label for="rep-parent-name">Parent / Guardian name</label>
+                <input type="text" id="rep-parent-name" name="parentName" placeholder="Parent or caretaker name" />
+              </div>
+              <div class="form-field">
+                <label for="rep-parent-phone">Parent / Guardian contact</label>
+                <input type="tel" id="rep-parent-phone" name="parentPhone" placeholder="088... or 077..." />
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label for="rep-statement">Story / Statement *</label>
+              <textarea id="rep-statement" name="statement" placeholder="Explain the child's living situation, why they are out of school, and what support will help them return to school..." rows="4" required></textarea>
+            </div>
+
+            <div class="form-check" style="margin-top:10px;">
               <input type="checkbox" id="rep-consent" required checked />
-              <label for="rep-consent">I understand this submission will be reviewed by a UAF field verifier before any action is taken, and I confirm no child's full private address is shared.</label>
+              <label for="rep-consent">I confirm that this case report is accurate to the best of my knowledge, and I consent to a UAF field verifier contacting me and following up with the household under UAF Safeguarding Policies.</label>
             </div>
 
-            <button type="submit" class="btn-submit-primary" style="margin-top:14px;">Submit for Verification</button>
+            <button type="submit" class="btn-submit-primary" style="margin-top:16px;">Submit Child Case for Verification</button>
           </form>
         </div>
       </div>
@@ -798,30 +851,42 @@
           <p class="section-lead">Working hand-in-hand with community leaders, civil society organizations, schools, and institutional supporters to advance child rights and education access.</p>
         </div>
 
-        <div class="partners-grid-display">
+        <div class="partners-grid-display" id="partners-grid-display">
+          <!-- Card 1 -->
           <div class="partner-card">
-            <div class="partner-card__emblem">🏫</div>
+            <div class="partner-card__logo-wrap">
+              <img src="assets/uaf-logo.png" alt="Community School Alliances" class="partner-card__logo" />
+            </div>
             <div class="partner-card__title">Community School Alliances</div>
             <div class="partner-card__type">Education Access Partner</div>
             <p class="partner-card__desc">Partnering with verified community primary and junior high schools across Montserrado County to admit out-of-school learners with waived or subsidized fees.</p>
           </div>
 
+          <!-- Card 2 -->
           <div class="partner-card">
-            <div class="partner-card__emblem">🛡️</div>
+            <div class="partner-card__logo-wrap">
+              <img src="assets/nic-logo.png" alt="Liberia Child Protection Network" class="partner-card__logo" />
+            </div>
             <div class="partner-card__title">Liberia Child Protection Network</div>
             <div class="partner-card__type">Safeguarding Alliance</div>
             <p class="partner-card__desc">Collaborating on child protection referrals, household counseling, and community awareness against child labor and early school drop-outs.</p>
           </div>
 
+          <!-- Card 3 -->
           <div class="partner-card">
-            <div class="partner-card__emblem">💻</div>
+            <div class="partner-card__logo-wrap">
+              <img src="assets/icon-partners.png" alt="Learning Alternative Program" class="partner-card__logo" />
+            </div>
             <div class="partner-card__title">Learning Alternative Program (ALP)</div>
             <div class="partner-card__type">Digital Literacy &amp; Skills</div>
             <p class="partner-card__desc">Empowering youth and young mothers with computer literacy, job readiness, and technology training to fund household educational needs.</p>
           </div>
 
+          <!-- Card 4 -->
           <div class="partner-card">
-            <div class="partner-card__emblem">🤝</div>
+            <div class="partner-card__logo-wrap">
+              <img src="assets/icon-impact.jpg" alt="Community Leadership Councils" class="partner-card__logo" />
+            </div>
             <div class="partner-card__title">Community Leadership Councils</div>
             <div class="partner-card__type">Local Governance</div>
             <p class="partner-card__desc">Zone leaders, block chairs, and community elders who guide UAF field verifiers through neighborhoods to identify every out-of-school child.</p>
@@ -831,13 +896,41 @@
         <div class="partner-join-callout">
           <h3>Interested in partnering with UAF?</h3>
           <p>We welcome donor agencies, educational institutions, and community foundations to support education access in Liberia.</p>
-          <button type="button" class="btn-partner-contact" data-goto="request-data">Contact UAF Partnership Desk</button>
+          <a href="mailto:upskillafrica.lr@gmail.com?subject=UAF%20Partnership%20Inquiry&body=Hello%20Upskill%20Africa%20Foundation%20Team%2C%0A%0AWe%20would%20like%20to%20partner%20with%20UAF%20on%20education%20access%20and%20child%20re-enrollment.%0A%0AOrganization%3A%20%0AContact%20Person%3A%20%0APhone%3A%20%0AMessage%3A%20" class="btn-partner-contact">
+            📧 Contact UAF Partnership Desk (upskillafrica.lr@gmail.com)
+          </a>
         </div>
       </div>
     </section>
 
   </main>
 
+</div>
+
+<!-- Install Guide Dialog Modal -->
+<div class="dialog-backdrop is-hidden" id="install-guide-backdrop">
+  <div class="dialog-window" style="max-width: 440px; text-align: center;">
+    <div class="dialog-header">
+      <h3>Install UAF Impact App</h3>
+      <button type="button" class="dialog-close" id="install-guide-close">×</button>
+    </div>
+    <div class="dialog-body" style="padding: 20px;">
+      <img src="assets/nic-logo.png" alt="UAF NIC Logo" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 12px; border-radius: 18px; box-shadow: 0 4px 14px rgba(0,0,0,0.12);" />
+      <h4 style="font-size: 16px; font-weight: 700; margin: 0 0 6px;">UAF Impact &amp; NIC</h4>
+      <p style="font-size: 13px; color: var(--ink-500); margin: 0 0 16px; line-height: 1.45;">Install the app icon directly to your desktop or phone home screen for instant offline access and real-time community updates.</p>
+      
+      <button type="button" class="btn-install-prompt-action" id="install-prompt-trigger">📲 Install to Home Screen</button>
+
+      <div style="text-align: left; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-top: 16px; font-size: 12px; color: var(--ink-700);">
+        <strong>How to install:</strong>
+        <ul style="margin: 6px 0 0 16px; padding: 0; line-height: 1.55;">
+          <li><strong>Android (Chrome):</strong> Tap <em>"Install to Home Screen"</em> above or tap the 3 dots (⋮) menu and select <strong>"Install app"</strong>.</li>
+          <li><strong>iPhone / iPad (Safari):</strong> Tap the <strong>Share</strong> button (box with up arrow) at the bottom, then tap <strong>"Add to Home Screen"</strong>.</li>
+          <li><strong>Computer (Chrome / Edge):</strong> Click the install icon (computer with down arrow) in the address bar.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Search Dialog Modal -->
