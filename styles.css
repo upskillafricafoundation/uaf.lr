@@ -171,7 +171,7 @@ body.modal-open, html.modal-open {
 }
 
 .home-install-wrapper {
-  margin-top: 18px;
+  margin-top: 22px;
   display: flex;
   justify-content: center;
 }
@@ -179,29 +179,37 @@ body.modal-open, html.modal-open {
 .btn-home-install {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  background: var(--blue-050);
-  color: var(--blue-700);
-  border: 1px solid var(--blue-200);
+  justify-content: center;
+  gap: 9px;
+  background: linear-gradient(135deg, #004F71 0%, #0284c7 100%);
+  color: #ffffff !important;
+  border: none;
   border-radius: 9999px;
   font-family: var(--font-sans);
   font-weight: 700;
-  font-size: 13px;
-  padding: 8px 20px;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  padding: 12px 28px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 1px 4px rgba(2, 132, 199, 0.08);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.35);
 }
 
 .btn-home-install:hover {
-  background: var(--blue-100);
-  border-color: var(--blue-300);
-  transform: translateY(-1px);
-  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.16);
+  background: linear-gradient(135deg, #003d57 0%, #0369a1 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.45);
+}
+
+.btn-home-install:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.3);
 }
 
 .btn-home-install svg {
-  color: var(--blue-700);
+  color: #ffffff;
+  stroke: #ffffff;
+  flex-shrink: 0;
 }
 .btn-install-prompt-action {
   background: var(--blue-700);
