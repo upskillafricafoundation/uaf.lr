@@ -83,50 +83,39 @@
   };
 
   /* ---------------------------------------------------------
-     DEFAULT FALLBACK DATA (Zero-Fabrication Baseline across 15 Counties)
+     DEFAULT FALLBACK DATA (Clean Baseline across 15 Counties)
   --------------------------------------------------------- */
-  const DEFAULT_COMMUNITIES = [
-    // Montserrado
-    { community: "West Point", county: "Montserrado", year: "2026", outOfSchoolIdentified: 142, supportedReenrolled: 86, yetToEnroll: 56, childPopulation: 650, parentsEmpowered: 52, schoolPartners: 3, amountNeeded: 12500, amountGenerated: 7500 },
-    { community: "Clara Town", county: "Montserrado", year: "2026", outOfSchoolIdentified: 98, supportedReenrolled: 54, yetToEnroll: 44, childPopulation: 490, parentsEmpowered: 38, schoolPartners: 2, amountNeeded: 8500, amountGenerated: 5100 },
-    { community: "Duala", county: "Montserrado", year: "2026", outOfSchoolIdentified: 115, supportedReenrolled: 62, yetToEnroll: 53, childPopulation: 580, parentsEmpowered: 45, schoolPartners: 2, amountNeeded: 9800, amountGenerated: 5800 },
-    { community: "Red Light", county: "Montserrado", year: "2026", outOfSchoolIdentified: 164, supportedReenrolled: 90, yetToEnroll: 74, childPopulation: 820, parentsEmpowered: 64, schoolPartners: 4, amountNeeded: 15200, amountGenerated: 8900 },
-    { community: "New Kru Town", county: "Montserrado", year: "2026", outOfSchoolIdentified: 87, supportedReenrolled: 48, yetToEnroll: 39, childPopulation: 410, parentsEmpowered: 35, schoolPartners: 2, amountNeeded: 7800, amountGenerated: 4700 },
-    // Margibi
-    { community: "Kakata", county: "Margibi", year: "2026", outOfSchoolIdentified: 76, supportedReenrolled: 42, yetToEnroll: 34, childPopulation: 380, parentsEmpowered: 30, schoolPartners: 2, amountNeeded: 6900, amountGenerated: 4100 },
-    { community: "Harbel", county: "Margibi", year: "2026", outOfSchoolIdentified: 54, supportedReenrolled: 30, yetToEnroll: 24, childPopulation: 290, parentsEmpowered: 22, schoolPartners: 1, amountNeeded: 5200, amountGenerated: 3100 },
-    // Bong
-    { community: "Gbarnga", county: "Bong", year: "2026", outOfSchoolIdentified: 92, supportedReenrolled: 50, yetToEnroll: 42, childPopulation: 460, parentsEmpowered: 36, schoolPartners: 3, amountNeeded: 8200, amountGenerated: 4800 },
-    { community: "Totota", county: "Bong", year: "2026", outOfSchoolIdentified: 63, supportedReenrolled: 35, yetToEnroll: 28, childPopulation: 320, parentsEmpowered: 24, schoolPartners: 1, amountNeeded: 5600, amountGenerated: 3200 },
-    // Nimba
-    { community: "Ganta", county: "Nimba", year: "2026", outOfSchoolIdentified: 108, supportedReenrolled: 58, yetToEnroll: 50, childPopulation: 540, parentsEmpowered: 44, schoolPartners: 3, amountNeeded: 9600, amountGenerated: 5600 },
-    { community: "Sanniquellie", county: "Nimba", year: "2026", outOfSchoolIdentified: 71, supportedReenrolled: 38, yetToEnroll: 33, childPopulation: 350, parentsEmpowered: 28, schoolPartners: 2, amountNeeded: 6400, amountGenerated: 3700 },
-    // Grand Bassa
-    { community: "Buchanan", county: "Grand Bassa", year: "2026", outOfSchoolIdentified: 84, supportedReenrolled: 45, yetToEnroll: 39, childPopulation: 420, parentsEmpowered: 34, schoolPartners: 2, amountNeeded: 7500, amountGenerated: 4300 },
-    { community: "Owensgrove", county: "Grand Bassa", year: "2026", outOfSchoolIdentified: 48, supportedReenrolled: 26, yetToEnroll: 22, childPopulation: 240, parentsEmpowered: 18, schoolPartners: 1, amountNeeded: 4200, amountGenerated: 2400 },
-    // Bomi
-    { community: "Tubmanburg", county: "Bomi", year: "2026", outOfSchoolIdentified: 58, supportedReenrolled: 32, yetToEnroll: 26, childPopulation: 280, parentsEmpowered: 22, schoolPartners: 2, amountNeeded: 5100, amountGenerated: 2900 },
-    // Grand Cape Mount
-    { community: "Robertsport", county: "Grand Cape Mount", year: "2026", outOfSchoolIdentified: 52, supportedReenrolled: 28, yetToEnroll: 24, childPopulation: 260, parentsEmpowered: 20, schoolPartners: 1, amountNeeded: 4700, amountGenerated: 2700 },
-    // Gbarpolu
-    { community: "Bopolu", county: "Gbarpolu", year: "2026", outOfSchoolIdentified: 44, supportedReenrolled: 22, yetToEnroll: 22, childPopulation: 220, parentsEmpowered: 16, schoolPartners: 1, amountNeeded: 3900, amountGenerated: 2100 },
-    // Lofa
-    { community: "Voinjama", county: "Lofa", year: "2026", outOfSchoolIdentified: 78, supportedReenrolled: 42, yetToEnroll: 36, childPopulation: 390, parentsEmpowered: 32, schoolPartners: 2, amountNeeded: 7100, amountGenerated: 4000 },
-    { community: "Foya", county: "Lofa", year: "2026", outOfSchoolIdentified: 56, supportedReenrolled: 30, yetToEnroll: 26, childPopulation: 270, parentsEmpowered: 22, schoolPartners: 1, amountNeeded: 5000, amountGenerated: 2800 },
-    // Grand Gedeh
-    { community: "Zwedru", county: "Grand Gedeh", year: "2026", outOfSchoolIdentified: 68, supportedReenrolled: 36, yetToEnroll: 32, childPopulation: 330, parentsEmpowered: 26, schoolPartners: 2, amountNeeded: 6100, amountGenerated: 3400 },
-    // Maryland
-    { community: "Harper", county: "Maryland", year: "2026", outOfSchoolIdentified: 64, supportedReenrolled: 34, yetToEnroll: 30, childPopulation: 310, parentsEmpowered: 25, schoolPartners: 2, amountNeeded: 5800, amountGenerated: 3300 },
-    { community: "Pleebo", county: "Maryland", year: "2026", outOfSchoolIdentified: 72, supportedReenrolled: 38, yetToEnroll: 34, childPopulation: 360, parentsEmpowered: 28, schoolPartners: 2, amountNeeded: 6500, amountGenerated: 3600 },
-    // Grand Kru
-    { community: "Barclayville", county: "Grand Kru", year: "2026", outOfSchoolIdentified: 38, supportedReenrolled: 18, yetToEnroll: 20, childPopulation: 190, parentsEmpowered: 14, schoolPartners: 1, amountNeeded: 3400, amountGenerated: 1800 },
-    // River Cess
-    { community: "Cestos City", county: "River Cess", year: "2026", outOfSchoolIdentified: 42, supportedReenrolled: 20, yetToEnroll: 22, childPopulation: 210, parentsEmpowered: 15, schoolPartners: 1, amountNeeded: 3700, amountGenerated: 2000 },
-    // River Gee
-    { community: "Fish Town", county: "River Gee", year: "2026", outOfSchoolIdentified: 46, supportedReenrolled: 22, yetToEnroll: 24, childPopulation: 230, parentsEmpowered: 16, schoolPartners: 1, amountNeeded: 4100, amountGenerated: 2200 },
-    // Sinoe
-    { community: "Greenville", county: "Sinoe", year: "2026", outOfSchoolIdentified: 54, supportedReenrolled: 28, yetToEnroll: 26, childPopulation: 270, parentsEmpowered: 20, schoolPartners: 2, amountNeeded: 4800, amountGenerated: 2600 }
-  ];
+  const DEFAULT_COMMUNITIES = [];
+
+  /* ---------------------------------------------------------
+     STORAGE HELPERS FOR ADMIN DATA
+  --------------------------------------------------------- */
+  function getAdminCommunities() {
+    try {
+      const stored = localStorage.getItem("uaf_admin_communities");
+      return stored ? JSON.parse(stored) : [];
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function getAdminFunding() {
+    try {
+      const stored = localStorage.getItem("uaf_admin_funding");
+      return stored ? JSON.parse(stored) : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function getAdminImpactKpis() {
+    try {
+      const stored = localStorage.getItem("uaf_admin_impact_kpis");
+      return stored ? JSON.parse(stored) : null;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /* ---------------------------------------------------------
      DYNAMIC COMMUNITIES ENGINE (Indexed in Local Storage)
@@ -154,32 +143,22 @@
     if (existingIdx >= 0) {
       list[existingIdx].outOfSchoolIdentified += count;
       list[existingIdx].yetToEnroll += count;
-      list[existingIdx].childPopulation += count * 4;
-      list[existingIdx].amountNeeded += count * 125;
+      list[existingIdx].childPopulation = (list[existingIdx].childPopulation || 0) + count * 4;
+      list[existingIdx].amountNeeded = (list[existingIdx].amountNeeded || 0) + count * 125;
     } else {
-      // Check baseline
-      const baseMatch = DEFAULT_COMMUNITIES.find(
-        (c) => c.community.toLowerCase() === cleanComm.toLowerCase() && c.county.toLowerCase() === cleanCounty.toLowerCase()
-      );
-      if (baseMatch) {
-        baseMatch.outOfSchoolIdentified += count;
-        baseMatch.yetToEnroll += count;
-        baseMatch.amountNeeded += count * 125;
-      } else {
-        list.push({
-          community: cleanComm,
-          county: cleanCounty,
-          year: "2026",
-          outOfSchoolIdentified: count,
-          supportedReenrolled: 0,
-          yetToEnroll: count,
-          childPopulation: Math.max(50, count * 4),
-          parentsEmpowered: Math.max(1, Math.round(count * 0.4)),
-          schoolPartners: 1,
-          amountNeeded: count * 125,
-          amountGenerated: 0
-        });
-      }
+      list.push({
+        community: cleanComm,
+        county: cleanCounty,
+        year: "2026",
+        outOfSchoolIdentified: count,
+        supportedReenrolled: 0,
+        yetToEnroll: count,
+        childPopulation: Math.max(50, count * 4),
+        parentsEmpowered: Math.max(1, Math.round(count * 0.4)),
+        schoolPartners: 1,
+        amountNeeded: count * 125,
+        amountGenerated: 0
+      });
     }
 
     try {
@@ -193,7 +172,10 @@
 
   function getMergedCommunities() {
     const dynamic = getDynamicCommunities();
-    const base = (publicData && Array.isArray(publicData.communities)) ? publicData.communities : DEFAULT_COMMUNITIES;
+    const adminComms = getAdminCommunities();
+    const base = (publicData && Array.isArray(publicData.communities) && publicData.communities.length > 0)
+      ? publicData.communities
+      : (adminComms.length > 0 ? adminComms : DEFAULT_COMMUNITIES);
 
     const map = new Map();
     base.forEach((c) => {
@@ -205,9 +187,9 @@
       const key = `${(d.county || "").toLowerCase()}|${(d.community || "").toLowerCase()}`;
       if (map.has(key)) {
         const item = map.get(key);
-        item.outOfSchoolIdentified += d.outOfSchoolIdentified;
-        item.yetToEnroll += d.yetToEnroll;
-        item.amountNeeded += d.amountNeeded;
+        item.outOfSchoolIdentified = (Number(item.outOfSchoolIdentified) || 0) + (Number(d.outOfSchoolIdentified) || 0);
+        item.yetToEnroll = (Number(item.yetToEnroll) || 0) + (Number(d.yetToEnroll) || 0);
+        item.amountNeeded = (Number(item.amountNeeded) || 0) + (Number(d.amountNeeded) || 0);
       } else {
         map.set(key, { ...d });
       }
@@ -316,12 +298,12 @@
   --------------------------------------------------------- */
   async function loadPublicData() {
     if (!isConfigured) {
-      console.info("UAF Impact: Using baseline verified field data across 15 counties.");
+      const adminFunding = getAdminFunding();
       publicData = {
         communities: getMergedCommunities(),
-        funding: {
-          totalGeneratedUSD: 87200,
-          totalNeededUSD: 142500,
+        funding: adminFunding || {
+          totalGeneratedUSD: 0,
+          totalNeededUSD: 0,
           lastUpdated: new Date().toISOString()
         }
       };
@@ -336,12 +318,13 @@
       refreshMergedDataset();
       renderAll();
     } catch (err) {
-      console.warn("UAF Impact: failed to load live public data, using verified baseline.", err);
+      console.warn("UAF Impact: failed to load live public data, using local storage baseline.", err);
+      const adminFunding = getAdminFunding();
       publicData = {
         communities: getMergedCommunities(),
-        funding: {
-          totalGeneratedUSD: 87200,
-          totalNeededUSD: 142500,
+        funding: adminFunding || {
+          totalGeneratedUSD: 0,
+          totalNeededUSD: 0,
           lastUpdated: new Date().toISOString()
         }
       };
@@ -482,17 +465,20 @@
     const tbody = document.getElementById("stats-combined-table-body");
 
     if (!rows.length) {
-      if (parentsEl) parentsEl.textContent = "—";
-      if (awaitingEl) awaitingEl.textContent = "—";
+      if (parentsEl) parentsEl.textContent = "0";
+      if (awaitingEl) awaitingEl.textContent = "0";
       if (commsEl) commsEl.textContent = "0";
-      if (schoolsEl) schoolsEl.textContent = "—";
+      if (schoolsEl) schoolsEl.textContent = "0";
       if (neededEl) neededEl.textContent = "$0.00";
       if (raisedEl) raisedEl.textContent = "$0.00";
       if (balanceEl) balanceEl.textContent = "$0.00";
       if (fillEl) fillEl.style.width = "0%";
       if (pctEl) pctEl.textContent = "0%";
+      if (lastUpdatedEl) {
+        lastUpdatedEl.textContent = "Last updated: " + fmtDate(fundingSummary?.generatedAt || publicData?.funding?.lastUpdated);
+      }
       if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:22px; color:var(--ink-400);">No community data found matching the selected filter.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align:center; padding:32px; color:var(--ink-500); font-weight:500;">No community records published yet. Field verifications and admin entries will appear here.</td></tr>`;
       }
       return;
     }
@@ -560,12 +546,18 @@
     const screen = document.querySelector('[data-screen="impact-drive"]');
     if (!screen) return;
 
+    const adminKpis = getAdminImpactKpis();
     const allRows = getMergedCommunities();
-    const childrenTotal = Math.max(1240, sum(allRows, "supportedReenrolled") * 2);
-    const womenTotal = Math.max(680, sum(allRows, "parentsEmpowered"));
-    const computerTotal = 450;
-    const youthTotal = 890;
-    const careerTotal = 720;
+
+    const childrenTotal = adminKpis?.children != null
+      ? Number(adminKpis.children)
+      : (allRows.length > 0 ? sum(allRows, "supportedReenrolled") : 0);
+    const womenTotal = adminKpis?.women != null
+      ? Number(adminKpis.women)
+      : (allRows.length > 0 ? sum(allRows, "parentsEmpowered") : 0);
+    const computerTotal = adminKpis?.computer != null ? Number(adminKpis.computer) : 0;
+    const youthTotal = adminKpis?.youth != null ? Number(adminKpis.youth) : 0;
+    const careerTotal = adminKpis?.career != null ? Number(adminKpis.career) : 0;
 
     const elChildren = document.getElementById("impact-kpi-children");
     const elWomen = document.getElementById("impact-kpi-women");
@@ -573,11 +565,11 @@
     const elYouth = document.getElementById("impact-kpi-youth");
     const elCareer = document.getElementById("impact-kpi-career");
 
-    if (elChildren) elChildren.textContent = fmt(childrenTotal) + "+";
-    if (elWomen) elWomen.textContent = fmt(womenTotal) + "+";
-    if (elComputer) elComputer.textContent = fmt(computerTotal) + "+";
-    if (elYouth) elYouth.textContent = fmt(youthTotal) + "+";
-    if (elCareer) elCareer.textContent = fmt(careerTotal) + "+";
+    if (elChildren) elChildren.textContent = childrenTotal > 0 ? fmt(childrenTotal) + "+" : "0";
+    if (elWomen) elWomen.textContent = womenTotal > 0 ? fmt(womenTotal) + "+" : "0";
+    if (elComputer) elComputer.textContent = computerTotal > 0 ? fmt(computerTotal) + "+" : "0";
+    if (elYouth) elYouth.textContent = youthTotal > 0 ? fmt(youthTotal) + "+" : "0";
+    if (elCareer) elCareer.textContent = careerTotal > 0 ? fmt(careerTotal) + "+" : "0";
   }
 
   /* ---------------------------------------------------------
@@ -601,7 +593,7 @@
       const clickAttr = isUrl ? `onclick="window.open('${p.goto}','_blank')"` : (p.goto ? `data-goto="${p.goto}"` : "");
       return `
         <div class="program-item-card" ${clickAttr}>
-          <div class="program-item__icon">${escapeHtml(p.icon || "📌")}</div>
+          <div class="program-item__icon">${p.icon ? escapeHtml(p.icon) : '<span class="program-badge-bullet"></span>'}</div>
           <div class="program-item__title">${escapeHtml(p.title)}</div>
           <p class="program-item__desc">${escapeHtml(p.desc)}</p>
           <span class="program-item__tag">${escapeHtml(p.tag || "Program")}</span>
@@ -615,6 +607,17 @@
       });
     });
   }
+
+  window.addEventListener("uaf_data_updated", () => {
+    refreshMergedDataset();
+    renderAll();
+  });
+  window.addEventListener("storage", (e) => {
+    if (e.key && e.key.startsWith("uaf_")) {
+      refreshMergedDataset();
+      renderAll();
+    }
+  });
 
   /* ---------------------------------------------------------
      RENDER — PARTNERS (from storage or defaults)

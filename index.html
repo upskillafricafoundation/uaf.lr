@@ -153,10 +153,6 @@
         
         <!-- 1. Emotional Funding Request Statement -->
         <div class="emotional-appeal-card">
-          <div class="appeal-badge-pill">
-            <span class="appeal-heart-icon">❤️</span>
-            <span>UAF Urgent Field Appeal · Liberia</span>
-          </div>
           <h2 class="appeal-title">Every Child Deserves a Desk, a Uniform, and a Future.</h2>
           <div class="appeal-body-text">
             <p>Every sunrise in Liberia brings a quiet tragedy for thousands of marginalized children who will never step inside a classroom today. While others learn to read and calculate, small hands are forced onto crowded streets selling cold water between speeding cars, breaking rocks in gravel pits, or sitting in dimly lit rooms because their families cannot afford a <strong>$1 enrollment fee</strong> or basic exercise books.</p>
@@ -181,8 +177,9 @@
             <div class="campaign-card campaign-card--clickable" data-story-id="story_blessing">
               <div class="campaign-card__img-wrap">
                 <img src="assets/uaf-logo.png" alt="Blessing's Journey" class="campaign-card__img" />
-                <div class="campaign-card__pct-badge">
-                  <span>75% Reached</span>
+                <div class="campaign-card__views-badge">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <span class="story-views-count" data-story-views="story_blessing">0 reads</span>
                 </div>
               </div>
               <div class="campaign-card__body">
@@ -193,12 +190,9 @@
                   <span class="raised-val">$5,250.00 raised</span>
                   <span class="goal-val">of $7,000.00 goal</span>
                 </div>
-                <div class="campaign-progress-bar">
-                  <div class="campaign-progress-fill" style="width: 75%;"></div>
-                </div>
                 <div class="story-card-action">
                   <button type="button" class="btn-read-story-trigger" data-story-id="story_blessing">
-                    <span>📖 Read Full Story &amp; Testimonial</span>
+                    <span>Read Full Story &amp; Testimonial</span>
                   </button>
                 </div>
               </div>
@@ -208,8 +202,9 @@
             <div class="campaign-card campaign-card--clickable" data-story-id="story_comfort">
               <div class="campaign-card__img-wrap">
                 <img src="assets/icon-partners.png" alt="Mother Comfort Soap Cooperative" class="campaign-card__img" />
-                <div class="campaign-card__pct-badge">
-                  <span>88% Reached</span>
+                <div class="campaign-card__views-badge">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <span class="story-views-count" data-story-views="story_comfort">0 reads</span>
                 </div>
               </div>
               <div class="campaign-card__body">
@@ -220,12 +215,9 @@
                   <span class="raised-val">$8,800.00 raised</span>
                   <span class="goal-val">of $10,000.00 goal</span>
                 </div>
-                <div class="campaign-progress-bar">
-                  <div class="campaign-progress-fill" style="width: 88%;"></div>
-                </div>
                 <div class="story-card-action">
                   <button type="button" class="btn-read-story-trigger" data-story-id="story_comfort">
-                    <span>📖 Read Full Story &amp; Testimonial</span>
+                    <span>Read Full Story &amp; Testimonial</span>
                   </button>
                 </div>
               </div>
@@ -235,8 +227,9 @@
             <div class="campaign-card campaign-card--clickable" data-story-id="story_emmanuel">
               <div class="campaign-card__img-wrap">
                 <img src="assets/icon-impact.jpg" alt="Alternative Learning Digital Skills" class="campaign-card__img" />
-                <div class="campaign-card__pct-badge">
-                  <span>68% Reached</span>
+                <div class="campaign-card__views-badge">
+                  <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <span class="story-views-count" data-story-views="story_emmanuel">0 reads</span>
                 </div>
               </div>
               <div class="campaign-card__body">
@@ -247,12 +240,9 @@
                   <span class="raised-val">$6,800.00 raised</span>
                   <span class="goal-val">of $10,000.00 goal</span>
                 </div>
-                <div class="campaign-progress-bar">
-                  <div class="campaign-progress-fill" style="width: 68%;"></div>
-                </div>
                 <div class="story-card-action">
                   <button type="button" class="btn-read-story-trigger" data-story-id="story_emmanuel">
-                    <span>📖 Read Full Story &amp; Testimonial</span>
+                    <span>Read Full Story &amp; Testimonial</span>
                   </button>
                 </div>
               </div>
@@ -260,16 +250,16 @@
           </div>
         </div>
 
-        <!-- 3. Donate Form Toggle Button -->
+        <!-- 3. Donate Form Collapsible Button -->
         <div class="donate-toggle-wrapper" style="margin-top:36px; text-align:center;">
-          <button type="button" class="btn-toggle-donate-form" id="btn-toggle-donate-form">
-            <span>💝 Make a Donation / Support this Initiative</span>
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          <button type="button" class="btn-toggle-donate-form" id="btn-toggle-donate-form" aria-expanded="false">
+            <span id="btn-donate-toggle-text">Donate Now</span>
+            <svg class="toggle-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
           </button>
         </div>
 
-        <!-- 4. Donate Form Container -->
-        <div id="donation-form-wrapper" class="donation-card-view" style="margin-top:24px; max-width:560px; margin-left:auto; margin-right:auto;">
+        <!-- 4. Donate Form Container (Collapsible - Hidden by default) -->
+        <div id="donation-form-wrapper" class="donation-card-view" style="display:none; margin-top:24px; max-width:560px; margin-left:auto; margin-right:auto;">
           
           <div class="donation-card__brand">
             <img src="assets/uaf-logo.png" alt="UAF" />
@@ -282,10 +272,10 @@
           <!-- Payment Method Tabs -->
           <div class="donation-methods-tabs">
             <button type="button" class="method-tab is-active" id="tab-manual-momo">
-              <span>📱 Manual MTN Transfer</span>
+              <span>Manual MTN Transfer</span>
             </button>
             <button type="button" class="method-tab is-disabled" id="tab-auto-momo">
-              <span>⚡ Automated Prompt</span>
+              <span>Automated Prompt</span>
               <span class="badge-soon">Coming Soon</span>
             </button>
           </div>
@@ -303,12 +293,12 @@
             <!-- Tap on mobile automatically opens phone dial pad -->
             <a href="tel:*156*3*0889541712%23" class="ussd-dial-button" id="ussd-dial-link" title="Tap to open phone dial pad">
               <span class="ussd-code-text">*156*3*0889541712#</span>
-              <span class="ussd-call-badge">📞 Tap to Dial</span>
+              <span class="ussd-call-badge">Tap to Dial</span>
             </a>
 
             <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
               <span style="font-size:11.5px; color:var(--ink-500);">Desktop / Alternate:</span>
-              <button type="button" class="btn-copy-ussd" id="ussd-copy-btn" data-code="*156*3*0889541712#">📋 Copy Code</button>
+              <button type="button" class="btn-copy-ussd" id="ussd-copy-btn" data-code="*156*3*0889541712#">Copy Code</button>
             </div>
 
             <ol class="ussd-steps-list">
@@ -436,7 +426,6 @@
         <!-- Combined Communities Statistics and Directory -->
         <div class="content-block">
           <div class="section-title-wrap">
-            <span class="section-tag">Zero-Fabrication Data</span>
             <h2>Communities Statistics &amp; Directory</h2>
             <p class="section-lead">Verified door-to-door community census, child exclusion monitoring, and funding gap across all 15 counties of Liberia.</p>
           </div>
@@ -469,31 +458,31 @@
             <!-- The 7 Required KPI Cards -->
             <div class="stats-7-grid" style="margin-top:20px;">
               <div class="stat-kpi-card">
-                <div class="stat-kpi-card__value" id="stat-parents-empowered">—</div>
+                <div class="stat-kpi-card__value" id="stat-parents-empowered">0</div>
                 <div class="stat-kpi-card__label"># of Parents Empowered with Skill Training</div>
               </div>
               <div class="stat-kpi-card">
-                <div class="stat-kpi-card__value" id="stat-children-awaiting">—</div>
+                <div class="stat-kpi-card__value" id="stat-children-awaiting">0</div>
                 <div class="stat-kpi-card__label"># of Children Awaiting Support</div>
               </div>
               <div class="stat-kpi-card">
-                <div class="stat-kpi-card__value" id="stat-communities-reached">—</div>
+                <div class="stat-kpi-card__value" id="stat-communities-reached">0</div>
                 <div class="stat-kpi-card__label">Communities Reached</div>
               </div>
               <div class="stat-kpi-card">
-                <div class="stat-kpi-card__value" id="stat-school-partners">—</div>
+                <div class="stat-kpi-card__value" id="stat-school-partners">0</div>
                 <div class="stat-kpi-card__label"># of School Partners</div>
               </div>
               <div class="stat-kpi-card">
-                <div class="stat-kpi-card__value" id="stat-amount-needed">—</div>
+                <div class="stat-kpi-card__value" id="stat-amount-needed">$0.00</div>
                 <div class="stat-kpi-card__label">Amount Needed</div>
               </div>
               <div class="stat-kpi-card">
-                <div class="stat-kpi-card__value" id="stat-amount-raised">—</div>
+                <div class="stat-kpi-card__value" id="stat-amount-raised">$0.00</div>
                 <div class="stat-kpi-card__label">Amount Raised</div>
               </div>
               <div class="stat-kpi-card stat-kpi-card--highlight">
-                <div class="stat-kpi-card__value" id="stat-balance-to-raise">—</div>
+                <div class="stat-kpi-card__value" id="stat-balance-to-raise">$0.00</div>
                 <div class="stat-kpi-card__label">Balance to Raise</div>
               </div>
             </div>
@@ -542,63 +531,78 @@
         <!-- UAF Programs (Relocated to Statistics as requested) -->
         <div class="content-block" style="margin-top:36px;">
           <div class="section-title-wrap">
-            <span class="section-tag">Core Interventions</span>
             <h2>UAF Programs</h2>
             <p class="section-lead">Targeted grassroots programs delivering education access, child safeguarding, and household resilience across communities.</p>
           </div>
 
           <div class="programs-square-grid">
             <div class="program-item-card" data-goto="submit-ossc">
-              <div class="program-item__icon">🎒</div>
+              <div class="program-item__icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+              </div>
               <div class="program-item__title">No Invisible Child</div>
               <p class="program-item__desc">Door-to-door child identification, enrollment subsidization, and uniform/kit distribution (NIC 2026/2027).</p>
               <span class="program-item__tag">Flagship</span>
             </div>
 
             <div class="program-item-card" data-goto="donate">
-              <div class="program-item__icon">🏫</div>
+              <div class="program-item__icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h1M14 10h1M9 14h1M14 14h1M9 18h1M14 18h1"/></svg>
+              </div>
               <div class="program-item__title">Education Access</div>
               <p class="program-item__desc">Household-level enrollment, school fee subsidization, and retention support for vulnerable learners.</p>
               <span class="program-item__tag">Access</span>
             </div>
 
             <div class="program-item-card">
-              <div class="program-item__icon">⚖️</div>
+              <div class="program-item__icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 9l9-6 9 6M3 9a4 4 0 008 0M13 9a4 4 0 008 0M7 18h10"/></svg>
+              </div>
               <div class="program-item__title">Rights Advocacy</div>
               <p class="program-item__desc">Community child policy dialogues, combating child labor, and defending the right to education.</p>
               <span class="program-item__tag">Advocacy</span>
             </div>
 
             <div class="program-item-card">
-              <div class="program-item__icon">🛡️</div>
+              <div class="program-item__icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              </div>
               <div class="program-item__title">Child Protection</div>
               <p class="program-item__desc">Safeguarding, mandatory reporting protocols, and creating secure learning spaces in partner schools.</p>
               <span class="program-item__tag">Protection</span>
             </div>
 
             <div class="program-item-card" data-goto="donate">
-              <div class="program-item__icon">🧼</div>
+              <div class="program-item__icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+              </div>
               <div class="program-item__title">Women &amp; Households</div>
               <p class="program-item__desc">Soap making, tie-dye, cake baking, and financial cooperatives enabling mothers to pay school fees.</p>
               <span class="program-item__tag">Livelihoods</span>
             </div>
 
             <div class="program-item-card" data-goto="donate">
-              <div class="program-item__icon">🌱</div>
+              <div class="program-item__icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zM12 6v6l4 2"/></svg>
+              </div>
               <div class="program-item__title">Women &amp; Youth</div>
               <p class="program-item__desc">Mentorship, leadership training, digital inclusion, and economic self-reliance for adolescent girls.</p>
               <span class="program-item__tag">Empowerment</span>
             </div>
 
             <div class="program-item-card" onclick="window.open('https://uafalp.blogspot.com/','_blank')">
-              <div class="program-item__icon">💻</div>
+              <div class="program-item__icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+              </div>
               <div class="program-item__title">Alternative Learning</div>
               <p class="program-item__desc">Practical computer literacy, typing, office productivity, and web basics for young mothers and dropouts (ALP).</p>
               <span class="program-item__tag">Digital Skills</span>
             </div>
 
             <div class="program-item-card">
-              <div class="program-item__icon">🚀</div>
+              <div class="program-item__icon">
+                <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+              </div>
               <div class="program-item__title">Youth Innovation</div>
               <p class="program-item__desc">Community innovation incubators, civic technology readiness, and youth-led problem solving.</p>
               <span class="program-item__tag">Innovation</span>
@@ -632,27 +636,27 @@
 
           <div class="impact-5-grid">
             <div class="impact-metric-box">
-              <div class="impact-metric-box__val" id="impact-kpi-children">1,240+</div>
+              <div class="impact-metric-box__val" id="impact-kpi-children">0</div>
               <div class="impact-metric-box__lbl"># of Children Enrolled &amp; Supported</div>
               <span class="impact-metric-box__sub">No Invisible Child Flagship</span>
             </div>
             <div class="impact-metric-box">
-              <div class="impact-metric-box__val" id="impact-kpi-women">680+</div>
+              <div class="impact-metric-box__val" id="impact-kpi-women">0</div>
               <div class="impact-metric-box__lbl"># of Women Trained with Skills</div>
               <span class="impact-metric-box__sub">Soap Making, Tie-Dye &amp; Baking</span>
             </div>
             <div class="impact-metric-box">
-              <div class="impact-metric-box__val" id="impact-kpi-computer">450+</div>
+              <div class="impact-metric-box__val" id="impact-kpi-computer">0</div>
               <div class="impact-metric-box__lbl"># of People Trained in Computer</div>
               <span class="impact-metric-box__sub">Alternative Learning Program (ALP)</span>
             </div>
             <div class="impact-metric-box">
-              <div class="impact-metric-box__val" id="impact-kpi-youth">890+</div>
+              <div class="impact-metric-box__val" id="impact-kpi-youth">0</div>
               <div class="impact-metric-box__lbl"># of Youths Impacted through Youth Development</div>
               <span class="impact-metric-box__sub">Leadership &amp; Civic Innovation</span>
             </div>
             <div class="impact-metric-box">
-              <div class="impact-metric-box__val" id="impact-kpi-career">720+</div>
+              <div class="impact-metric-box__val" id="impact-kpi-career">0</div>
               <div class="impact-metric-box__lbl"># of Students Impacted through Career Development</div>
               <span class="impact-metric-box__sub">Guidance, Mentorship &amp; Apprenticeship</span>
             </div>
@@ -664,7 +668,6 @@
           <div class="section-title-wrap">
             <span class="section-tag">Intervention Framework</span>
             <h2>UAF Programs: Strategic &amp; Impact Statements</h2>
-            <p class="section-lead">Each UAF program combines a clear operational mandate with measurable long-term community transformation.</p>
           </div>
 
           <div class="programs-statements-grid">
@@ -672,7 +675,9 @@
             <!-- Program 1 -->
             <div class="program-statement-card">
               <div class="prog-statement-header">
-                <div class="prog-statement-icon">🎒</div>
+                <div class="prog-statement-icon">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+                </div>
                 <div>
                   <h3 class="prog-statement-title">No Invisible Child (NIC 2026/2027)</h3>
                   <span class="prog-statement-tag">Flagship Educational Initiative</span>
@@ -691,7 +696,9 @@
             <!-- Program 2 -->
             <div class="program-statement-card">
               <div class="prog-statement-header">
-                <div class="prog-statement-icon">🏫</div>
+                <div class="prog-statement-icon">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h1M14 10h1M9 14h1M14 14h1M9 18h1M14 18h1"/></svg>
+                </div>
                 <div>
                   <h3 class="prog-statement-title">Education Access &amp; Retention</h3>
                   <span class="prog-statement-tag">Access &amp; Equity</span>
@@ -710,7 +717,9 @@
             <!-- Program 3 -->
             <div class="program-statement-card">
               <div class="prog-statement-header">
-                <div class="prog-statement-icon">🧼</div>
+                <div class="prog-statement-icon">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+                </div>
                 <div>
                   <h3 class="prog-statement-title">Women &amp; Household Livelihoods</h3>
                   <span class="prog-statement-tag">Economic Self-Reliance</span>
@@ -729,7 +738,9 @@
             <!-- Program 4 -->
             <div class="program-statement-card">
               <div class="prog-statement-header">
-                <div class="prog-statement-icon">💻</div>
+                <div class="prog-statement-icon">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
+                </div>
                 <div>
                   <h3 class="prog-statement-title">Alternative Learning Program (ALP)</h3>
                   <span class="prog-statement-tag">Digital Inclusion</span>
@@ -748,7 +759,9 @@
             <!-- Program 5 -->
             <div class="program-statement-card">
               <div class="prog-statement-header">
-                <div class="prog-statement-icon">🌱</div>
+                <div class="prog-statement-icon">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zM12 6v6l4 2"/></svg>
+                </div>
                 <div>
                   <h3 class="prog-statement-title">Youth Development &amp; Innovation</h3>
                   <span class="prog-statement-tag">Civic Leadership</span>
@@ -767,7 +780,9 @@
             <!-- Program 6 -->
             <div class="program-statement-card">
               <div class="prog-statement-header">
-                <div class="prog-statement-icon">🚀</div>
+                <div class="prog-statement-icon">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+                </div>
                 <div>
                   <h3 class="prog-statement-title">Student Career Development &amp; Mentorship</h3>
                   <span class="prog-statement-tag">Future Readiness</span>
@@ -786,7 +801,9 @@
             <!-- Program 7 -->
             <div class="program-statement-card">
               <div class="prog-statement-header">
-                <div class="prog-statement-icon">🛡️</div>
+                <div class="prog-statement-icon">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                </div>
                 <div>
                   <h3 class="prog-statement-title">Child Protection &amp; Safeguarding</h3>
                   <span class="prog-statement-tag">Safeguarding &amp; Security</span>
@@ -805,7 +822,9 @@
             <!-- Program 8 -->
             <div class="program-statement-card">
               <div class="prog-statement-header">
-                <div class="prog-statement-icon">⚖️</div>
+                <div class="prog-statement-icon">
+                  <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 9l9-6 9 6M3 9a4 4 0 008 0M13 9a4 4 0 008 0M7 18h10"/></svg>
+                </div>
                 <div>
                   <h3 class="prog-statement-title">Rights Advocacy &amp; Field Census</h3>
                   <span class="prog-statement-tag">Policy &amp; Research</span>
@@ -869,7 +888,7 @@
             </div>
 
             <div class="form-notice-box">
-              <span style="font-size:14px;">🔒</span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
               <span>UAF enforces child safeguarding: individual child identifying records are never disclosed. Only verified, aggregated indicators are released.</span>
             </div>
 
@@ -1095,8 +1114,8 @@
         <div class="partner-join-callout">
           <h3>Interested in partnering with UAF?</h3>
           <p>We welcome donor agencies, educational institutions, and community foundations to support education access in Liberia.</p>
-          <a href="mailto:upskillafrica.lr@gmail.com?subject=UAF%20Partnership%20Inquiry&body=Hello%20Upskill%20Africa%20Foundation%20Team%2C%0A%0AWe%20would%20like%20to%20partner%20with%20UAF%20on%20education%20access%20and%20child%20re-enrollment.%0A%0AOrganization%3A%20%0AContact%20Person%3A%20%0APhone%3A%20%0AMessage%3A%20" class="btn-partner-contact">
-            📧 Contact UAF Partnership Desk (upskillafrica.lr@gmail.com)
+          <a href="mailto:upskillafrica.lr@gmail.com?subject=Partnership%20Request%20-%20Upskill%20Africa%20Foundation&body=Dear%20UAF%20Partnership%20Team%2C%0A%0AWe%20are%20reaching%20out%20to%20express%20our%20interest%20in%20partnering%20with%20Upskill%20Africa%20Foundation%20on%20education%20access%20and%20child%20re-enrollment%20initiatives.%0A%0AOrganization%3A%20%0AContact%20Person%3A%20%0APhone%3A%20%0AMessage%3A%20" class="btn-partner-contact" target="_blank" rel="noopener noreferrer">
+            Contact UAF Partnership Desk (upskillafrica.lr@gmail.com)
           </a>
         </div>
       </div>
@@ -1118,7 +1137,7 @@
       <h4 style="font-size: 16px; font-weight: 700; margin: 0 0 6px;">UAF Impact &amp; NIC</h4>
       <p style="font-size: 13px; color: var(--ink-500); margin: 0 0 16px; line-height: 1.45;">Install the app icon directly to your desktop or phone home screen for instant offline access and real-time community updates.</p>
       
-      <button type="button" class="btn-install-prompt-action" id="install-prompt-trigger">📲 Install to Home Screen</button>
+      <button type="button" class="btn-install-prompt-action" id="install-prompt-trigger">Install to Home Screen</button>
 
       <div style="text-align: left; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-top: 16px; font-size: 12px; color: var(--ink-700);">
         <strong>How to install:</strong>

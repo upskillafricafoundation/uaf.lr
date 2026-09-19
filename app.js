@@ -222,7 +222,7 @@
             document.body.removeChild(temp);
           }
           const original = copyBtn.textContent;
-          copyBtn.textContent = "✓ Copied!";
+          copyBtn.textContent = "Copied!";
           showToast("USSD Code " + code + " copied to clipboard!");
           setTimeout(() => { copyBtn.textContent = original; }, 2500);
         } catch (err) {
@@ -425,8 +425,36 @@
   window.__uafShowToast = showToast;
 
   /* ---------------------------------------------------------
-     STORY DETAIL MODAL (Opens to read full story & testimonial)
+     STORY DETAIL MODAL & VIEW COUNTER TRACKING
   --------------------------------------------------------- */
+  function getStoryViews() {
+    try {
+      const stored = localStorage.getItem("uaf_story_views");
+      return stored ? JSON.parse(stored) : {};
+    } catch (_) {
+      return {};
+    }
+  }
+
+  function updateStoryViewsDisplay() {
+    const views = getStoryViews();
+    document.querySelectorAll("[data-story-views]").forEach((el) => {
+      const id = el.dataset.storyViews;
+      const count = Number(views[id]) || 0;
+      el.textContent = `${count} read${count === 1 ? "" : "s"}`;
+    });
+  }
+
+  function incrementStoryView(storyId) {
+    if (!storyId) return;
+    const views = getStoryViews();
+    views[storyId] = (Number(views[storyId]) || 0) + 1;
+    try {
+      localStorage.setItem("uaf_story_views", JSON.stringify(views));
+    } catch (_) {}
+    updateStoryViewsDisplay();
+  }
+
   function initStoryModal() {
     const modal = document.getElementById("story-modal-backdrop");
     const closeBtn = document.getElementById("story-modal-close");
@@ -444,6 +472,8 @@
       modal.style.display = "none";
     }
 
+    updateStoryViewsDisplay();
+
     closeBtn?.addEventListener("click", closeModal);
     doneBtn?.addEventListener("click", closeModal);
     modal?.addEventListener("click", (e) => {
@@ -456,6 +486,9 @@
         const storyId = el.dataset.storyId;
         const story = window.__uafGetStory && window.__uafGetStory(storyId);
         if (!story || !modal) return;
+
+        // Track and increment view count when user clicks story to read details
+        incrementStoryView(storyId);
 
         const tagEl = document.getElementById("story-modal-tag");
         const locEl = document.getElementById("story-modal-location");
@@ -480,17 +513,34 @@
   }
 
   /* ---------------------------------------------------------
-     DONATE FORM TOGGLE (In Fundraising Tab)
+     COLLAPSIBLE DONATE FORM TOGGLE (In Fundraising Tab)
   --------------------------------------------------------- */
   function initDonateToggle() {
     const toggleBtn = document.getElementById("btn-toggle-donate-form");
     const formWrapper = document.getElementById("donation-form-wrapper");
     if (!toggleBtn || !formWrapper) return;
 
+    formWrapper.style.display = "none";
+    toggleBtn.classList.remove("is-open");
+    toggleBtn.setAttribute("aria-expanded", "false");
+
     toggleBtn.addEventListener("click", () => {
-      formWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
-      const nameInput = document.getElementById("don-name");
-      if (nameInput) nameInput.focus();
+      const isHidden = formWrapper.style.display === "none" || !formWrapper.style.display;
+      const textSpan = document.getElementById("btn-donate-toggle-text");
+      if (isHidden) {
+        formWrapper.style.display = "block";
+        toggleBtn.classList.add("is-open");
+        toggleBtn.setAttribute("aria-expanded", "true");
+        if (textSpan) textSpan.textContent = "Close Donation Form";
+        formWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+        const nameInput = document.getElementById("don-name");
+        if (nameInput) setTimeout(() => nameInput.focus(), 300);
+      } else {
+        formWrapper.style.display = "none";
+        toggleBtn.classList.remove("is-open");
+        toggleBtn.setAttribute("aria-expanded", "false");
+        if (textSpan) textSpan.textContent = "Donate Now";
+      }
     });
   }
 
