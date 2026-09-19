@@ -1,0 +1,315 @@
+/* =========================================================
+   UAF IMPACT — ADMIN: UAF PROGRAMS MANAGEMENT
+   ---------------------------------------------------------
+   Administrative portal for adding, editing, and managing
+   the core UAF intervention programs.
+   ========================================================= */
+(() => {
+  "use strict";
+
+  const STORAGE_KEY = "uaf_programs";
+
+  const DEFAULT_PROGRAMS = [
+    {
+      id: "nic",
+      icon: "NIC",
+      title: "No Invisible Child",
+      desc: "Identifying, supporting, and re-enrolling out-of-school children across vulnerable communities (NIC 2026/2027).",
+      tag: "Flagship",
+      status: "Active",
+      goto: "submit-ossc"
+    },
+    {
+      id: "edu_access",
+      icon: "EDU",
+      title: "Education Access",
+      desc: "Household-level enrollment, school fee subsidization, and uniform/kit distribution for vulnerable learners.",
+      tag: "Access",
+      status: "Active",
+      goto: "donate"
+    },
+    {
+      id: "rights_advocacy",
+      icon: "LAW",
+      title: "Rights Advocacy",
+      desc: "Advocating for educational rights, community policy awareness, and combating child labor across communities.",
+      tag: "Advocacy",
+      status: "Active",
+      goto: ""
+    },
+    {
+      id: "child_protection",
+      icon: "SAFE",
+      title: "Child Protection",
+      desc: "Safeguarding, child protection standards, reporting mechanisms, and creating secure learning spaces.",
+      tag: "Protection",
+      status: "Active",
+      goto: ""
+    },
+    {
+      id: "women_households",
+      icon: "WOMEN",
+      title: "Women & Households",
+      desc: "Soap making, tie-dye, cake baking, and income generation enabling mothers to sustainably afford school fees.",
+      tag: "Livelihoods",
+      status: "Active",
+      goto: "donate"
+    },
+    {
+      id: "women_youth",
+      icon: "YOUTH",
+      title: "Women & Youth",
+      desc: "Mentorship, leadership training, digital inclusion, and economic self-reliance programs for community youth.",
+      tag: "Empowerment",
+      status: "Active",
+      goto: "donate"
+    },
+    {
+      id: "alp_digital",
+      icon: "ALP",
+      title: "Alternative Learning (ALP)",
+      desc: "Digital literacy, computer basics, and practical tech skills for young mothers and out-of-school adolescents.",
+      tag: "Digital Skills",
+      status: "Active",
+      goto: "https://uafalp.blogspot.com/"
+    },
+    {
+      id: "community_census",
+      icon: "DATA",
+      title: "Field Data Census",
+      desc: "Independent door-to-door community verification, data audits, and real-time out-of-school children tracking.",
+      tag: "Data & Research",
+      status: "Active",
+      goto: "statistics"
+    }
+  ];
+
+  function getPrograms() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return DEFAULT_PROGRAMS;
+  }
+
+  function savePrograms(programs) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(programs));
+      window.dispatchEvent(new Event("uaf_programs_updated"));
+    } catch (e) {
+      console.error("Failed to save programs to storage:", e);
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+  }
+
+  function renderProgramsModule(container, session) {
+    let programs = getPrograms();
+    let editingIndex = -1;
+
+    function refresh() {
+      programs = getPrograms();
+      render();
+    }
+
+    function render() {
+      container.innerHTML = `
+        <div class="admin-module-header">
+          <div>
+            <h2>UAF Programs Management</h2>
+            <p class="admin-muted" style="margin-top:4px;">Manage the core intervention programs displayed across the UAF Impact web application.</p>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button id="prog-reset-btn" class="btn btn--outline" style="font-size:12px;">Reset Defaults</button>
+            <button id="prog-add-btn" class="btn btn--primary" style="font-size:12px;">+ Add Program</button>
+          </div>
+        </div>
+
+        <div id="prog-flash" style="margin-bottom:12px;"></div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Icon</th>
+                <th>Program Name</th>
+                <th>Category Tag</th>
+                <th>Description</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${programs.map((p, idx) => `
+                <tr>
+                  <td style="font-size:13px;font-weight:600;text-align:center;"><span class="admin-badge admin-badge--neutral">${escapeHtml(p.icon || "UAF")}</span></td>
+                  <td><strong>${escapeHtml(p.title)}</strong></td>
+                  <td><span class="admin-badge admin-badge--neutral">${escapeHtml(p.tag || "Core")}</span></td>
+                  <td style="max-width:320px;font-size:12.5px;color:var(--ink-700);">${escapeHtml(p.desc)}</td>
+                  <td>
+                    <span class="admin-badge ${p.status === 'Active' ? 'admin-badge--verified' : 'admin-badge--review'}">
+                      ${escapeHtml(p.status || 'Active')}
+                    </span>
+                  </td>
+                  <td>
+                    <div style="display:flex;gap:6px;">
+                      <button class="btn btn--outline prog-edit-btn" data-index="${idx}" style="padding:4px 8px;font-size:11.5px;">Edit</button>
+                      <button class="btn btn--outline prog-delete-btn" data-index="${idx}" style="padding:4px 8px;font-size:11.5px;color:var(--red-700);">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Edit/Add Modal -->
+        <div id="prog-modal" class="admin-modal-overlay is-hidden">
+          <div class="admin-modal" style="max-width:500px;">
+            <h3 id="prog-modal-title">Edit Program</h3>
+            <form id="prog-form" style="margin-top:14px;">
+              <div style="display:grid;grid-template-columns:80px 1fr;gap:10px;">
+                <div class="form-field">
+                  <label for="prog-icon">Icon Code</label>
+                  <input type="text" id="prog-icon" placeholder="NIC" required style="text-align:center;font-size:13px;font-weight:600;" />
+                </div>
+                <div class="form-field">
+                  <label for="prog-title">Program Title</label>
+                  <input type="text" id="prog-title" placeholder="Program name" required />
+                </div>
+              </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div class="form-field">
+                  <label for="prog-tag">Category Tag</label>
+                  <input type="text" id="prog-tag" placeholder="e.g. Flagship, Access" required />
+                </div>
+                <div class="form-field">
+                  <label for="prog-status">Status</label>
+                  <select id="prog-status">
+                    <option value="Active">Active</option>
+                    <option value="Expanding">Expanding</option>
+                    <option value="Planned">Planned</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-field">
+                <label for="prog-desc">Description</label>
+                <textarea id="prog-desc" rows="3" placeholder="Brief explanation of the program..." required></textarea>
+              </div>
+              <div class="form-field">
+                <label for="prog-goto">Navigation Target / Link</label>
+                <input type="text" id="prog-goto" placeholder="e.g. donate, submit-ossc, or URL" />
+              </div>
+              <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+                <button type="button" id="prog-modal-cancel" class="btn btn--outline">Cancel</button>
+                <button type="submit" class="btn btn--primary">Save Program</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+
+      // Event listeners
+      container.querySelector("#prog-add-btn").addEventListener("click", () => {
+        editingIndex = -1;
+        document.getElementById("prog-modal-title").textContent = "Add New Program";
+        document.getElementById("prog-form").reset();
+        document.getElementById("prog-icon").value = "UAF";
+        document.getElementById("prog-modal").classList.remove("is-hidden");
+      });
+
+      container.querySelector("#prog-reset-btn").addEventListener("click", () => {
+        if (confirm("Reset programs list to default 8 UAF programs?")) {
+          savePrograms(DEFAULT_PROGRAMS);
+          refresh();
+          showFlash("Programs reset to default baseline.", "success");
+        }
+      });
+
+      container.querySelectorAll(".prog-edit-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.index);
+          const p = programs[idx];
+          if (!p) return;
+          editingIndex = idx;
+          document.getElementById("prog-modal-title").textContent = "Edit Program: " + p.title;
+          document.getElementById("prog-icon").value = p.icon || "UAF";
+          document.getElementById("prog-title").value = p.title || "";
+          document.getElementById("prog-tag").value = p.tag || "";
+          document.getElementById("prog-status").value = p.status || "Active";
+          document.getElementById("prog-desc").value = p.desc || "";
+          document.getElementById("prog-goto").value = p.goto || "";
+          document.getElementById("prog-modal").classList.remove("is-hidden");
+        });
+      });
+
+      container.querySelectorAll(".prog-delete-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.index);
+          const p = programs[idx];
+          if (!p) return;
+          if (confirm(`Are you sure you want to delete "${p.title}"?`)) {
+            programs.splice(idx, 1);
+            savePrograms(programs);
+            refresh();
+            showFlash(`Deleted "${p.title}".`, "success");
+          }
+        });
+      });
+
+      const modal = container.querySelector("#prog-modal");
+      const cancelBtn = container.querySelector("#prog-modal-cancel");
+      const form = container.querySelector("#prog-form");
+
+      cancelBtn.addEventListener("click", () => {
+        modal.classList.add("is-hidden");
+      });
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const updated = {
+          id: editingIndex >= 0 ? programs[editingIndex].id : "prog_" + Date.now(),
+          icon: document.getElementById("prog-icon").value.trim() || "UAF",
+          title: document.getElementById("prog-title").value.trim(),
+          tag: document.getElementById("prog-tag").value.trim(),
+          status: document.getElementById("prog-status").value,
+          desc: document.getElementById("prog-desc").value.trim(),
+          goto: document.getElementById("prog-goto").value.trim()
+        };
+
+        if (editingIndex >= 0) {
+          programs[editingIndex] = updated;
+          showFlash(`Updated program "${updated.title}".`, "success");
+        } else {
+          programs.push(updated);
+          showFlash(`Added new program "${updated.title}".`, "success");
+        }
+
+        savePrograms(programs);
+        modal.classList.add("is-hidden");
+        refresh();
+      });
+    }
+
+    function showFlash(msg, type) {
+      const el = container.querySelector("#prog-flash");
+      if (!el) return;
+      el.innerHTML = `<div class="admin-flash admin-flash--${type}">${escapeHtml(msg)}</div>`;
+      setTimeout(() => { el.innerHTML = ""; }, 3500);
+    }
+
+    render();
+  }
+
+  // Register with Admin Module registry
+  if (window.__uafRegisterAdminModule) {
+    window.__uafRegisterAdminModule("programs", renderProgramsModule);
+  }
+})();
