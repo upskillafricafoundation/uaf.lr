@@ -1,12 +1,10 @@
 /* =========================================================
-   UAF IMPACT — SERVICE WORKER
-   Caches only the public app shell (markup, styles, scripts,
-   icons). Never cache admin routes or private API responses —
-   Phase 4's public data fetch is explicitly excluded below via
-   the /api path check, same rule Phase 1 set.
+   UAF IMPACT — SERVICE WORKER (OFFLINE-FIRST ENGINE v7)
+   Caches the complete app shell (markup, styles, scripts,
+   icons, media assets) for full offline execution and auto-sync.
    ========================================================= */
 
-const CACHE_VERSION = "uaf-impact-shell-v6";
+const CACHE_VERSION = "uaf-impact-shell-v7";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -68,7 +66,12 @@ self.addEventListener("fetch", (event) => {
           }
           return res;
         })
-        .catch(() => cached);
+        .catch(() => {
+          if (req.mode === "navigate") {
+            return caches.match("./index.html").then((fallback) => fallback || caches.match("./"));
+          }
+          return cached;
+        });
     })
   );
 });

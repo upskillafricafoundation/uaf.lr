@@ -37,7 +37,7 @@
   function currentRoute() {
     const raw = (location.hash || "#/menu").replace(/^#\/?/, "").toLowerCase();
     if (!raw || raw === "home" || raw === "menu") return "menu";
-    if (raw === "support" || raw === "donate") return "donate";
+    if (raw === "support" || raw === "donate" || raw === "fundraising" || raw === "fundraise") return "donate";
     if (raw === "statistics" || raw === "stats") return "statistics";
     if (raw === "impact-drive" || raw === "impact" || raw === "communities" || raw === "works") return "impact-drive";
     if (raw === "request-data" || raw === "request" || raw === "evidence") return "request-data";
@@ -81,9 +81,10 @@
       symbol: "$",
       label: "USD $",
       chips: [
-        { label: "$5", amount: 5 },
+        { label: "$1", amount: 1 },
+        { label: "$5", amount: 5, defaultSelected: true },
         { label: "$10", amount: 10 },
-        { label: "$25", amount: 25, defaultSelected: true },
+        { label: "$25", amount: 25 },
         { label: "$50", amount: 50 },
         { label: "$100", amount: 100 },
         { label: "Custom", amount: "custom" }
@@ -93,11 +94,12 @@
       symbol: "L$",
       label: "LRD L$",
       chips: [
+        { label: "L$100", amount: 100 },
+        { label: "L$500", amount: 500, defaultSelected: true },
         { label: "L$1,000", amount: 1000 },
         { label: "L$2,500", amount: 2500 },
-        { label: "L$5,000", amount: 5000, defaultSelected: true },
+        { label: "L$5,000", amount: 5000 },
         { label: "L$10,000", amount: 10000 },
-        { label: "L$20,000", amount: 20000 },
         { label: "Custom", amount: "custom" }
       ]
     }
@@ -423,20 +425,112 @@
   window.__uafShowToast = showToast;
 
   /* ---------------------------------------------------------
-     OFFLINE STATUS
+     STORY DETAIL MODAL (Opens to read full story & testimonial)
+  --------------------------------------------------------- */
+  function initStoryModal() {
+    const modal = document.getElementById("story-modal-backdrop");
+    const closeBtn = document.getElementById("story-modal-close");
+    const doneBtn = document.getElementById("story-modal-done-btn");
+
+    function closeModal() {
+      modal?.classList.add("is-hidden");
+    }
+
+    closeBtn?.addEventListener("click", closeModal);
+    doneBtn?.addEventListener("click", closeModal);
+    modal?.addEventListener("click", (e) => {
+      if (e.target === modal) closeModal();
+    });
+
+    document.querySelectorAll("[data-story-id]").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const storyId = el.dataset.storyId;
+        const story = window.__uafGetStory && window.__uafGetStory(storyId);
+        if (!story || !modal) return;
+
+        const tagEl = document.getElementById("story-modal-tag");
+        const locEl = document.getElementById("story-modal-location");
+        const titleEl = document.getElementById("story-modal-title");
+        const quoteEl = document.getElementById("story-modal-quote");
+        const authorEl = document.getElementById("story-modal-author");
+        const actEl = document.getElementById("story-modal-activities");
+        const narEl = document.getElementById("story-modal-narrative");
+
+        if (tagEl) tagEl.textContent = story.tag || "Community Story";
+        if (locEl) locEl.textContent = `${story.community || ""} · ${story.county || "Liberia"}`;
+        if (titleEl) titleEl.textContent = story.title || "";
+        if (quoteEl) quoteEl.textContent = story.testimonial || "";
+        if (authorEl) authorEl.textContent = `— ${story.speaker || "Community Member"}`;
+        if (actEl) actEl.textContent = story.activities || "";
+        if (narEl) narEl.textContent = story.narrative || "";
+
+        modal.classList.remove("is-hidden");
+      });
+    });
+  }
+
+  /* ---------------------------------------------------------
+     DONATE FORM TOGGLE (In Fundraising Tab)
+  --------------------------------------------------------- */
+  function initDonateToggle() {
+    const toggleBtn = document.getElementById("btn-toggle-donate-form");
+    const formWrapper = document.getElementById("donation-form-wrapper");
+    if (!toggleBtn || !formWrapper) return;
+
+    toggleBtn.addEventListener("click", () => {
+      formWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+      const nameInput = document.getElementById("don-name");
+      if (nameInput) nameInput.focus();
+    });
+  }
+
+  /* ---------------------------------------------------------
+     OFFLINE STATUS & DRAFT QUEUE BADGE
   --------------------------------------------------------- */
   function updateOnlineStatus() {
     const banner = document.getElementById("status-banner");
+    const textEl = document.getElementById("status-banner-text");
+    const badge = document.getElementById("offline-sync-badge");
     if (!banner) return;
+
+    let queuedCount = 0;
+    try {
+      const q = JSON.parse(localStorage.getItem("uaf_offline_queue") || "[]");
+      queuedCount = Array.isArray(q) ? q.length : 0;
+    } catch (_) {}
+
+    if (badge) {
+      if (queuedCount > 0) {
+        badge.textContent = `${queuedCount} draft${queuedCount > 1 ? "s" : ""} queued`;
+        badge.classList.remove("is-hidden");
+      } else {
+        badge.classList.add("is-hidden");
+      }
+    }
+
     if (navigator.onLine) {
-      banner.classList.remove("is-visible");
+      if (queuedCount > 0) {
+        banner.classList.add("is-visible");
+        if (textEl) textEl.textContent = `Online — syncing ${queuedCount} offline draft(s)...`;
+        window.__uafSyncOfflineDrafts && window.__uafSyncOfflineDrafts();
+      } else {
+        banner.classList.remove("is-visible");
+      }
     } else {
-      banner.querySelector("span:last-child").textContent =
-        "Offline — showing previously cached information.";
+      if (textEl) {
+        textEl.textContent = queuedCount > 0
+          ? `Offline mode — ${queuedCount} draft(s) saved locally. Auto-syncs on reconnect.`
+          : "Offline mode — submissions are saved as drafts and auto-synced when online.";
+      }
       banner.classList.add("is-visible");
     }
   }
-  window.addEventListener("online", updateOnlineStatus);
+  window.__uafUpdateOnlineStatus = updateOnlineStatus;
+  window.addEventListener("online", () => {
+    updateOnlineStatus();
+    window.__uafSyncOfflineDrafts && window.__uafSyncOfflineDrafts();
+  });
   window.addEventListener("offline", updateOnlineStatus);
 
   /* ---------------------------------------------------------
@@ -507,6 +601,8 @@
     initDonationControls();
     initSearchDialog();
     initInstall();
+    initStoryModal();
+    initDonateToggle();
     updateOnlineStatus();
     renderRoute();
 

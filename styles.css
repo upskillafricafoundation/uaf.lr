@@ -211,6 +211,7 @@ body.modal-open, html.modal-open {
   stroke: #ffffff;
   flex-shrink: 0;
 }
+
 .btn-install-prompt-action {
   background: var(--blue-700);
   color: #ffffff;
@@ -1602,4 +1603,505 @@ body.modal-open, html.modal-open {
   .form-row-2 {
     grid-template-columns: 1fr;
   }
+  .stats-7-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .impact-5-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .programs-statements-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* =========================================================
+   FUNDRAISING & EMOTIONAL APPEAL STYLES
+   ========================================================= */
+.emotional-appeal-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%);
+  border: 1.5px solid var(--blue-200);
+  border-radius: 18px;
+  padding: 32px 28px;
+  box-shadow: 0 4px 20px rgba(2, 132, 199, 0.08);
+  margin-bottom: 24px;
+}
+
+.appeal-badge-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-bottom: 14px;
+}
+
+.appeal-title {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--ink-900);
+  line-height: 1.25;
+  margin: 0 0 16px;
+  letter-spacing: -0.3px;
+}
+
+.appeal-body-text p {
+  font-size: 14.5px;
+  color: var(--ink-700);
+  line-height: 1.65;
+  margin: 0 0 12px;
+}
+
+.appeal-quote-highlight {
+  background: #ffffff;
+  border-left: 4px solid var(--gold-500);
+  border-radius: 0 12px 12px 0;
+  padding: 14px 18px;
+  margin-top: 18px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.appeal-quote-quote {
+  font-size: 13.5px;
+  font-style: italic;
+  color: var(--ink-900);
+  line-height: 1.55;
+  margin: 0 0 6px;
+}
+
+.appeal-quote-cite {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue-700);
+}
+
+/* Clickable Story Cards & Read Button */
+.campaign-card--clickable {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease;
+}
+
+.campaign-card--clickable:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(2, 132, 199, 0.12);
+}
+
+.campaign-card__tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--blue-700);
+  background: var(--blue-050);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.story-card-action {
+  margin-top: 14px;
+}
+
+.btn-read-story-trigger {
+  width: 100%;
+  background: var(--surface-alt);
+  color: var(--blue-700);
+  border: 1px solid var(--blue-200);
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-read-story-trigger:hover {
+  background: var(--blue-700);
+  color: #ffffff;
+  border-color: var(--blue-700);
+}
+
+/* Donate Form Toggle Button */
+.btn-toggle-donate-form {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(135deg, #004F71 0%, #0284c7 100%);
+  color: #ffffff !important;
+  border: none;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: 15px;
+  padding: 14px 32px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 16px rgba(2, 132, 199, 0.35);
+}
+
+.btn-toggle-donate-form:hover {
+  background: linear-gradient(135deg, #003d57 0%, #0369a1 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(2, 132, 199, 0.45);
+}
+
+/* =========================================================
+   STORY DETAIL MODAL
+   ========================================================= */
+.story-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  backdrop-filter: blur(4px);
+}
+
+.story-modal-card {
+  background: #ffffff;
+  border-radius: 18px;
+  max-width: 620px;
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.story-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.story-modal-tag {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--blue-700);
+  background: var(--blue-050);
+  padding: 3px 10px;
+  border-radius: 6px;
+}
+
+.story-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: var(--ink-400);
+  cursor: pointer;
+  padding: 2px 8px;
+  border-radius: 6px;
+}
+
+.story-modal-close:hover {
+  background: var(--surface-alt);
+  color: var(--ink-900);
+}
+
+.story-modal-body {
+  padding: 24px;
+  flex-grow: 1;
+}
+
+.story-modal-location {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-500);
+  margin-bottom: 6px;
+}
+
+.story-modal-title {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink-900);
+  margin: 0 0 16px;
+  line-height: 1.3;
+}
+
+.story-modal-quote-wrap {
+  position: relative;
+  background: #f8fafc;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 20px 18px 42px;
+  margin-bottom: 20px;
+}
+
+.story-modal-quote-mark {
+  position: absolute;
+  top: 8px;
+  left: 14px;
+  font-size: 38px;
+  font-family: Georgia, serif;
+  color: var(--blue-300);
+  line-height: 1;
+}
+
+.story-modal-quote-text {
+  font-size: 13.5px;
+  font-style: italic;
+  color: var(--ink-800);
+  line-height: 1.55;
+  margin: 0 0 6px;
+}
+
+.story-modal-quote-author {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--blue-700);
+}
+
+.story-modal-section {
+  margin-top: 18px;
+}
+
+.story-modal-section h3 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink-900);
+  margin: 0 0 8px;
+}
+
+.story-modal-section p {
+  font-size: 13.5px;
+  color: var(--ink-700);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.story-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.btn-story-modal-done {
+  background: var(--blue-700);
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 22px;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-story-modal-done:hover {
+  background: var(--blue-800);
+}
+
+/* =========================================================
+   STATISTICS 7-KPI CARDS GRID
+   ========================================================= */
+.stats-7-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.stat-kpi-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 14px;
+  text-align: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.stat-kpi-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.stat-kpi-card__value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--ink-900);
+  font-family: var(--font-sans);
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+
+.stat-kpi-card__label {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--ink-500);
+  line-height: 1.35;
+}
+
+.stat-kpi-card--highlight {
+  background: #fffbeb;
+  border-color: #fde68a;
+}
+
+.stat-kpi-card--highlight .stat-kpi-card__value {
+  color: #b45309;
+}
+
+/* =========================================================
+   IMPACT DRIVE 5-KPI GRID & PROGRAM STATEMENTS
+   ========================================================= */
+.impact-5-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.impact-metric-box {
+  background: #ffffff;
+  border: 1.5px solid var(--blue-100);
+  border-radius: 14px;
+  padding: 20px 16px;
+  text-align: center;
+  box-shadow: 0 2px 10px rgba(2, 132, 199, 0.06);
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.impact-metric-box:hover {
+  transform: translateY(-2px);
+  border-color: var(--blue-400);
+  box-shadow: 0 6px 18px rgba(2, 132, 199, 0.12);
+}
+
+.impact-metric-box__val {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--blue-700);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.impact-metric-box__lbl {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-800);
+  line-height: 1.35;
+}
+
+.impact-metric-box__sub {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-400);
+  margin-top: 5px;
+}
+
+.programs-statements-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 20px;
+  margin-top: 20px;
+}
+
+.program-statement-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+}
+
+.prog-statement-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.prog-statement-icon {
+  width: 48px;
+  height: 48px;
+  background: var(--blue-050);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.prog-statement-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--ink-900);
+  margin: 0 0 3px;
+}
+
+.prog-statement-tag {
+  display: inline-block;
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--blue-700);
+  background: var(--blue-050);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+
+.statement-block {
+  padding: 12px 14px;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.statement-block--program {
+  background: #f8fafc;
+  border-left: 3.5px solid var(--blue-700);
+}
+
+.statement-block--impact {
+  background: #f0fdf4;
+  border-left: 3.5px solid var(--green-600);
+}
+
+.statement-title {
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.statement-block--program .statement-title {
+  color: var(--blue-700);
+}
+
+.statement-block--impact .statement-title {
+  color: var(--green-700);
+}
+
+.statement-block p {
+  font-size: 13px;
+  color: var(--ink-700);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Offline Sync Badge */
+.offline-sync-badge {
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--blue-700);
+  color: #ffffff;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: 8px;
+}
+
+.offline-sync-badge.is-synced {
+  background: var(--green-600);
 }

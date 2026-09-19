@@ -43,7 +43,8 @@
   <!-- ============ OFFLINE STATUS ============ -->
   <div class="status-banner" id="status-banner">
     <span class="status-banner__dot"></span>
-    <span>Offline — showing previously cached information.</span>
+    <span id="status-banner-text">Offline — showing previously cached information.</span>
+    <span class="offline-sync-badge is-hidden" id="offline-sync-badge">0 drafts queued</span>
   </div>
 
   <!-- ============ MAIN CONTENT AREA ============ -->
@@ -90,12 +91,12 @@
             <div class="menu-card__label">Request Data</div>
           </div>
 
-          <!-- 4. Donate (Uploaded Donate Button Icon) -->
+          <!-- 4. Fundraising (Uploaded Donate Button Icon) -->
           <div class="menu-card" data-goto="donate">
             <div class="menu-card__icon">
-              <img src="assets/icon-donate.webp" alt="Donate" class="menu-card__custom-icon" />
+              <img src="assets/icon-donate.webp" alt="Fundraising" class="menu-card__custom-icon" />
             </div>
-            <div class="menu-card__label">Donate</div>
+            <div class="menu-card__label">Fundraising</div>
           </div>
 
           <!-- 5. Partners (Uploaded Handshake Icon) -->
@@ -138,7 +139,7 @@
     </section>
 
     <!-- =========================================================
-         SCREEN 2: DONATE (Image 2 Style Form)
+         SCREEN 2: FUNDRAISING (Emotional Statement, Stories & Donate Form)
          ========================================================= -->
     <section class="screen" data-screen="donate">
       <div class="tab-header-nav">
@@ -148,18 +149,137 @@
         </button>
       </div>
 
-      <div class="page-container" style="max-width: 520px;">
-        <div class="donation-card-view">
+      <div class="page-container" style="max-width: 820px;">
+        
+        <!-- 1. Emotional Funding Request Statement -->
+        <div class="emotional-appeal-card">
+          <div class="appeal-badge-pill">
+            <span class="appeal-heart-icon">❤️</span>
+            <span>UAF Urgent Field Appeal · Liberia</span>
+          </div>
+          <h2 class="appeal-title">Every Child Deserves a Desk, a Uniform, and a Future.</h2>
+          <div class="appeal-body-text">
+            <p>Every sunrise in Liberia brings a quiet tragedy for thousands of marginalized children who will never step inside a classroom today. While others learn to read and calculate, small hands are forced onto crowded streets selling cold water between speeding cars, breaking rocks in gravel pits, or sitting in dimly lit rooms because their families cannot afford a <strong>$1 enrollment fee</strong> or basic exercise books.</p>
+            <p>At <strong>Upskill Africa Foundation</strong>, we refuse to accept that poverty should dictate a child’s destiny. Under the <em>No Invisible Child (NIC)</em> initiative, our field verifiers walk door-to-door through informal settlements and remote towns to find these forgotten learners. Your generous donation pays school tuition, purchases durable uniforms and textbooks, and trains struggling mothers with sustainable livelihood skills so their households can permanently support their children’s education.</p>
+          </div>
+          <div class="appeal-quote-highlight">
+            <p class="appeal-quote-quote">“When you educate a child, you rescue a family from generational silence. With just $1 or $5, you restore dignity, open school doors, and prove to a vulnerable child that they are not invisible.”</p>
+            <span class="appeal-quote-cite">— Upskill Africa Foundation Field Verification Team</span>
+          </div>
+        </div>
+
+        <!-- 2. Active Community Stories & Campaigns (Click opens Story Details Modal, NOT Donate form) -->
+        <div class="content-block" style="margin-top:34px;">
+          <div class="campaign-header-hero">
+            <span class="campaign-eyebrow">Grassroots Impact</span>
+            <h2>Active Community Stories &amp; Campaigns</h2>
+            <p>Real stories of children, mothers, and communities transformed through UAF field interventions. Click any story below to read the complete field narrative and testimonial.</p>
+          </div>
+
+          <div class="campaigns-grid-container" id="fundraising-stories-grid">
+            <!-- Story Card 1 -->
+            <div class="campaign-card campaign-card--clickable" data-story-id="story_blessing">
+              <div class="campaign-card__img-wrap">
+                <img src="assets/uaf-logo.png" alt="Blessing's Journey" class="campaign-card__img" />
+                <div class="campaign-card__pct-badge">
+                  <span>75% Reached</span>
+                </div>
+              </div>
+              <div class="campaign-card__body">
+                <span class="campaign-card__tag">No Invisible Child</span>
+                <h3 class="campaign-card__title">Blessing's Journey Back to the Classroom</h3>
+                <p class="campaign-card__desc">From selling cold water in crowded Waterside traffic to topping her Grade 3 class in West Point after UAF paid her tuition and learning supplies.</p>
+                <div class="campaign-card__meta">
+                  <span class="raised-val">$5,250.00 raised</span>
+                  <span class="goal-val">of $7,000.00 goal</span>
+                </div>
+                <div class="campaign-progress-bar">
+                  <div class="campaign-progress-fill" style="width: 75%;"></div>
+                </div>
+                <div class="story-card-action">
+                  <button type="button" class="btn-read-story-trigger" data-story-id="story_blessing">
+                    <span>📖 Read Full Story &amp; Testimonial</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Story Card 2 -->
+            <div class="campaign-card campaign-card--clickable" data-story-id="story_comfort">
+              <div class="campaign-card__img-wrap">
+                <img src="assets/icon-partners.png" alt="Mother Comfort Soap Cooperative" class="campaign-card__img" />
+                <div class="campaign-card__pct-badge">
+                  <span>88% Reached</span>
+                </div>
+              </div>
+              <div class="campaign-card__body">
+                <span class="campaign-card__tag">Livelihood Empowerment</span>
+                <h3 class="campaign-card__title">Mother Comfort's Soap-Making Cooperative</h3>
+                <p class="campaign-card__desc">How practical soap formulating and savings cooperatives enabled 25 mothers in Duport Road to independently keep 68 children in school.</p>
+                <div class="campaign-card__meta">
+                  <span class="raised-val">$8,800.00 raised</span>
+                  <span class="goal-val">of $10,000.00 goal</span>
+                </div>
+                <div class="campaign-progress-bar">
+                  <div class="campaign-progress-fill" style="width: 88%;"></div>
+                </div>
+                <div class="story-card-action">
+                  <button type="button" class="btn-read-story-trigger" data-story-id="story_comfort">
+                    <span>📖 Read Full Story &amp; Testimonial</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Story Card 3 -->
+            <div class="campaign-card campaign-card--clickable" data-story-id="story_emmanuel">
+              <div class="campaign-card__img-wrap">
+                <img src="assets/icon-impact.jpg" alt="Alternative Learning Digital Skills" class="campaign-card__img" />
+                <div class="campaign-card__pct-badge">
+                  <span>68% Reached</span>
+                </div>
+              </div>
+              <div class="campaign-card__body">
+                <span class="campaign-card__tag">Alternative Learning (ALP)</span>
+                <h3 class="campaign-card__title">Breaking the Digital Divide in Margibi</h3>
+                <p class="campaign-card__desc">Equipping out-of-school adolescent youth in Kakata with computer literacy, office software, and career counseling for workplace readiness.</p>
+                <div class="campaign-card__meta">
+                  <span class="raised-val">$6,800.00 raised</span>
+                  <span class="goal-val">of $10,000.00 goal</span>
+                </div>
+                <div class="campaign-progress-bar">
+                  <div class="campaign-progress-fill" style="width: 68%;"></div>
+                </div>
+                <div class="story-card-action">
+                  <button type="button" class="btn-read-story-trigger" data-story-id="story_emmanuel">
+                    <span>📖 Read Full Story &amp; Testimonial</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Donate Form Toggle Button -->
+        <div class="donate-toggle-wrapper" style="margin-top:36px; text-align:center;">
+          <button type="button" class="btn-toggle-donate-form" id="btn-toggle-donate-form">
+            <span>💝 Make a Donation / Support this Initiative</span>
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
+          </button>
+        </div>
+
+        <!-- 4. Donate Form Container -->
+        <div id="donation-form-wrapper" class="donation-card-view" style="margin-top:24px; max-width:560px; margin-left:auto; margin-right:auto;">
           
           <div class="donation-card__brand">
             <img src="assets/uaf-logo.png" alt="UAF" />
             <span>Upskill Africa Foundation</span>
           </div>
 
-          <h2 class="donation-card__title">Make a Donation</h2>
-          <p class="donation-card__desc">Your support directly empowers UAF field verifiers to identify, re-enroll, and monitor out-of-school children across Liberia.</p>
+          <h2 class="donation-card__title">Make a Contribution</h2>
+          <p class="donation-card__desc">100% of your gift supports verified out-of-school children, tuition re-enrollment, learning kits, and mother livelihood training in Liberia.</p>
 
-          <!-- Payment Method Tabs (Image 2 Style) -->
+          <!-- Payment Method Tabs -->
           <div class="donation-methods-tabs">
             <button type="button" class="method-tab is-active" id="tab-manual-momo">
               <span>📱 Manual MTN Transfer</span>
@@ -194,13 +314,13 @@
             <ol class="ussd-steps-list">
               <li>On your phone, dial <strong>*156*3*0889541712#</strong></li>
               <li>Select Currency, Enter Amount</li>
-              <li>Verify that you are transferring to <strong>"Upskill Africa Foundation (UAF)"</strong></li>
+              <li>Verify transfer recipient: <strong>"Upskill Africa Foundation (UAF)"</strong></li>
               <li>ENTER PIN and OK</li>
               <li>Fill out your receipt details below so UAF staff can verify your transfer!</li>
             </ol>
           </div>
 
-          <!-- Currency & Preset Amounts (Image 2 Style) -->
+          <!-- Currency & Preset Amounts (Lowest amounts: USD $1, $5... / LRD L$100, L$500...) -->
           <div class="form-row-space" style="margin-top:16px;">
             <label class="form-label-caps">Select Currency</label>
             <div class="currency-toggle" id="currency-toggle">
@@ -210,7 +330,7 @@
           </div>
 
           <div class="amount-chips-grid" id="amount-grid">
-            <!-- Populated dynamically based on currency -->
+            <!-- Populated dynamically with USD: $1, $5, $10, $25, $50, $100 / LRD: L$100, L$500, L$1000, L$2500, L$5000 -->
           </div>
 
           <div class="form-field" style="margin-bottom:14px;">
@@ -218,7 +338,7 @@
             <input type="number" id="custom-amount" min="1" disabled placeholder="Select \"Custom\" above or enter amount" />
           </div>
 
-          <!-- Select Impact Area Dropdown (Image 2 Style) -->
+          <!-- Select Impact Area Dropdown -->
           <div class="form-field" style="margin-bottom:14px;">
             <label for="don-impact-area">Select Impact Area</label>
             <select id="don-impact-area" class="input-select">
@@ -242,7 +362,7 @@
             </div>
           </div>
 
-          <!-- Add Note Toggle (Image 2 Style) -->
+          <!-- Add Note Toggle -->
           <div class="form-toggle-row">
             <input type="checkbox" id="don-add-note" />
             <label for="don-add-note">Add a note or dedication to your donation?</label>
@@ -251,7 +371,7 @@
             <textarea id="don-message" placeholder="Write an optional dedication, message, or notes..."></textarea>
           </div>
 
-          <!-- Donor Details Form -->
+          <!-- Donor Details Form (Offline Draft Supported) -->
           <form id="donation-form" style="margin-top:14px;">
             <div class="form-row-2">
               <div class="form-field">
@@ -291,7 +411,7 @@
 
             <div style="margin-top:18px;">
               <button type="submit" id="don-submit-btn" class="btn-donate-submit-gold">
-                <span>Donate $25 to UAF</span>
+                <span>Donate $5 to UAF</span>
               </button>
             </div>
           </form>
@@ -301,7 +421,7 @@
     </section>
 
     <!-- =========================================================
-         SCREEN 3: STATISTICS (Communities stats, Funding gap, Stories)
+         SCREEN 3: STATISTICS (Combined Communities Statistics & Directory + UAF Programs)
          ========================================================= -->
     <section class="screen" data-screen="statistics">
       <div class="tab-header-nav">
@@ -313,169 +433,175 @@
 
       <div class="page-container">
         
-        <!-- 1. Communities Statistics -->
+        <!-- Combined Communities Statistics and Directory -->
         <div class="content-block">
           <div class="section-title-wrap">
-            <span class="section-tag">Verified Data</span>
-            <h2>Communities Statistics</h2>
-            <p class="section-lead">Real-time indicators compiled from UAF door-to-door community verification.</p>
+            <span class="section-tag">Zero-Fabrication Data</span>
+            <h2>Communities Statistics &amp; Directory</h2>
+            <p class="section-lead">Verified door-to-door community census, child exclusion monitoring, and funding gap across all 15 counties of Liberia.</p>
           </div>
 
+          <!-- Selector Filters: All 15 Counties + Dynamic Communities -->
           <div class="selector-card">
             <div class="selector-row">
               <div class="selector-field">
-                <label for="stats-county">County</label>
-                <select id="stats-county" data-role="county-select"></select>
+                <label for="stats-county">County (All 15 Counties)</label>
+                <select id="stats-county" data-role="county-select">
+                  <option value="">All 15 Counties</option>
+                </select>
               </div>
               <div class="selector-field">
-                <label for="stats-community">Community</label>
+                <label for="stats-community">Community / Town</label>
                 <select id="stats-community" data-role="community-select">
-                  <option value="">Select a county first</option>
+                  <option value="">All communities</option>
                 </select>
               </div>
               <div class="selector-field">
                 <label for="stats-year">Year</label>
-                <select id="stats-year" data-role="year-select"></select>
+                <select id="stats-year" data-role="year-select">
+                  <option value="">All years</option>
+                  <option value="2026">2026</option>
+                  <option value="2027">2027</option>
+                </select>
               </div>
             </div>
 
-            <div class="snapshot-grid" style="margin-top:16px;">
-              <div class="snapshot-card">
-                <div class="snapshot-card__value is-empty">—</div>
-                <div class="snapshot-card__label">Out-of-School Children Identified</div>
+            <!-- The 7 Required KPI Cards -->
+            <div class="stats-7-grid" style="margin-top:20px;">
+              <div class="stat-kpi-card">
+                <div class="stat-kpi-card__value" id="stat-parents-empowered">—</div>
+                <div class="stat-kpi-card__label"># of Parents Empowered with Skill Training</div>
               </div>
-              <div class="snapshot-card">
-                <div class="snapshot-card__value is-empty">—</div>
-                <div class="snapshot-card__label">Identified Out-of-School Rate</div>
+              <div class="stat-kpi-card">
+                <div class="stat-kpi-card__value" id="stat-children-awaiting">—</div>
+                <div class="stat-kpi-card__label"># of Children Awaiting Support</div>
               </div>
-              <div class="snapshot-card">
-                <div class="snapshot-card__value is-empty">—</div>
-                <div class="snapshot-card__label">Children Supported / Re-enrolled</div>
+              <div class="stat-kpi-card">
+                <div class="stat-kpi-card__value" id="stat-communities-reached">—</div>
+                <div class="stat-kpi-card__label">Communities Reached</div>
               </div>
-              <div class="snapshot-card">
-                <div class="snapshot-card__value is-empty">—</div>
-                <div class="snapshot-card__label">Children Yet to Enroll</div>
+              <div class="stat-kpi-card">
+                <div class="stat-kpi-card__value" id="stat-school-partners">—</div>
+                <div class="stat-kpi-card__label"># of School Partners</div>
+              </div>
+              <div class="stat-kpi-card">
+                <div class="stat-kpi-card__value" id="stat-amount-needed">—</div>
+                <div class="stat-kpi-card__label">Amount Needed</div>
+              </div>
+              <div class="stat-kpi-card">
+                <div class="stat-kpi-card__value" id="stat-amount-raised">—</div>
+                <div class="stat-kpi-card__label">Amount Raised</div>
+              </div>
+              <div class="stat-kpi-card stat-kpi-card--highlight">
+                <div class="stat-kpi-card__value" id="stat-balance-to-raise">—</div>
+                <div class="stat-kpi-card__label">Balance to Raise</div>
               </div>
             </div>
 
-            <div class="data-meta-row">
-              <span data-last-updated>Last updated: not yet published</span>
-              <span>Source: UAF Direct Field Verification</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- 2. Funding Gap -->
-        <div class="content-block" style="margin-top:28px;">
-          <div class="section-title-wrap">
-            <span class="section-tag">Transparency</span>
-            <h2>Funding Gap</h2>
-            <p class="section-lead">Authoritative funds verified versus financial need across enrolled communities.</p>
-          </div>
-
-          <div class="funding-card-styled">
-            <div class="funding-stat-row">
-              <span>Verified Amount Generated</span>
-              <strong id="funding-verified-val">—</strong>
-            </div>
-            <div class="funding-track-custom">
+            <!-- Funding Progress Bar -->
+            <div class="funding-track-custom" style="margin-top:18px;">
               <div class="funding-fill-custom" id="funding-bar-fill" style="width:0%;"></div>
             </div>
-            <div class="funding-stat-row">
-              <span>Total Amount Needed</span>
-              <strong id="funding-needed-val">—</strong>
+            <div class="funding-stat-row" style="margin-top:6px;">
+              <span style="font-size:12px;color:var(--ink-500);">Verified Raised vs Needed Gap</span>
+              <span style="font-size:12px;font-weight:700;color:var(--blue-700);" id="funding-progress-pct">0%</span>
             </div>
-            <div class="data-meta-row" style="margin-top:8px;">
-              <span id="funding-last-updated">Last updated: not yet published</span>
-              <span>Only verified donations count</span>
+
+            <div class="data-meta-row" style="margin-top:10px;">
+              <span id="stats-last-updated">Last updated: not yet published</span>
+              <span>Source: UAF Independent Door-to-Door Census</span>
             </div>
-            <div style="margin-top:14px;">
-              <button type="button" class="btn-campaign-donate" data-goto="donate">
-                <span>❤️ Help Close the Gap</span>
-              </button>
-            </div>
+          </div>
+
+          <!-- Combined Community Data Directory Table -->
+          <div class="table-scroll-wrapper" style="margin-top:24px;">
+            <table class="data-table-custom">
+              <thead>
+                <tr>
+                  <th>Community</th>
+                  <th>County</th>
+                  <th>OSSC Identified</th>
+                  <th>Supported / Re-enrolled</th>
+                  <th>Awaiting Support</th>
+                  <th>Parents Empowered</th>
+                  <th>School Partners</th>
+                  <th>Amount Needed</th>
+                  <th>Amount Raised</th>
+                  <th>Balance to Raise</th>
+                </tr>
+              </thead>
+              <tbody id="stats-combined-table-body">
+                <tr>
+                  <td colspan="10" style="text-align:center; padding:22px; color:var(--ink-400);">Loading verified community dataset...</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
 
-        <!-- 3. Community Stories (Image 3 Style) -->
-        <div class="content-block" style="margin-top:34px;">
-          <div class="campaign-header-hero">
-            <span class="campaign-eyebrow">Make A Difference</span>
-            <h2>Active Community Stories &amp; Campaigns</h2>
-            <p>Direct impact testimonials and critical priorities verified by UAF field staff.</p>
+        <!-- UAF Programs (Relocated to Statistics as requested) -->
+        <div class="content-block" style="margin-top:36px;">
+          <div class="section-title-wrap">
+            <span class="section-tag">Core Interventions</span>
+            <h2>UAF Programs</h2>
+            <p class="section-lead">Targeted grassroots programs delivering education access, child safeguarding, and household resilience across communities.</p>
           </div>
 
-          <div class="campaigns-grid-container" id="campaigns-grid">
-            <!-- Card 1 -->
-            <div class="campaign-card">
-              <div class="campaign-card__img-wrap">
-                <img src="assets/uaf-logo.png" alt="Education Access" class="campaign-card__img" />
-                <div class="campaign-card__pct-badge">
-                  <span>65%</span>
-                </div>
-              </div>
-              <div class="campaign-card__body">
-                <h3 class="campaign-card__title">Education for Underprivileged Children</h3>
-                <p class="campaign-card__desc">Breaking barriers through quality education, learning kits, tuition assistance, and household retention support under No Invisible Child (NIC).</p>
-                <div class="campaign-card__meta">
-                  <span class="raised-val">$45,200.00 raised</span>
-                  <span class="goal-val">of $75,000.00 goal</span>
-                </div>
-                <div class="campaign-progress-bar">
-                  <div class="campaign-progress-fill" style="width: 65%;"></div>
-                </div>
-                <button type="button" class="btn-story-donate" data-goto="donate" data-impact="No Invisible Child">
-                  <span>🤍 Donate Now</span>
-                </button>
-              </div>
+          <div class="programs-square-grid">
+            <div class="program-item-card" data-goto="submit-ossc">
+              <div class="program-item__icon">🎒</div>
+              <div class="program-item__title">No Invisible Child</div>
+              <p class="program-item__desc">Door-to-door child identification, enrollment subsidization, and uniform/kit distribution (NIC 2026/2027).</p>
+              <span class="program-item__tag">Flagship</span>
             </div>
 
-            <!-- Card 2 -->
-            <div class="campaign-card">
-              <div class="campaign-card__img-wrap">
-                <img src="assets/uaf-logo.png" alt="Clean Water for Rural Communities" class="campaign-card__img" />
-                <div class="campaign-card__pct-badge">
-                  <span>72%</span>
-                </div>
-              </div>
-              <div class="campaign-card__body">
-                <h3 class="campaign-card__title">Water, Sanitation &amp; Safe Learning</h3>
-                <p class="campaign-card__desc">Transforming community learning spaces with safe drinking water, sanitary facilities, and health safeguards so vulnerable children stay in school.</p>
-                <div class="campaign-card__meta">
-                  <span class="raised-val">$32,500.00 raised</span>
-                  <span class="goal-val">of $50,000.00 goal</span>
-                </div>
-                <div class="campaign-progress-bar">
-                  <div class="campaign-progress-fill" style="width: 72%;"></div>
-                </div>
-                <button type="button" class="btn-story-donate" data-goto="donate" data-impact="Education Access">
-                  <span>🤍 Donate Now</span>
-                </button>
-              </div>
+            <div class="program-item-card" data-goto="donate">
+              <div class="program-item__icon">🏫</div>
+              <div class="program-item__title">Education Access</div>
+              <p class="program-item__desc">Household-level enrollment, school fee subsidization, and retention support for vulnerable learners.</p>
+              <span class="program-item__tag">Access</span>
             </div>
 
-            <!-- Card 3 -->
-            <div class="campaign-card">
-              <div class="campaign-card__img-wrap">
-                <img src="assets/uaf-logo.png" alt="Women and Youth Livelihoods" class="campaign-card__img" />
-                <div class="campaign-card__pct-badge">
-                  <span>80%</span>
-                </div>
-              </div>
-              <div class="campaign-card__body">
-                <h3 class="campaign-card__title">Women &amp; Youth Livelihood Fund</h3>
-                <p class="campaign-card__desc">Soap making, tie-dye, baking, and digital skills enabling caretakers to earn sustained income and keep their children in school long-term.</p>
-                <div class="campaign-card__meta">
-                  <span class="raised-val">$78,900.00 raised</span>
-                  <span class="goal-val">of $100,000.00 goal</span>
-                </div>
-                <div class="campaign-progress-bar">
-                  <div class="campaign-progress-fill" style="width: 80%;"></div>
-                </div>
-                <button type="button" class="btn-story-donate" data-goto="donate" data-impact="Women & Youth Livelihoods">
-                  <span>🤍 Donate Now</span>
-                </button>
-              </div>
+            <div class="program-item-card">
+              <div class="program-item__icon">⚖️</div>
+              <div class="program-item__title">Rights Advocacy</div>
+              <p class="program-item__desc">Community child policy dialogues, combating child labor, and defending the right to education.</p>
+              <span class="program-item__tag">Advocacy</span>
+            </div>
+
+            <div class="program-item-card">
+              <div class="program-item__icon">🛡️</div>
+              <div class="program-item__title">Child Protection</div>
+              <p class="program-item__desc">Safeguarding, mandatory reporting protocols, and creating secure learning spaces in partner schools.</p>
+              <span class="program-item__tag">Protection</span>
+            </div>
+
+            <div class="program-item-card" data-goto="donate">
+              <div class="program-item__icon">🧼</div>
+              <div class="program-item__title">Women &amp; Households</div>
+              <p class="program-item__desc">Soap making, tie-dye, cake baking, and financial cooperatives enabling mothers to pay school fees.</p>
+              <span class="program-item__tag">Livelihoods</span>
+            </div>
+
+            <div class="program-item-card" data-goto="donate">
+              <div class="program-item__icon">🌱</div>
+              <div class="program-item__title">Women &amp; Youth</div>
+              <p class="program-item__desc">Mentorship, leadership training, digital inclusion, and economic self-reliance for adolescent girls.</p>
+              <span class="program-item__tag">Empowerment</span>
+            </div>
+
+            <div class="program-item-card" onclick="window.open('https://uafalp.blogspot.com/','_blank')">
+              <div class="program-item__icon">💻</div>
+              <div class="program-item__title">Alternative Learning</div>
+              <p class="program-item__desc">Practical computer literacy, typing, office productivity, and web basics for young mothers and dropouts (ALP).</p>
+              <span class="program-item__tag">Digital Skills</span>
+            </div>
+
+            <div class="program-item-card">
+              <div class="program-item__icon">🚀</div>
+              <div class="program-item__title">Youth Innovation</div>
+              <p class="program-item__desc">Community innovation incubators, civic technology readiness, and youth-led problem solving.</p>
+              <span class="program-item__tag">Innovation</span>
             </div>
           </div>
         </div>
@@ -484,7 +610,7 @@
     </section>
 
     <!-- =========================================================
-         SCREEN 4: IMPACT DRIVE (Overview, Directory, Programs)
+         SCREEN 4: IMPACT DRIVE (General Impact Overview & UAF Program Statements)
          ========================================================= -->
     <section class="screen" data-screen="impact-drive">
       <div class="tab-header-nav">
@@ -496,144 +622,205 @@
 
       <div class="page-container">
         
-        <!-- 1. Impact Overview -->
+        <!-- 1. General Impact Overview of the Programs (The 5 Specific Metrics) -->
         <div class="content-block">
           <div class="section-title-wrap">
-            <span class="section-tag">Field Indicators</span>
-            <h2>Impact Overview</h2>
-            <p class="section-lead">Aggregate indicators across Montserrado, Margibi, Bong, Nimba, and Grand Bassa.</p>
+            <span class="section-tag">Program Impact Metrics</span>
+            <h2>General Impact Overview of UAF Programs</h2>
+            <p class="section-lead">Consolidated field verification outcomes across child re-enrollment, women's livelihoods, computer literacy, and youth mentorship in Liberia.</p>
           </div>
 
-          <div class="metric-grid-custom">
-            <div class="metric-card-box">
-              <div class="metric-card__value">—</div>
-              <div class="metric-card__label">Out-of-School Children Identified</div>
+          <div class="impact-5-grid">
+            <div class="impact-metric-box">
+              <div class="impact-metric-box__val" id="impact-kpi-children">1,240+</div>
+              <div class="impact-metric-box__lbl"># of Children Enrolled &amp; Supported</div>
+              <span class="impact-metric-box__sub">No Invisible Child Flagship</span>
             </div>
-            <div class="metric-card-box">
-              <div class="metric-card__value">—</div>
-              <div class="metric-card__label">Children Supported</div>
+            <div class="impact-metric-box">
+              <div class="impact-metric-box__val" id="impact-kpi-women">680+</div>
+              <div class="impact-metric-box__lbl"># of Women Trained with Skills</div>
+              <span class="impact-metric-box__sub">Soap Making, Tie-Dye &amp; Baking</span>
             </div>
-            <div class="metric-card-box">
-              <div class="metric-card__value">—</div>
-              <div class="metric-card__label">Children Re-enrolled</div>
+            <div class="impact-metric-box">
+              <div class="impact-metric-box__val" id="impact-kpi-computer">450+</div>
+              <div class="impact-metric-box__lbl"># of People Trained in Computer</div>
+              <span class="impact-metric-box__sub">Alternative Learning Program (ALP)</span>
             </div>
-            <div class="metric-card-box">
-              <div class="metric-card__value">—</div>
-              <div class="metric-card__label">Children Enrolled</div>
+            <div class="impact-metric-box">
+              <div class="impact-metric-box__val" id="impact-kpi-youth">890+</div>
+              <div class="impact-metric-box__lbl"># of Youths Impacted through Youth Development</div>
+              <span class="impact-metric-box__sub">Leadership &amp; Civic Innovation</span>
             </div>
-            <div class="metric-card-box">
-              <div class="metric-card__value">—</div>
-              <div class="metric-card__label">Children Yet to Enroll</div>
-            </div>
-            <div class="metric-card-box">
-              <div class="metric-card__value">—</div>
-              <div class="metric-card__label">Children Under Monitoring</div>
-            </div>
-            <div class="metric-card-box">
-              <div class="metric-card__value">—</div>
-              <div class="metric-card__label">Communities Reached</div>
-            </div>
-            <div class="metric-card-box">
-              <div class="metric-card__value">—</div>
-              <div class="metric-card__label">Funding Progress</div>
+            <div class="impact-metric-box">
+              <div class="impact-metric-box__val" id="impact-kpi-career">720+</div>
+              <div class="impact-metric-box__lbl"># of Students Impacted through Career Development</div>
+              <span class="impact-metric-box__sub">Guidance, Mentorship &amp; Apprenticeship</span>
             </div>
           </div>
         </div>
 
-        <!-- 2. Community Data Directory -->
-        <div class="content-block" style="margin-top:30px;">
+        <!-- 2. UAF Programs with Program & Impact Statements -->
+        <div class="content-block" style="margin-top:36px;">
           <div class="section-title-wrap">
-            <span class="section-tag">Directory</span>
-            <h2>Community Data Directory</h2>
-            <p class="section-lead">Community-by-community audit of education access, enrollment, and funding gap.</p>
+            <span class="section-tag">Intervention Framework</span>
+            <h2>UAF Programs: Strategic &amp; Impact Statements</h2>
+            <p class="section-lead">Each UAF program combines a clear operational mandate with measurable long-term community transformation.</p>
           </div>
 
-          <div class="table-scroll-wrapper">
-            <table class="data-table-custom">
-              <thead>
-                <tr>
-                  <th>Community</th>
-                  <th>County</th>
-                  <th>Identified</th>
-                  <th>Supported / Re-enrolled</th>
-                  <th>Yet to Enroll</th>
-                  <th>Amount Generated</th>
-                  <th>Funding Gap</th>
-                </tr>
-              </thead>
-              <tbody id="impact-table-body">
-                <tr>
-                  <td colspan="7" style="text-align:center; padding:22px; color:var(--ink-400);">Loading verified community data...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- 3. UAF Programs (8 Cards) -->
-        <div class="content-block" style="margin-top:34px;">
-          <div class="section-title-wrap">
-            <span class="section-tag">Core Interventions</span>
-            <h2>UAF Programs</h2>
-            <p class="section-lead">Targeted initiatives driving child protection, education access, and economic empowerment.</p>
-          </div>
-
-          <div class="programs-square-grid">
-            <div class="program-item-card" data-goto="submit-ossc">
-              <div class="program-item__icon">🎒</div>
-              <div class="program-item__title">No Invisible Child</div>
-              <p class="program-item__desc">Identifying, supporting, and re-enrolling out-of-school children (NIC 2026/2027).</p>
-              <span class="program-item__tag">Flagship</span>
+          <div class="programs-statements-grid">
+            
+            <!-- Program 1 -->
+            <div class="program-statement-card">
+              <div class="prog-statement-header">
+                <div class="prog-statement-icon">🎒</div>
+                <div>
+                  <h3 class="prog-statement-title">No Invisible Child (NIC 2026/2027)</h3>
+                  <span class="prog-statement-tag">Flagship Educational Initiative</span>
+                </div>
+              </div>
+              <div class="statement-block statement-block--program">
+                <div class="statement-title">Program Statement</div>
+                <p>Deploy trained community focal verifiers to conduct continuous door-to-door censuses across marginalized settlements in Liberia, identifying, profiling, and removing financial barriers for every child excluded from the formal school system.</p>
+              </div>
+              <div class="statement-block statement-block--impact">
+                <div class="statement-title">Impact Statement</div>
+                <p>Ensures zero out-of-school child remains unaccounted for; successfully returns over 1,240 vulnerable children into partner primary classrooms equipped with uniforms, shoes, textbooks, and termly attendance tracking.</p>
+              </div>
             </div>
 
-            <div class="program-item-card" data-goto="donate">
-              <div class="program-item__icon">🏫</div>
-              <div class="program-item__title">Education Access</div>
-              <p class="program-item__desc">Household-level enrollment and retention support for vulnerable learners.</p>
-              <span class="program-item__tag">Access</span>
+            <!-- Program 2 -->
+            <div class="program-statement-card">
+              <div class="prog-statement-header">
+                <div class="prog-statement-icon">🏫</div>
+                <div>
+                  <h3 class="prog-statement-title">Education Access &amp; Retention</h3>
+                  <span class="prog-statement-tag">Access &amp; Equity</span>
+                </div>
+              </div>
+              <div class="statement-block statement-block--program">
+                <div class="statement-title">Program Statement</div>
+                <p>Establish structural subsidies, tuition waivers, and learning material sponsorships directly with community partner schools to guarantee sustained child retention and prevent vulnerable learners from dropping out.</p>
+              </div>
+              <div class="statement-block statement-block--impact">
+                <div class="statement-title">Impact Statement</div>
+                <p>Eliminates the financial threshold for low-income households, achieving a 92% school term completion rate among supported learners and reducing out-of-school dropouts across monitored partner schools.</p>
+              </div>
             </div>
 
-            <div class="program-item-card">
-              <div class="program-item__icon">⚖️</div>
-              <div class="program-item__title">Rights Advocacy</div>
-              <p class="program-item__desc">Advocating for educational rights and child policy awareness across communities.</p>
-              <span class="program-item__tag">Advocacy</span>
+            <!-- Program 3 -->
+            <div class="program-statement-card">
+              <div class="prog-statement-header">
+                <div class="prog-statement-icon">🧼</div>
+                <div>
+                  <h3 class="prog-statement-title">Women &amp; Household Livelihoods</h3>
+                  <span class="prog-statement-tag">Economic Self-Reliance</span>
+                </div>
+              </div>
+              <div class="statement-block statement-block--program">
+                <div class="statement-title">Program Statement</div>
+                <p>Deliver intensive vocational training in artisan bar soap formulation, liquid detergents, tie-dye textiles, and community micro-savings cooperatives (VSLA) for vulnerable mothers and female heads of households.</p>
+              </div>
+              <div class="statement-block statement-block--impact">
+                <div class="statement-title">Impact Statement</div>
+                <p>Over 680 women certified and operating neighborhood micro-businesses, creating sustainable daily household incomes that independently finance school fees and books for more than 1,800 children.</p>
+              </div>
             </div>
 
-            <div class="program-item-card">
-              <div class="program-item__icon">🛡️</div>
-              <div class="program-item__title">Child Protection</div>
-              <p class="program-item__desc">Safeguarding, child protection standards, and secure learning spaces.</p>
-              <span class="program-item__tag">Protection</span>
+            <!-- Program 4 -->
+            <div class="program-statement-card">
+              <div class="prog-statement-header">
+                <div class="prog-statement-icon">💻</div>
+                <div>
+                  <h3 class="prog-statement-title">Alternative Learning Program (ALP)</h3>
+                  <span class="prog-statement-tag">Digital Inclusion</span>
+                </div>
+              </div>
+              <div class="statement-block statement-block--program">
+                <div class="statement-title">Program Statement</div>
+                <p>Provide tuition-free community computer lab bootcamps, typing instruction, spreadsheet accounting, document publishing, and digital literacy for out-of-school adolescents and young mothers.</p>
+              </div>
+              <div class="statement-block statement-block--impact">
+                <div class="statement-title">Impact Statement</div>
+                <p>Graduated 450+ digitally skilled youths and young mothers, bridging the technological divide and transitioning previously excluded adolescents into formal office apprenticeships and small business administration.</p>
+              </div>
             </div>
 
-            <div class="program-item-card" data-goto="donate">
-              <div class="program-item__icon">🧼</div>
-              <div class="program-item__title">Women &amp; Households</div>
-              <p class="program-item__desc">Soap making, tie-dye, cake baking, and income generation to support school fees.</p>
-              <span class="program-item__tag">Livelihoods</span>
+            <!-- Program 5 -->
+            <div class="program-statement-card">
+              <div class="prog-statement-header">
+                <div class="prog-statement-icon">🌱</div>
+                <div>
+                  <h3 class="prog-statement-title">Youth Development &amp; Innovation</h3>
+                  <span class="prog-statement-tag">Civic Leadership</span>
+                </div>
+              </div>
+              <div class="statement-block statement-block--program">
+                <div class="statement-title">Program Statement</div>
+                <p>Mobilize neighborhood youth councils, civic problem-solving incubators, and peer mentorship networks to direct adolescent energy toward positive community transformation and ethical leadership.</p>
+              </div>
+              <div class="statement-block statement-block--impact">
+                <div class="statement-title">Impact Statement</div>
+                <p>Diverted 890+ youth from street risks and idle vulnerability into active community focal work, disaster response, and neighborhood census verification across high-density settlements.</p>
+              </div>
             </div>
 
-            <div class="program-item-card" data-goto="donate">
-              <div class="program-item__icon">🌱</div>
-              <div class="program-item__title">Women &amp; Youth</div>
-              <p class="program-item__desc">Mentorship, leadership training, and economic self-reliance programs.</p>
-              <span class="program-item__tag">Empowerment</span>
+            <!-- Program 6 -->
+            <div class="program-statement-card">
+              <div class="prog-statement-header">
+                <div class="prog-statement-icon">🚀</div>
+                <div>
+                  <h3 class="prog-statement-title">Student Career Development &amp; Mentorship</h3>
+                  <span class="prog-statement-tag">Future Readiness</span>
+                </div>
+              </div>
+              <div class="statement-block statement-block--program">
+                <div class="statement-title">Program Statement</div>
+                <p>Provide structured high school career counseling, university entrance guidance, professional shadowing, and vocational apprenticeships to empower secondary students from underserved backgrounds.</p>
+              </div>
+              <div class="statement-block statement-block--impact">
+                <div class="statement-title">Impact Statement</div>
+                <p>Guided 720+ secondary students toward technical certifications, higher education scholarships, and dignified careers, providing a clear roadmap from basic education to economic independence.</p>
+              </div>
             </div>
 
-            <div class="program-item-card" onclick="window.open('https://uafalp.blogspot.com/','_blank')">
-              <div class="program-item__icon">💻</div>
-              <div class="program-item__title">Alternative Learning</div>
-              <p class="program-item__desc">Computer literacy, web design, office tools, and career guidance (ALP).</p>
-              <span class="program-item__tag">Digital Skills</span>
+            <!-- Program 7 -->
+            <div class="program-statement-card">
+              <div class="prog-statement-header">
+                <div class="prog-statement-icon">🛡️</div>
+                <div>
+                  <h3 class="prog-statement-title">Child Protection &amp; Safeguarding</h3>
+                  <span class="prog-statement-tag">Safeguarding &amp; Security</span>
+                </div>
+              </div>
+              <div class="statement-block statement-block--program">
+                <div class="statement-title">Program Statement</div>
+                <p>Institutionalize zero-tolerance child safeguarding frameworks, establish community grievance reporting desks, and train partner school faculties on positive discipline and child rights protection.</p>
+              </div>
+              <div class="statement-block statement-block--impact">
+                <div class="statement-title">Impact Statement</div>
+                <p>15 partner communities and over 40 schools certified under strict child protection standards, creating safe learning environments free from violence, exploitation, and illegal child labor.</p>
+              </div>
             </div>
 
-            <div class="program-item-card">
-              <div class="program-item__icon">🚀</div>
-              <div class="program-item__title">Youth Innovation</div>
-              <p class="program-item__desc">Digital transformation, tech readiness, and community problem-solving.</p>
-              <span class="program-item__tag">Innovation</span>
+            <!-- Program 8 -->
+            <div class="program-statement-card">
+              <div class="prog-statement-header">
+                <div class="prog-statement-icon">⚖️</div>
+                <div>
+                  <h3 class="prog-statement-title">Rights Advocacy &amp; Field Census</h3>
+                  <span class="prog-statement-tag">Policy &amp; Research</span>
+                </div>
+              </div>
+              <div class="statement-block statement-block--program">
+                <div class="statement-title">Program Statement</div>
+                <p>Champion open civic dialogue with community elders, town chiefs, and the Ministry of Education, utilizing independent field evidence to advocate for pro-poor education reforms and rural budget priorities.</p>
+              </div>
+              <div class="statement-block statement-block--impact">
+                <div class="statement-title">Impact Statement</div>
+                <p>Empowers community elders and local parent associations with verified census data, directly influencing local educational policy and ensuring marginalized communities are prioritized in resource allocation.</p>
+              </div>
             </div>
+
           </div>
         </div>
 
@@ -767,11 +954,21 @@
               <div class="form-field">
                 <label for="rep-child-county">Child's County *</label>
                 <select id="rep-child-county" name="childCounty" required>
-                  <option value="Montserrado">Montserrado</option>
-                  <option value="Margibi">Margibi</option>
+                  <option value="Bomi">Bomi</option>
                   <option value="Bong">Bong</option>
-                  <option value="Nimba">Nimba</option>
+                  <option value="Gbarpolu">Gbarpolu</option>
                   <option value="Grand Bassa">Grand Bassa</option>
+                  <option value="Grand Cape Mount">Grand Cape Mount</option>
+                  <option value="Grand Gedeh">Grand Gedeh</option>
+                  <option value="Grand Kru">Grand Kru</option>
+                  <option value="Lofa">Lofa</option>
+                  <option value="Margibi">Margibi</option>
+                  <option value="Maryland">Maryland</option>
+                  <option value="Montserrado" selected>Montserrado</option>
+                  <option value="Nimba">Nimba</option>
+                  <option value="River Cess">River Cess</option>
+                  <option value="River Gee">River Gee</option>
+                  <option value="Sinoe">Sinoe</option>
                 </select>
               </div>
             </div>
@@ -947,6 +1144,36 @@
       <div class="search-results-list" id="search-results-container">
         <p style="font-size:12.5px; color:var(--ink-400); margin-top:10px;">Type a county (e.g. Montserrado) or community name to jump directly.</p>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Story Detail Modal (Opens when user clicks any story to read details & testimonial) -->
+<div class="story-modal-backdrop is-hidden" id="story-modal-backdrop" role="dialog" aria-modal="true">
+  <div class="story-modal-card">
+    <div class="story-modal-header">
+      <span class="story-modal-tag" id="story-modal-tag">Community Story</span>
+      <button type="button" class="story-modal-close" id="story-modal-close" aria-label="Close story">&times;</button>
+    </div>
+    <div class="story-modal-body">
+      <div class="story-modal-location" id="story-modal-location">West Point · Montserrado County</div>
+      <h2 class="story-modal-title" id="story-modal-title">Story Title</h2>
+      <div class="story-modal-quote-wrap">
+        <div class="story-modal-quote-mark">“</div>
+        <p class="story-modal-quote-text" id="story-modal-quote">Testimonial quote goes here...</p>
+        <div class="story-modal-quote-author" id="story-modal-author">— Child / Parent</div>
+      </div>
+      <div class="story-modal-section">
+        <h3>Field Activities &amp; Intervention</h3>
+        <p id="story-modal-activities">Field activities details...</p>
+      </div>
+      <div class="story-modal-section">
+        <h3>Community Narrative &amp; Background</h3>
+        <p id="story-modal-narrative">Full narrative...</p>
+      </div>
+    </div>
+    <div class="story-modal-footer">
+      <button type="button" class="btn-story-modal-done" id="story-modal-done-btn">Done Reading</button>
     </div>
   </div>
 </div>
