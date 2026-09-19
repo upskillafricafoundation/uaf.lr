@@ -1,0 +1,300 @@
+/* =========================================================
+   UAF IMPACT — ADMIN: PARTNERS & COLLABORATORS MANAGEMENT
+   ---------------------------------------------------------
+   Administrative portal for adding, editing, and managing
+   UAF partner organizations, institutions, and their logos.
+   ========================================================= */
+(() => {
+  "use strict";
+
+  const STORAGE_KEY = "uaf_partners";
+
+  const DEFAULT_PARTNERS = [
+    {
+      id: "part_nic",
+      name: "No Invisible Child (NIC)",
+      type: "Founding Coalition",
+      logoUrl: "assets/nic-logo.png",
+      desc: "Flagship educational initiative ensuring every marginalized out-of-school child in Liberia is identified, supported, and re-enrolled."
+    },
+    {
+      id: "part_uaf",
+      name: "Upskill Africa Foundation",
+      type: "Implementing Organization",
+      logoUrl: "assets/uaf-logo.png",
+      desc: "Community grassroots non-profit dedicated to child protection, literacy, livelihood empowerment, and digital access."
+    },
+    {
+      id: "part_moe",
+      name: "Ministry of Education (Liberia)",
+      type: "Institutional Alignment",
+      logoUrl: "assets/uaf-logo.png",
+      desc: "Strategic coordination and policy adherence aligning community interventions with national curriculum standards."
+    },
+    {
+      id: "part_comm",
+      name: "Grassroots Community Alliances",
+      type: "Community Leadership",
+      logoUrl: "assets/icon-partners.png",
+      desc: "Local town chiefs, women-led savings cooperatives, and youth mentors powering household-level census and child safeguarding."
+    }
+  ];
+
+  function getPartners() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {}
+    return DEFAULT_PARTNERS;
+  }
+
+  function savePartners(partners) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(partners));
+      window.dispatchEvent(new Event("uaf_partners_updated"));
+    } catch (e) {
+      console.error("Failed to save partners to storage:", e);
+    }
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+  }
+
+  function renderPartnersModule(container, session) {
+    let partners = getPartners();
+    let editingIndex = -1;
+    let currentLogoDataUrl = "";
+
+    function refresh() {
+      partners = getPartners();
+      render();
+    }
+
+    function render() {
+      container.innerHTML = `
+        <div class="admin-module-header">
+          <div>
+            <h2>Partners &amp; Collaborators Management</h2>
+            <p class="admin-muted" style="margin-top:4px;">Manage partner organizations, institutional collaborators, and official logos displayed on the UAF platform.</p>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button id="partner-reset-btn" class="btn btn--outline" style="font-size:12px;">Reset Defaults</button>
+            <button id="partner-add-btn" class="btn btn--primary" style="font-size:12px;">+ Add Partner</button>
+          </div>
+        </div>
+
+        <div id="partner-flash" style="margin-bottom:12px;"></div>
+
+        <div class="admin-table-wrap">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th style="width:70px;text-align:center;">Logo</th>
+                <th>Partner Name</th>
+                <th>Classification / Type</th>
+                <th>Description</th>
+                <th style="width:130px;">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${partners.map((p, idx) => `
+                <tr>
+                  <td style="text-align:center;vertical-align:middle;">
+                    <div style="width:48px;height:48px;background:#fff;border:1px solid var(--ink-200);border-radius:8px;padding:4px;display:flex;align-items:center;justify-content:center;margin:0 auto;overflow:hidden;">
+                      <img src="${p.logoUrl || '../assets/uaf-logo.png'}" alt="${escapeHtml(p.name)}" style="max-width:100%;max-height:100%;object-fit:contain;" />
+                    </div>
+                  </td>
+                  <td><strong>${escapeHtml(p.name)}</strong></td>
+                  <td><span class="admin-badge admin-badge--neutral">${escapeHtml(p.type || "Partner")}</span></td>
+                  <td style="max-width:320px;font-size:12.5px;color:var(--ink-700);">${escapeHtml(p.desc || "")}</td>
+                  <td>
+                    <div style="display:flex;gap:6px;">
+                      <button class="btn btn--outline partner-edit-btn" data-index="${idx}" style="padding:4px 8px;font-size:11.5px;">Edit</button>
+                      <button class="btn btn--outline partner-delete-btn" data-index="${idx}" style="padding:4px 8px;font-size:11.5px;color:var(--red-700);">Delete</button>
+                    </div>
+                  </td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Add/Edit Partner Modal -->
+        <div id="partner-modal" class="admin-modal-overlay is-hidden">
+          <div class="admin-modal" style="max-width:520px;">
+            <h3 id="partner-modal-title">Edit Partner</h3>
+            <form id="partner-form" style="margin-top:14px;">
+              <div class="form-field">
+                <label for="partner-name">Partner / Organization Name *</label>
+                <input type="text" id="partner-name" placeholder="e.g. Ministry of Education" required />
+              </div>
+
+              <div class="form-field">
+                <label for="partner-type">Classification / Partnership Type *</label>
+                <input type="text" id="partner-type" placeholder="e.g. Implementing Organization, Founding Coalition, Donor" required />
+              </div>
+
+              <div class="form-field">
+                <label>Partner Logo (Upload File or Enter URL) *</label>
+                <div style="display:flex;gap:12px;align-items:center;margin-top:4px;">
+                  <div style="width:60px;height:60px;background:#fff;border:1px solid var(--ink-200);border-radius:8px;padding:4px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;">
+                    <img id="partner-logo-preview" src="../assets/uaf-logo.png" alt="Logo preview" style="max-width:100%;max-height:100%;object-fit:contain;" />
+                  </div>
+                  <div style="flex:1;">
+                    <input type="file" id="partner-logo-file" accept="image/*" style="font-size:12px;margin-bottom:6px;width:100%;" />
+                    <input type="text" id="partner-logo-url" placeholder="Or enter logo path/URL e.g. assets/nic-logo.png" style="font-size:12px;" />
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-field">
+                <label for="partner-desc">Description / Scope of Collaboration *</label>
+                <textarea id="partner-desc" rows="3" placeholder="Explain the role, alignment, and collaborative impact..." required></textarea>
+              </div>
+
+              <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+                <button type="button" id="partner-modal-cancel" class="btn btn--outline">Cancel</button>
+                <button type="submit" class="btn btn--primary">Save Partner</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      `;
+
+      // Handlers
+      const modal = container.querySelector("#partner-modal");
+      const modalTitle = container.querySelector("#partner-modal-title");
+      const form = container.querySelector("#partner-form");
+      const cancelBtn = container.querySelector("#partner-modal-cancel");
+      const logoFileInput = container.querySelector("#partner-logo-file");
+      const logoUrlInput = container.querySelector("#partner-logo-url");
+      const logoPreview = container.querySelector("#partner-logo-preview");
+
+      function updateLogoPreview(src) {
+        logoPreview.src = src || "../assets/uaf-logo.png";
+      }
+
+      logoFileInput.addEventListener("change", () => {
+        if (logoFileInput.files && logoFileInput.files[0]) {
+          const file = logoFileInput.files[0];
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            currentLogoDataUrl = e.target.result;
+            logoUrlInput.value = "";
+            updateLogoPreview(currentLogoDataUrl);
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      logoUrlInput.addEventListener("input", () => {
+        if (logoUrlInput.value.trim()) {
+          currentLogoDataUrl = logoUrlInput.value.trim();
+          updateLogoPreview(currentLogoDataUrl);
+        }
+      });
+
+      container.querySelector("#partner-add-btn").addEventListener("click", () => {
+        editingIndex = -1;
+        currentLogoDataUrl = "assets/nic-logo.png";
+        modalTitle.textContent = "Add New Partner";
+        form.reset();
+        logoUrlInput.value = "assets/nic-logo.png";
+        updateLogoPreview("assets/nic-logo.png");
+        modal.classList.remove("is-hidden");
+      });
+
+      container.querySelector("#partner-reset-btn").addEventListener("click", () => {
+        if (confirm("Reset partners list to default UAF partners?")) {
+          savePartners(DEFAULT_PARTNERS);
+          refresh();
+          showFlash("Partners reset to default baseline.", "success");
+        }
+      });
+
+      container.querySelectorAll(".partner-edit-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.index);
+          const p = partners[idx];
+          if (!p) return;
+          editingIndex = idx;
+          modalTitle.textContent = "Edit Partner: " + p.name;
+          form.reset();
+          document.getElementById("partner-name").value = p.name || "";
+          document.getElementById("partner-type").value = p.type || "";
+          document.getElementById("partner-desc").value = p.desc || "";
+          currentLogoDataUrl = p.logoUrl || "assets/uaf-logo.png";
+          logoUrlInput.value = p.logoUrl || "";
+          updateLogoPreview(currentLogoDataUrl);
+          modal.classList.remove("is-hidden");
+        });
+      });
+
+      container.querySelectorAll(".partner-delete-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const idx = Number(btn.dataset.index);
+          const p = partners[idx];
+          if (!p) return;
+          if (confirm(`Are you sure you want to delete "${p.name}"?`)) {
+            partners.splice(idx, 1);
+            savePartners(partners);
+            refresh();
+            showFlash(`Deleted "${p.name}".`, "success");
+          }
+        });
+      });
+
+      cancelBtn.addEventListener("click", () => {
+        modal.classList.add("is-hidden");
+      });
+
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const name = document.getElementById("partner-name").value.trim();
+        const type = document.getElementById("partner-type").value.trim();
+        const desc = document.getElementById("partner-desc").value.trim();
+        const logo = currentLogoDataUrl || logoUrlInput.value.trim() || "assets/uaf-logo.png";
+
+        const updated = {
+          id: editingIndex >= 0 ? partners[editingIndex].id : "part_" + Date.now(),
+          name,
+          type,
+          desc,
+          logoUrl: logo
+        };
+
+        if (editingIndex >= 0) {
+          partners[editingIndex] = updated;
+          showFlash(`Updated partner "${updated.name}".`, "success");
+        } else {
+          partners.push(updated);
+          showFlash(`Added new partner "${updated.name}".`, "success");
+        }
+
+        savePartners(partners);
+        modal.classList.add("is-hidden");
+        refresh();
+      });
+    }
+
+    function showFlash(msg, type) {
+      const el = container.querySelector("#partner-flash");
+      if (!el) return;
+      el.innerHTML = `<div class="admin-flash admin-flash--${type}">${escapeHtml(msg)}</div>`;
+      setTimeout(() => { el.innerHTML = ""; }, 3500);
+    }
+
+    render();
+  }
+
+  // Register with Admin Module registry
+  if (window.__uafRegisterAdminModule) {
+    window.__uafRegisterAdminModule("partners", renderPartnersModule);
+  }
+})();
