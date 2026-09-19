@@ -41,7 +41,7 @@
     if (raw === "statistics" || raw === "stats") return "statistics";
     if (raw === "impact-drive" || raw === "impact" || raw === "communities" || raw === "works") return "impact-drive";
     if (raw === "request-data" || raw === "request" || raw === "evidence") return "request-data";
-    if (raw === "submit-ossc" || raw === "report" || raw === "ossc") return "submit-ossc";
+    if (raw === "submit-ossc" || raw === "identify-ossc" || raw === "report" || raw === "ossc") return "submit-ossc";
     if (raw === "partners" || raw === "partner" || raw === "collaborators") return "partners";
 
     return ROUTES.includes(raw) ? raw : "menu";
@@ -440,30 +440,63 @@
   window.addEventListener("offline", updateOnlineStatus);
 
   /* ---------------------------------------------------------
-     PWA INSTALL PROMPT
+     PWA INSTALL PROMPT & GUIDED DIALOG
   --------------------------------------------------------- */
   let deferredPrompt = null;
   function initInstall() {
     const installBtns = document.querySelectorAll("[data-action='install']");
+    const guideBackdrop = document.getElementById("install-guide-backdrop");
+    const guideClose = document.getElementById("install-guide-close");
+    const promptTrigger = document.getElementById("install-prompt-trigger");
 
     window.addEventListener("beforeinstallprompt", (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      installBtns.forEach((btn) => btn.classList.remove("is-hidden"));
     });
 
-    installBtns.forEach((btn) => {
-      btn.addEventListener("click", async () => {
-        if (!deferredPrompt) return;
+    function openInstallGuide() {
+      if (deferredPrompt) {
         deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt = null;
+        deferredPrompt.userChoice.then(() => {
+          deferredPrompt = null;
+        });
+      } else if (guideBackdrop) {
+        guideBackdrop.classList.remove("is-hidden");
+      } else {
+        showToast("To install, use your browser's 'Add to Home Screen' or 'Install' menu option.");
+      }
+    }
+
+    installBtns.forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        openInstallGuide();
       });
     });
 
+    guideClose?.addEventListener("click", () => {
+      guideBackdrop?.classList.add("is-hidden");
+    });
+
+    guideBackdrop?.addEventListener("click", (e) => {
+      if (e.target === guideBackdrop) guideBackdrop.classList.add("is-hidden");
+    });
+
+    promptTrigger?.addEventListener("click", () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+          deferredPrompt = null;
+          guideBackdrop?.classList.add("is-hidden");
+        });
+      } else {
+        showToast("Follow the browser instructions shown above to install!");
+      }
+    });
+
     window.addEventListener("appinstalled", () => {
-      installBtns.forEach((btn) => btn.classList.add("is-hidden"));
-      showToast("UAF Impact installed. Thank you.");
+      guideBackdrop?.classList.add("is-hidden");
+      showToast("UAF Impact installed successfully!");
     });
   }
 
