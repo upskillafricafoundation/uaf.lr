@@ -1,10 +1,10 @@
 /* =========================================================
-   UAF IMPACT — SERVICE WORKER (OFFLINE-FIRST ENGINE v7)
+   UAF IMPACT — SERVICE WORKER (OFFLINE-FIRST ENGINE v8)
    Caches the complete app shell (markup, styles, scripts,
    icons, media assets) for full offline execution and auto-sync.
    ========================================================= */
 
-const CACHE_VERSION = "uaf-impact-shell-v7";
+const CACHE_VERSION = "uaf-impact-shell-v8";
 const APP_SHELL = [
   "./",
   "./index.html",

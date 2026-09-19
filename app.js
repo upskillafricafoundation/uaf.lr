@@ -433,7 +433,15 @@
     const doneBtn = document.getElementById("story-modal-done-btn");
 
     function closeModal() {
-      modal?.classList.add("is-hidden");
+      if (modal) {
+        modal.classList.add("is-hidden");
+        modal.style.display = "none";
+      }
+    }
+
+    if (modal) {
+      modal.classList.add("is-hidden");
+      modal.style.display = "none";
     }
 
     closeBtn?.addEventListener("click", closeModal);
@@ -466,6 +474,7 @@
         if (narEl) narEl.textContent = story.narrative || "";
 
         modal.classList.remove("is-hidden");
+        modal.style.display = "flex";
       });
     });
   }
