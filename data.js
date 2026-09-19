@@ -331,13 +331,41 @@
       });
     });
   }
-  window.addEventListener("uaf_programs_updated", renderUafPrograms);
+  /* ---------------------------------------------------------
+     RENDER — PARTNERS (from storage or defaults)
+  --------------------------------------------------------- */
+  function renderPartners() {
+    const container = document.getElementById("partners-grid-display");
+    if (!container) return;
+    let partners = null;
+    try {
+      const stored = localStorage.getItem("uaf_partners");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) partners = parsed;
+      }
+    } catch (e) {}
+    if (!partners) return;
+
+    container.innerHTML = partners.map((p) => `
+      <div class="partner-card">
+        <div class="partner-card__logo-wrap">
+          <img src="${p.logoUrl || 'assets/uaf-logo.png'}" alt="${escapeHtml(p.name)}" class="partner-card__logo" />
+        </div>
+        <div class="partner-card__title">${escapeHtml(p.name)}</div>
+        <div class="partner-card__type">${escapeHtml(p.type || "Partner")}</div>
+        <p class="partner-card__desc">${escapeHtml(p.desc || "")}</p>
+      </div>
+    `).join("");
+  }
+  window.addEventListener("uaf_partners_updated", renderPartners);
 
   function renderAll() {
     renderCommunitiesStatistics();
     renderFundingGap();
     renderImpactDashboard();
     renderUafPrograms();
+    renderPartners();
   }
 
   /* ---------------------------------------------------------
@@ -406,36 +434,82 @@
       const submitBtn = form.querySelector('button[type="submit"]');
       const reporterName = document.getElementById("rep-name")?.value.trim() || "";
       const reporterPhone = document.getElementById("rep-phone")?.value.trim() || "";
-      const county = document.getElementById("rep-county")?.value.trim() || "";
       const community = document.getElementById("rep-community")?.value.trim() || "";
+      const county = document.getElementById("rep-county")?.value.trim() || "";
       const childCount = Number(document.getElementById("rep-count")?.value) || 0;
-      const notes = document.getElementById("rep-notes")?.value.trim() || "";
+
+      const childName = document.getElementById("rep-child-name")?.value.trim() || "";
+      const gender = document.getElementById("rep-child-gender")?.value.trim() || "";
+      const childCommunity = document.getElementById("rep-child-community")?.value.trim() || "";
+      const childCounty = document.getElementById("rep-child-county")?.value.trim() || "";
+      const photoInput = document.getElementById("rep-child-photo");
+      const yearsOut = document.getElementById("rep-years-out")?.value.trim() || "";
+      const currentClass = document.getElementById("rep-current-class")?.value.trim() || "";
+      const causeOfExclusion = document.getElementById("rep-cause")?.value.trim() || "";
+      const parentName = document.getElementById("rep-parent-name")?.value.trim() || "";
+      const parentPhone = document.getElementById("rep-parent-phone")?.value.trim() || "";
+      const statement = document.getElementById("rep-statement")?.value.trim() || "";
       const consent = document.getElementById("rep-consent")?.checked || false;
 
-      if (!reporterName || !reporterPhone || !county || !community || childCount <= 0 || !consent) {
+      if (!reporterName || !reporterPhone || !county || !community || childCount <= 0 || !childName || !gender || !childCommunity || !childCounty || !yearsOut || !currentClass || !causeOfExclusion || !statement || !consent) {
         window.__uafShowToast?.("Please complete all required fields and verify consent.");
         return;
       }
 
+      submitBtn?.setAttribute("disabled", "true");
+
+      // Read photo as base64 if present
+      let photoData = "";
+      if (photoInput && photoInput.files && photoInput.files[0]) {
+        try {
+          photoData = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = () => resolve("");
+            reader.readAsDataURL(photoInput.files[0]);
+          });
+        } catch (err) {
+          console.warn("Photo read failed", err);
+        }
+      }
+
+      const payload = {
+        action: "submitOutOfSchoolReport",
+        reporterName,
+        reporterPhone,
+        community,
+        county,
+        childCount,
+        childName,
+        gender,
+        childCommunity,
+        childCounty,
+        photoData,
+        yearsOut,
+        currentClass,
+        causeOfExclusion,
+        parentName,
+        parentPhone,
+        statement,
+        consent,
+        timestamp: new Date().toISOString()
+      };
+
       if (!isConfigured) {
+        // Store report locally in localStorage for mock/offline verification
+        try {
+          const reports = JSON.parse(localStorage.getItem("uaf_ossc_reports") || "[]");
+          reports.unshift(payload);
+          localStorage.setItem("uaf_ossc_reports", JSON.stringify(reports));
+        } catch (_) {}
+
         window.__uafShowToast?.("Report submitted! A UAF verifier will investigate before publication.");
         form.reset();
+        submitBtn?.removeAttribute("disabled");
         return;
       }
 
-      submitBtn?.setAttribute("disabled", "true");
       try {
-        const payload = {
-          action: "submitOutOfSchoolReport",
-          reporterName,
-          reporterPhone,
-          county,
-          community,
-          childCount,
-          notes,
-          consent
-        };
-
         const res = await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
