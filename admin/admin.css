@@ -3,8 +3,8 @@
    Reuses the color/spacing tokens defined in ../styles.css
    (:root variables). Only admin-specific layout lives here.
    ========================================================= */
-*, *::before, *::after, html, body, input, button, select, textarea {
-  font-family: 'Lorem ipsum dolor sit amet' !important;
+*, *::before, *::after, html, body, button, input, select, textarea, h1, h2, h3, h4, h5, h6, p, span, a, label {
+  font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
 }
 
 :root {
