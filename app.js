@@ -480,68 +480,173 @@
       if (e.target === modal) closeModal();
     });
 
-    document.querySelectorAll("[data-story-id]").forEach((el) => {
-      el.addEventListener("click", (e) => {
+    function formatUSD(num) {
+      const n = Number(num) || 0;
+      return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function openStoryDetailModal(storyId) {
+      const story = window.__uafGetStory && window.__uafGetStory(storyId);
+      if (!story || !modal) return;
+
+      // Track and increment view count when user clicks story to read details
+      incrementStoryView(storyId);
+
+      const tagEl = document.getElementById("story-modal-tag");
+      const locEl = document.getElementById("story-modal-location");
+      const titleEl = document.getElementById("story-modal-title");
+      const quoteEl = document.getElementById("story-modal-quote");
+      const authorEl = document.getElementById("story-modal-author");
+      const actEl = document.getElementById("story-modal-activities");
+      const narEl = document.getElementById("story-modal-narrative");
+      const imgEl = document.getElementById("story-modal-img");
+      const imgWrap = document.getElementById("story-modal-img-wrap");
+      const fundingWrap = document.getElementById("story-modal-funding-wrap");
+      const raisedEl = document.getElementById("story-modal-raised-val");
+      const goalEl = document.getElementById("story-modal-goal-val");
+      const fillEl = document.getElementById("story-modal-funding-fill");
+
+      if (tagEl) tagEl.textContent = story.tag || story.category || "Community Story";
+      if (locEl) locEl.textContent = `${story.community ? story.community + " · " : ""}${story.county || "Liberia"}`;
+      if (titleEl) titleEl.textContent = story.title || "";
+
+      // Story image
+      if (imgEl && imgWrap) {
+        if (story.imageUrl) {
+          imgEl.src = story.imageUrl;
+          imgWrap.style.display = "block";
+        } else {
+          imgWrap.style.display = "none";
+        }
+      }
+
+      // Amount raised & target progress bar
+      if (fundingWrap) {
+        const raised = Number(story.amountRaised || 0);
+        const goal = Number(story.fundingGoal || 0);
+        if (raised > 0 || goal > 0) {
+          fundingWrap.style.display = "block";
+          if (raisedEl) raisedEl.textContent = formatUSD(raised) + " raised";
+          if (goalEl) goalEl.textContent = goal > 0 ? "of " + formatUSD(goal) + " target" : "";
+          if (fillEl) {
+            const pct = goal > 0 ? Math.min(100, Math.round((raised / goal) * 100)) : 100;
+            fillEl.style.width = pct + "%";
+          }
+        } else {
+          fundingWrap.style.display = "none";
+        }
+      }
+
+      if (quoteEl) quoteEl.textContent = story.testimonial || "";
+      if (authorEl) authorEl.textContent = `— ${story.speaker || "Beneficiary Story"}`;
+      if (actEl) actEl.textContent = story.activities || "Field verification, tuition sponsorship, and learning kits distribution.";
+      if (narEl) narEl.textContent = story.narrative || story.summary || "";
+
+      modal.classList.remove("is-hidden");
+      modal.style.display = "flex";
+    }
+
+    window.__uafOpenStoryDetailModal = openStoryDetailModal;
+
+    // Event delegation on document to handle any dynamically rendered story cards
+    document.addEventListener("click", (e) => {
+      const trigger = e.target.closest("[data-story-id]");
+      if (!trigger) return;
+      // Do not trigger if clicking a button with other explicit actions inside
+      const storyId = trigger.dataset.storyId;
+      if (storyId) {
         e.stopPropagation();
-        const storyId = el.dataset.storyId;
-        const story = window.__uafGetStory && window.__uafGetStory(storyId);
-        if (!story || !modal) return;
-
-        // Track and increment view count when user clicks story to read details
-        incrementStoryView(storyId);
-
-        const tagEl = document.getElementById("story-modal-tag");
-        const locEl = document.getElementById("story-modal-location");
-        const titleEl = document.getElementById("story-modal-title");
-        const quoteEl = document.getElementById("story-modal-quote");
-        const authorEl = document.getElementById("story-modal-author");
-        const actEl = document.getElementById("story-modal-activities");
-        const narEl = document.getElementById("story-modal-narrative");
-
-        if (tagEl) tagEl.textContent = story.tag || "Community Story";
-        if (locEl) locEl.textContent = `${story.community || ""} · ${story.county || "Liberia"}`;
-        if (titleEl) titleEl.textContent = story.title || "";
-        if (quoteEl) quoteEl.textContent = story.testimonial || "";
-        if (authorEl) authorEl.textContent = `— ${story.speaker || "Community Member"}`;
-        if (actEl) actEl.textContent = story.activities || "";
-        if (narEl) narEl.textContent = story.narrative || "";
-
-        modal.classList.remove("is-hidden");
-        modal.style.display = "flex";
-      });
+        openStoryDetailModal(storyId);
+      }
     });
   }
 
   /* ---------------------------------------------------------
      COLLAPSIBLE DONATE FORM TOGGLE (In Fundraising Tab)
   --------------------------------------------------------- */
-  function initDonateToggle() {
-    const toggleBtn = document.getElementById("btn-toggle-donate-form");
+  function openDonationForm(impactArea) {
+    goTo("donate");
     const formWrapper = document.getElementById("donation-form-wrapper");
-    if (!toggleBtn || !formWrapper) return;
+    const toggleBtn = document.getElementById("btn-toggle-donate-form");
+    const textSpan = document.getElementById("btn-donate-toggle-text");
 
-    formWrapper.style.display = "none";
-    toggleBtn.classList.remove("is-open");
-    toggleBtn.setAttribute("aria-expanded", "false");
+    if (formWrapper) {
+      formWrapper.style.display = "block";
+    }
+    if (toggleBtn) {
+      toggleBtn.classList.add("is-open");
+      toggleBtn.setAttribute("aria-expanded", "true");
+    }
+    if (textSpan) {
+      textSpan.textContent = "Close Donation Form";
+    }
 
-    toggleBtn.addEventListener("click", () => {
-      const isHidden = formWrapper.style.display === "none" || !formWrapper.style.display;
-      const textSpan = document.getElementById("btn-donate-toggle-text");
-      if (isHidden) {
-        formWrapper.style.display = "block";
+    if (impactArea) {
+      const impactAreaSelect = document.getElementById("don-impact-area");
+      if (impactAreaSelect) {
+        for (let i = 0; i < impactAreaSelect.options.length; i++) {
+          if (impactAreaSelect.options[i].text.toLowerCase().includes(impactArea.toLowerCase()) || impactAreaSelect.options[i].value.toLowerCase().includes(impactArea.toLowerCase())) {
+            impactAreaSelect.selectedIndex = i;
+            break;
+          }
+        }
+      }
+    }
+
+    setTimeout(() => {
+      if (formWrapper) {
+        formWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+      const nameInput = document.getElementById("don-name");
+      if (nameInput) nameInput.focus();
+    }, 120);
+  }
+  window.__uafOpenDonationForm = openDonationForm;
+
+  function toggleDonationForm() {
+    const formWrapper = document.getElementById("donation-form-wrapper");
+    const toggleBtn = document.getElementById("btn-toggle-donate-form");
+    const textSpan = document.getElementById("btn-donate-toggle-text");
+    if (!formWrapper) return;
+
+    const isHidden = formWrapper.style.display === "none" || !formWrapper.style.display;
+    if (isHidden) {
+      formWrapper.style.display = "block";
+      if (toggleBtn) {
         toggleBtn.classList.add("is-open");
         toggleBtn.setAttribute("aria-expanded", "true");
-        if (textSpan) textSpan.textContent = "Close Donation Form";
-        formWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
-        const nameInput = document.getElementById("don-name");
-        if (nameInput) setTimeout(() => nameInput.focus(), 300);
-      } else {
-        formWrapper.style.display = "none";
+      }
+      if (textSpan) textSpan.textContent = "Close Donation Form";
+      formWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+      const nameInput = document.getElementById("don-name");
+      if (nameInput) setTimeout(() => nameInput.focus(), 250);
+    } else {
+      formWrapper.style.display = "none";
+      if (toggleBtn) {
         toggleBtn.classList.remove("is-open");
         toggleBtn.setAttribute("aria-expanded", "false");
-        if (textSpan) textSpan.textContent = "Donate Now";
       }
-    });
+      if (textSpan) textSpan.textContent = "Donate Now";
+    }
+  }
+  window.__uafToggleDonationForm = toggleDonationForm;
+
+  function initDonateToggle() {
+    const toggleBtn = document.getElementById("btn-toggle-donate-form");
+    if (toggleBtn) {
+      toggleBtn.onclick = (e) => {
+        e.preventDefault();
+        toggleDonationForm();
+      };
+    }
+
+    const headerDonateBtn = document.querySelector(".btn-header-donate");
+    if (headerDonateBtn) {
+      headerDonateBtn.onclick = (e) => {
+        e.preventDefault();
+        openDonationForm();
+      };
+    }
   }
 
   /* ---------------------------------------------------------
@@ -654,9 +759,9 @@
   }
 
   /* ---------------------------------------------------------
-     INIT ON DOM READY
+     INIT ON DOM READY & IMMEDIATE EXECUTION FALLBACK
   --------------------------------------------------------- */
-  document.addEventListener("DOMContentLoaded", () => {
+  function initApp() {
     initDonationControls();
     initSearchDialog();
     initInstall();
@@ -667,39 +772,23 @@
 
     // Wire up all [data-goto] elements
     document.querySelectorAll("[data-goto]").forEach((el) => {
-      el.addEventListener("click", () => {
+      el.addEventListener("click", (e) => {
+        const goto = el.dataset.goto;
         const impact = el.dataset.impact;
-        if (impact) {
-          const impactAreaSelect = document.getElementById("don-impact-area");
-          if (impactAreaSelect) {
-            for (let i = 0; i < impactAreaSelect.options.length; i++) {
-              if (impactAreaSelect.options[i].text.includes(impact) || impactAreaSelect.options[i].value.includes(impact)) {
-                impactAreaSelect.selectedIndex = i;
-                break;
-              }
-            }
-          }
+        if (goto === "donate") {
+          e.preventDefault();
+          openDonationForm(impact);
+        } else {
+          goTo(goto);
         }
-        goTo(el.dataset.goto);
       });
     });
 
-    // Story donate buttons specifically
-    document.querySelectorAll(".btn-story-donate").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const impact = btn.dataset.impact;
-        if (impact) {
-          const impactAreaSelect = document.getElementById("don-impact-area");
-          if (impactAreaSelect) {
-            for (let i = 0; i < impactAreaSelect.options.length; i++) {
-              if (impactAreaSelect.options[i].text.includes(impact) || impactAreaSelect.options[i].value.includes(impact)) {
-                impactAreaSelect.selectedIndex = i;
-                break;
-              }
-            }
-          }
-        }
-        goTo("donate");
+    // Wire up all donate buttons across the app
+    document.querySelectorAll(".btn-header-donate, .btn-story-donate, .btn-campaign-donate").forEach((btn) => {
+      btn.addEventListener("click", (e) => {
+        e.preventDefault();
+        openDonationForm(btn.dataset.impact);
       });
     });
 
@@ -711,5 +800,11 @@
     window.__uafDataInit && window.__uafDataInit();
 
     console.info("UAF Impact —", APP_VERSION);
-  });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initApp);
+  } else {
+    initApp();
+  }
 })();

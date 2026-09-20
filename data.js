@@ -40,47 +40,239 @@
   window.UAF_COUNTIES = ALL_15_COUNTIES;
 
   /* ---------------------------------------------------------
-     ACTIVE COMMUNITY STORIES & CAMPAIGNS DATASET
+     ACTIVE COMMUNITY STORIES & CAMPAIGNS DATASET (Dynamic Store)
   --------------------------------------------------------- */
-  const COMMUNITY_STORIES = {
-    story_blessing: {
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+  }
+
+  function formatMoney(num) {
+    const n = Number(num) || 0;
+    return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  const DEFAULT_STORIES_DATASET = [
+    {
       id: "story_blessing",
       title: "Blessing's Journey Back to the Classroom",
+      category: "No Invisible Child",
       tag: "No Invisible Child Flagship",
       community: "West Point",
       county: "Montserrado",
+      storyDate: "2026-02-15",
+      imageUrl: "assets/uaf-logo.png",
+      amountRaised: 5250,
+      fundingGoal: 7000,
       speaker: "Blessing K., Age 9 & Her Mother Ma Musu",
       testimonial: "“I thought I would sell cold water forever. When Teacher Joseph from UAF came to our zinc house with books and uniform, I cried. Now I am 1st place in Grade 3!”",
       activities: "Door-to-door community verification in West Point informal settlements, tuition waiver sponsorship, distribution of backpacks, geometry sets, shoes, and two full school uniforms, plus monthly academic check-ins.",
-      narrative: "Blessing was forced out of school when her mother contracted a chronic illness and could no longer afford school registration. For 18 months, Blessing spent 9 hours every day dodging commercial vehicles along the Waterside traffic corridor selling plastic water sachets to generate 250 LRD ($1.30) for daily food. During the UAF door-to-door enumeration, field officers identified Blessing and enrolled her in the No Invisible Child initiative. UAF cleared her outstanding fees at St. Mary Public School, provided study materials, and enrolled her mother into our women's micro-enterprise savings group. Today, Blessing has maintained an exceptional 92% cumulative average and dreams of becoming a pediatric physician in Liberia."
+      narrative: "Blessing was forced out of school when her mother contracted a chronic illness and could no longer afford school registration. For 18 months, Blessing spent 9 hours every day dodging commercial vehicles along the Waterside traffic corridor selling plastic water sachets to generate 250 LRD ($1.30) for daily food. During the UAF door-to-door enumeration, field officers identified Blessing and enrolled her in the No Invisible Child initiative. UAF cleared her outstanding fees at St. Mary Public School, provided study materials, and enrolled her mother into our women's micro-enterprise savings group. Today, Blessing has maintained an exceptional 92% cumulative average and dreams of becoming a pediatric physician in Liberia.",
+      summary: "From selling cold water in crowded Waterside traffic to topping her Grade 3 class in West Point after UAF paid her tuition and learning supplies.",
+      status: "PUBLISHED",
+      views: 0
     },
-    story_comfort: {
+    {
       id: "story_comfort",
       title: "Mother Comfort's Soap-Making Cooperative",
+      category: "Women Livelihood Empowerment",
       tag: "Women Livelihood Empowerment",
       community: "Duport Road",
       county: "Montserrado",
+      storyDate: "2026-03-01",
+      imageUrl: "assets/icon-partners.png",
+      amountRaised: 8800,
+      fundingGoal: 10000,
       speaker: "Mother Comfort Toe, Cooperative Lead",
       testimonial: "“Before UAF trained us, every school opening was agony. We could not pay tuition. Today, our cooperative produces 300 soap bars weekly. My children will never drop out again.”",
       activities: "Intensive 6-week hands-on vocational training in cold-process laundry and medicated soap formulating, household financial bookkeeping, group rotating savings (Susu), and collective market distribution.",
-      narrative: "In Paynesville, single mothers often face severe income volatility that causes their children to be sent home for tuition arrears mid-semester. To break this recurrent cycle, Upskill Africa Foundation established the Duport Road Women's Empowerment Guild. 25 mothers completed practical skill development in industrial liquid soap, dishwashing solution, and laundry bar formulation. Equipped with starter chemical kits and bulk molds, the cooperative now supplies regional vendors and community schools. Profit distribution directly funds a dedicated children's education account, permanently securing the schooling of 68 children who were previously on the verge of school dropout."
+      narrative: "In Paynesville, single mothers often face severe income volatility that causes their children to be sent home for tuition arrears mid-semester. To break this recurrent cycle, Upskill Africa Foundation established the Duport Road Women's Empowerment Guild. 25 mothers completed practical skill development in industrial liquid soap, dishwashing solution, and laundry bar formulation. Equipped with starter chemical kits and bulk molds, the cooperative now supplies regional vendors and community schools. Profit distribution directly funds a dedicated children's education account, permanently securing the schooling of 68 children who were previously on the verge of school dropout.",
+      summary: "How practical soap formulating and savings cooperatives enabled 25 mothers in Duport Road to independently keep 68 children in school.",
+      status: "PUBLISHED",
+      views: 0
     },
-    story_emmanuel: {
+    {
       id: "story_emmanuel",
       title: "Breaking the Digital Divide in Margibi",
+      category: "Alternative Learning (ALP)",
       tag: "Alternative Learning Program (ALP)",
       community: "Kakata",
       county: "Margibi",
+      storyDate: "2026-03-10",
+      imageUrl: "assets/icon-impact.jpg",
+      amountRaised: 6800,
+      fundingGoal: 10000,
       speaker: "Emmanuel Flomo, Age 17, ALP Graduate",
       testimonial: "“I had never touched a computer keyboard in my life. UAF taught me how to type, format documents, and research on the internet. Now I work as a data clerk at Kakata Central Market.”",
       activities: "12-week modular curriculum covering fundamental computer hardware, touch typing, document formatting in Word and Excel, digital safety, resume building, and career mentorship for out-of-school teenagers.",
-      narrative: "In post-secondary and informal employment across Liberia, basic digital literacy is a mandatory requirement. Adolescents who miss traditional secondary schooling are often locked out of clerical and logistics opportunities. Through the UAF Alternative Learning Program (ALP) Hub in Kakata, Emmanuel and 34 other out-of-school youth attended daily computer sessions powered by solar backup. Over 12 weeks, Emmanuel progressed from zero digital exposure to proficient spreadsheet data entry and typing 45 WPM. Upon graduation, he secured an apprentice recording role with a local produce cooperative, using his earned wage to self-fund his evening high school completion."
+      narrative: "In post-secondary and informal employment across Liberia, basic digital literacy is a mandatory requirement. Adolescents who miss traditional secondary schooling are often locked out of clerical and logistics opportunities. Through the UAF Alternative Learning Program (ALP) Hub in Kakata, Emmanuel and 34 other out-of-school youth attended daily computer sessions powered by solar backup. Over 12 weeks, Emmanuel progressed from zero digital exposure to proficient spreadsheet data entry and typing 45 WPM. Upon graduation, he secured an apprentice recording role with a local produce cooperative, using his earned wage to self-fund his evening high school completion.",
+      summary: "Equipping out-of-school adolescent youth in Kakata with computer literacy, office software, and career counseling for workplace readiness.",
+      status: "PUBLISHED",
+      views: 0
     }
-  };
+  ];
+
+  function getUafStories() {
+    try {
+      const stored = localStorage.getItem("uaf_stories");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return DEFAULT_STORIES_DATASET;
+  }
+  window.__uafGetStories = getUafStories;
 
   window.__uafGetStory = function (storyId) {
-    return COMMUNITY_STORIES[storyId] || null;
+    const list = getUafStories();
+    const found = list.find((s) => (s.id || s.storyId) === storyId);
+    if (found) return found;
+    return null;
   };
+
+  function renderFundraisingStories() {
+    const grid = document.getElementById("fundraising-stories-grid");
+    if (!grid) return;
+
+    const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").toUpperCase() !== "ARCHIVED");
+    if (stories.length === 0) {
+      grid.innerHTML = '<p style="padding:24px;text-align:center;color:var(--ink-400);grid-column:1/-1;">No active community stories at this time.</p>';
+      return;
+    }
+
+    let viewsMap = {};
+    try {
+      viewsMap = JSON.parse(localStorage.getItem("uaf_story_views") || "{}");
+    } catch (_) {}
+
+    grid.innerHTML = stories.map((s) => {
+      const storyId = s.id || s.storyId;
+      const raised = Number(s.amountRaised || 0);
+      const goal = Number(s.fundingGoal || 0);
+      const views = (viewsMap[storyId] != null ? viewsMap[storyId] : (s.views || 0));
+      const goalText = goal > 0 ? `<span class="goal-val">of ${formatMoney(goal)} goal</span>` : "";
+
+      return `
+        <div class="campaign-card campaign-card--clickable" data-story-id="${escapeHtml(storyId)}">
+          <div class="campaign-card__img-wrap">
+            <img src="${s.imageUrl || 'assets/uaf-logo.png'}" alt="${escapeHtml(s.title)}" class="campaign-card__img" onerror="this.src='assets/uaf-logo.png';" />
+            <div class="campaign-card__views-badge">
+              <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              <span class="story-views-count" data-story-views="${escapeHtml(storyId)}">${views} ${views === 1 ? "read" : "reads"}</span>
+            </div>
+          </div>
+          <div class="campaign-card__body">
+            <span class="campaign-card__tag">${escapeHtml(s.tag || s.category || "Field Story")}</span>
+            <h3 class="campaign-card__title">${escapeHtml(s.title)}</h3>
+            <p class="campaign-card__desc">${escapeHtml(s.summary || (s.narrative ? s.narrative.slice(0, 160) + "..." : ""))}</p>
+            <div class="campaign-card__meta">
+              <span class="raised-val">${formatMoney(raised)} raised</span>
+              ${goalText}
+            </div>
+            <div class="story-card-action">
+              <button type="button" class="btn-read-story-trigger" data-story-id="${escapeHtml(storyId)}">
+                <span>Read Full Story &amp; Testimonial</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+  window.__uafRenderFundraisingStories = renderFundraisingStories;
+
+  /* ---------------------------------------------------------
+     PARTNERS & COLLABORATORS DATASET (Dynamic Store)
+  --------------------------------------------------------- */
+  const DEFAULT_PARTNERS_DATASET = [
+    {
+      id: "part_cas",
+      name: "Community School Alliances",
+      type: "Education Access Partner",
+      logoUrl: "assets/uaf-logo.png",
+      desc: "Partnering with verified community primary and junior high schools across Montserrado County to admit out-of-school learners with waived or subsidized fees."
+    },
+    {
+      id: "part_lcpn",
+      name: "Liberia Child Protection Network",
+      type: "Safeguarding Alliance",
+      logoUrl: "assets/nic-logo.png",
+      desc: "Collaborating on child protection referrals, household counseling, and community awareness against child labor and early school drop-outs."
+    },
+    {
+      id: "part_alp",
+      name: "Learning Alternative Program (ALP)",
+      type: "Digital Literacy & Skills",
+      logoUrl: "assets/icon-partners.png",
+      desc: "Empowering youth and young mothers with computer literacy, job readiness, and technology training to fund household educational needs."
+    },
+    {
+      id: "part_clc",
+      name: "Community Leadership Councils",
+      type: "Local Governance",
+      logoUrl: "assets/icon-impact.jpg",
+      desc: "Zone leaders, block chairs, and community elders who guide UAF field verifiers through neighborhoods to identify every out-of-school child."
+    },
+    {
+      id: "part_nic",
+      name: "No Invisible Child (NIC)",
+      type: "Founding Coalition",
+      logoUrl: "assets/nic-logo.png",
+      desc: "Flagship educational initiative ensuring every marginalized out-of-school child in Liberia is identified, supported, and re-enrolled."
+    },
+    {
+      id: "part_uaf",
+      name: "Upskill Africa Foundation",
+      type: "Implementing Organization",
+      logoUrl: "assets/uaf-logo.png",
+      desc: "Community grassroots non-profit dedicated to child protection, literacy, livelihood empowerment, and digital access."
+    }
+  ];
+
+  function getUafPartners() {
+    try {
+      const stored = localStorage.getItem("uaf_partners");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return DEFAULT_PARTNERS_DATASET;
+  }
+  window.__uafGetPartners = getUafPartners;
+
+  function renderPartners() {
+    const container = document.getElementById("partners-grid-display");
+    if (!container) return;
+
+    const partners = getUafPartners();
+    if (partners.length === 0) {
+      container.innerHTML = '<p style="padding:24px;text-align:center;color:var(--ink-400);grid-column:1/-1;">No partners registered yet.</p>';
+      return;
+    }
+
+    container.innerHTML = partners.map((p) => `
+      <div class="partner-card">
+        <div class="partner-card__logo-wrap">
+          <img src="${p.logoUrl || 'assets/uaf-logo.png'}" alt="${escapeHtml(p.name)}" class="partner-card__logo" onerror="this.src='assets/uaf-logo.png';" />
+        </div>
+        <div class="partner-card__title">${escapeHtml(p.name)}</div>
+        <div class="partner-card__type">${escapeHtml(p.type || "Collaborator")}</div>
+        <p class="partner-card__desc">${escapeHtml(p.desc || "")}</p>
+      </div>
+    `).join("");
+  }
+  window.__uafRenderPartners = renderPartners;
+
+  // Real-time synchronization event listeners
+  window.addEventListener("uaf_stories_updated", renderFundraisingStories);
+  window.addEventListener("uaf_partners_updated", renderPartners);
+  window.addEventListener("storage", (e) => {
+    if (e.key === "uaf_stories") renderFundraisingStories();
+    if (e.key === "uaf_partners") renderPartners();
+  });
 
   /* ---------------------------------------------------------
      DEFAULT FALLBACK DATA (Clean Baseline across 15 Counties)
@@ -1041,6 +1233,8 @@
      INIT HOOK
   --------------------------------------------------------- */
   window.__uafDataInit = function () {
+    renderFundraisingStories();
+    renderPartners();
     initSelectorDropdowns();
     initReportForm();
     initEvidenceForm();
