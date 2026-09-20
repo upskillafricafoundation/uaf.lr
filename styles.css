@@ -105,17 +105,15 @@ body.modal-open, html.modal-open {
 
 .app-header {
   height: 64px;
-  background: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--border);
+  background: #004F71;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
   display: flex;
   align-items: center;
   padding: 0 24px;
   position: sticky;
   top: 0;
   z-index: 100;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02);
+  box-shadow: 0 2px 10px rgba(0, 79, 113, 0.25);
 }
 
 .app-header__brand {
@@ -129,13 +127,14 @@ body.modal-open, html.modal-open {
   width: 36px;
   height: 36px;
   object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.2));
 }
 
 .app-header__org-name {
   font-family: var(--font-display);
   font-size: 17px;
   font-weight: 700;
-  color: var(--ink-900);
+  color: #ffffff;
   letter-spacing: -0.2px;
 }
 
@@ -150,8 +149,8 @@ body.modal-open, html.modal-open {
 }
 
 .btn-header-donate {
-  background: var(--green-600);
-  color: #ffffff;
+  background: #ffffff;
+  color: #004F71;
   border: none;
   border-radius: 6px;
   font-family: var(--font-sans);
@@ -159,30 +158,38 @@ body.modal-open, html.modal-open {
   font-size: 13.5px;
   padding: 8px 18px;
   cursor: pointer;
-  transition: background 0.15s ease, transform 0.1s ease;
+  transition: all 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
 }
 
 .btn-header-donate:hover {
-  background: var(--green-700);
+  background: #f0fdf4;
+  color: #00364d;
   transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
 .btn-header-search {
-  background: transparent;
-  border: none;
-  color: var(--ink-500);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px;
+  padding: 7px;
   border-radius: 6px;
   transition: all 0.15s ease;
 }
 
 .btn-header-search:hover {
-  background: var(--border-light);
-  color: var(--ink-900);
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+.btn-header-search svg {
+  stroke: #ffffff;
 }
 
 .btn-header-install {
@@ -428,34 +435,43 @@ body.modal-open, html.modal-open {
    ========================================================= */
 
 .tab-header-nav {
-  background: rgba(255, 255, 255, 0.88);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  border-bottom: 1px solid var(--border);
+  background: #003e59;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   padding: 10px 24px;
   display: flex;
   align-items: center;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
 }
 
 .btn-back-menu {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  background: var(--surface-alt);
-  border: 1px solid var(--ink-300);
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 8px;
   padding: 7px 14px;
   font-size: 13px;
   font-weight: 600;
-  color: var(--ink-700);
+  color: #ffffff;
   cursor: pointer;
   transition: all 0.15s ease;
 }
 
+.btn-back-menu svg {
+  stroke: #ffffff;
+  flex-shrink: 0;
+}
+
+.btn-back-menu span {
+  color: #ffffff;
+}
+
 .btn-back-menu:hover {
-  background: #ffffff;
-  border-color: var(--ink-900);
-  color: var(--ink-900);
+  background: rgba(255, 255, 255, 0.22);
+  border-color: #ffffff;
+  color: #ffffff;
+  transform: translateX(-2px);
 }
 
 .page-container {
@@ -2229,3 +2245,156 @@ body.modal-open, html.modal-open {
 .offline-sync-badge.is-synced {
   background: var(--green-600);
 }
+
+/* =========================================================
+   UAF WAVE FOOTER (Matching Mockup Design)
+   Visible ONLY in Impact Drive, Request Data, and Partnership Tabs
+   ========================================================= */
+
+.uaf-wave-footer {
+  margin-top: 60px;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+
+.uaf-wave-svg-wrap {
+  position: relative;
+  width: 100%;
+  height: 90px;
+  overflow: hidden;
+  line-height: 0;
+  pointer-events: none;
+}
+
+.uaf-wave-svg {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 90px;
+}
+
+.uaf-wave-back {
+  fill: #00364d;
+  opacity: 0.65;
+}
+
+.uaf-wave-front {
+  fill: #004F71;
+}
+
+.uaf-wave-footer__inner {
+  background: #004F71;
+  padding: 10px 24px 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+  z-index: 2;
+}
+
+.uaf-footer-socials {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 22px;
+}
+
+.uaf-social-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  color: #ffffff;
+  text-decoration: none;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.uaf-social-icon-btn:hover {
+  background: #ffffff;
+  color: #004F71;
+  border-color: #ffffff;
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+}
+
+.uaf-social-icon-btn svg {
+  width: 20px;
+  height: 20px;
+}
+
+.uaf-footer-nav-links {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 18px;
+  flex-wrap: wrap;
+  max-width: 820px;
+  margin-bottom: 18px;
+}
+
+.uaf-footer-nav-links a {
+  color: rgba(255, 255, 255, 0.9);
+  text-decoration: none;
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: color 0.15s ease;
+  padding: 4px 6px;
+}
+
+.uaf-footer-nav-links a:hover {
+  color: #ffffff;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.uaf-footer-address {
+  margin-bottom: 10px;
+}
+
+.uaf-footer-address span {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.78);
+  letter-spacing: 0.2px;
+  display: inline-block;
+}
+
+.uaf-footer-copyright span {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.58);
+  letter-spacing: 0.2px;
+  display: inline-block;
+}
+
+@media (max-width: 640px) {
+  .uaf-wave-svg-wrap,
+  .uaf-wave-svg {
+    height: 60px;
+  }
+  .uaf-footer-socials {
+    gap: 8px;
+  }
+  .uaf-social-icon-btn {
+    width: 38px;
+    height: 38px;
+  }
+  .uaf-social-icon-btn svg {
+    width: 17px;
+    height: 17px;
+  }
+  .uaf-footer-nav-links {
+    gap: 6px 12px;
+  }
+  .uaf-footer-nav-links a {
+    font-size: 12.5px;
+  }
+}
+
