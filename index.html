@@ -13,13 +13,10 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="UAF Impact" />
-
- <!-- Load Open Sans from Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet" />
-
-<!-- Force Open Sans globally on all elements and form controls -->
+<link rel="stylesheet" href="styles.css" />
 <style>
   *, *::before, *::after, html, body, input, button, select, textarea, h1, h2, h3, h4, h5, h6, p, span, a, label {
     font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
@@ -63,15 +60,15 @@
          ========================================================= -->
     <section class="screen is-active" data-screen="menu">
       <div class="menu-container">
-        <h1 class="menu-title">IMPACT DRIVE MENU</h1>
+        <h1 class="menu-title">MENU</h1>
 
         <div class="menu-grid">
           <!-- 1. Impact Drive (Uploaded Target Icon) -->
           <div class="menu-card" data-goto="impact-drive">
             <div class="menu-card__icon">
-              <img src="assets/icon-impact.png" alt="Impact Drive" class="menu-card__custom-icon" />
+              <img src="assets/icon-impact.jpg" alt="Impact Drive" class="menu-card__custom-icon" />
             </div>
-            <div class="menu-card__label">Impact</div>
+            <div class="menu-card__label">Impact Drive</div>
           </div>
 
           <!-- 2. Statistics -->
@@ -131,7 +128,7 @@
 
         <div class="menu-footer">
           <p>Protecting Children. Promoting Education. Empowering Communities.</p>
-          <span>Upskill Africa Foundation · Montserrado County, Liberia</span> <br>
+          <span>Upskill Africa Foundation · Montserrado County, Liberia</span>
           <span>Powered by Innovation Enterprise (ie) @2026 All right reserved</span>
           <div class="home-install-wrapper">
             <button type="button" class="btn-home-install" id="home-install-btn" data-action="install" aria-label="Install UAF Impact App">
