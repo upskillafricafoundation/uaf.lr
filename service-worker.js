@@ -4,7 +4,7 @@
    icons, media assets) for full offline execution and auto-sync.
    ========================================================= */
 
-const CACHE_VERSION = "uaf-impact-shell-v9";
+const CACHE_VERSION = "uaf-impact-shell-v13";
 const APP_SHELL = [
   "./",
   "./index.html",
