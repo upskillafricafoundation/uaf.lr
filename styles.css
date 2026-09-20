@@ -52,10 +52,33 @@ html, body, button, input, select, textarea, h1, h2, h3, h4, h5, h6, p, span, a,
 html, body {
   margin: 0;
   padding: 0;
-  background-color: var(--surface-alt);
+  min-height: 100%;
   color: var(--ink-900);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: #f8fafc;
+  background-image: linear-gradient(rgba(248, 250, 252, 0.76), rgba(248, 250, 252, 0.84)), url('assets/hero-bg.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* Global Hero Background fixed layer (smooth across all mobile and desktop devices) */
+.global-hero-bg {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background-image: linear-gradient(rgba(248, 250, 252, 0.76), rgba(248, 250, 252, 0.84)), url('assets/hero-bg.jpg');
+  background-size: cover;
+  background-position: center top;
+  background-repeat: no-repeat;
+  pointer-events: none;
+  z-index: 0;
 }
 
 body.modal-open, html.modal-open {
@@ -76,11 +99,15 @@ body.modal-open, html.modal-open {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  background: transparent;
 }
 
 .app-header {
   height: 64px;
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -274,11 +301,15 @@ body.modal-open, html.modal-open {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
+  background: transparent;
 }
 
 .screen {
   display: none;
   width: 100%;
+  background: transparent;
 }
 
 .screen.is-active {
@@ -286,27 +317,18 @@ body.modal-open, html.modal-open {
 }
 
 /* =========================================================
-   SCREEN 1: MENU GRID (Image 1 Style with Hero Background)
+   SCREEN 1: MENU GRID (Image 1 Style with Global Hero Background)
    ========================================================= */
 
 .screen[data-screen="menu"] {
   position: relative;
   min-height: calc(100vh - 64px);
-  background-color: #f8fafc;
+  background: transparent;
   overflow: hidden;
 }
 
 .screen[data-screen="menu"]::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background-image: url('assets/hero-bg.jpg');
-  background-size: cover;
-  background-position: center top;
-  background-repeat: no-repeat;
-  opacity: 0.22;
-  pointer-events: none;
-  z-index: 0;
+  display: none;
 }
 
 .menu-container {
@@ -406,7 +428,9 @@ body.modal-open, html.modal-open {
    ========================================================= */
 
 .tab-header-nav {
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.88);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-bottom: 1px solid var(--border);
   padding: 10px 24px;
   display: flex;
