@@ -58,6 +58,9 @@
       el.classList.toggle("is-active", el.dataset.nav === route);
     });
 
+    // Toggle non-scrollable home screen mode
+    document.body.classList.toggle("is-home-screen", route === "menu");
+
     // Scroll to top on route change
     const main = document.getElementById("app-main");
     if (main) main.scrollTop = 0;
@@ -759,6 +762,272 @@
   }
 
   /* ---------------------------------------------------------
+     DYNAMIC CHILD PROFILES REPEATER (Screen 6: Submit OSSC)
+  --------------------------------------------------------- */
+  const ALL_15_LIBERIA_COUNTIES = [
+    "Montserrado", "Margibi", "Bong", "Nimba", "Grand Bassa",
+    "Lofa", "Maryland", "Sinoe", "Grand Cape Mount", "Grand Gedeh",
+    "Rivercess", "Grand Kru", "Bomi", "River Gee", "Gbarpolu"
+  ];
+
+  function setupDynamicChildProfiles() {
+    const countInput = document.getElementById("rep-count");
+    const container = document.getElementById("children-profiles-container");
+    if (!countInput || !container) return;
+
+    function renderChildCards(targetCount) {
+      let count = parseInt(targetCount, 10);
+      if (isNaN(count) || count < 1) count = 1;
+      if (count > 20) count = 20;
+
+      // Preserve existing input data before re-rendering
+      const existingCards = container.querySelectorAll(".child-profile-card");
+      const preserved = [];
+      existingCards.forEach((c) => {
+        preserved.push({
+          name: c.querySelector(".child-name")?.value || "",
+          gender: c.querySelector(".child-gender")?.value || "",
+          age: c.querySelector(".child-age")?.value || "",
+          origin: c.querySelector(".child-origin")?.value || "",
+          community: c.querySelector(".child-community")?.value || "",
+          livingWith: c.querySelector(".child-living-with")?.value || "",
+          parentName: c.querySelector(".parent-name")?.value || "",
+          parentPhone: c.querySelector(".parent-phone")?.value || "",
+          yearsOut: c.querySelector(".child-years-out")?.value || "",
+          currentClass: c.querySelector(".child-class")?.value || "",
+          cause: c.querySelector(".child-cause")?.value || "",
+          abuseObs: c.querySelector(".child-abuse-obs")?.value || "No",
+          abuseType: c.querySelector(".child-abuse-type")?.value || "",
+          statement: c.querySelector(".child-statement")?.value || "",
+          consent: c.querySelector(".child-consent")?.checked || false
+        });
+      });
+
+      const countyOptionsHtml = ALL_15_LIBERIA_COUNTIES.map(
+        (co) => `<option value="${co}">${co} County</option>`
+      ).join("");
+
+      let html = "";
+      for (let i = 1; i <= count; i++) {
+        html += `
+          <div class="child-profile-card" data-child-index="${i}">
+            <div class="child-profile-card-header">
+              <span>Child #${i} Profile &amp; Case Details</span>
+              <span style="font-size:11px;font-weight:normal;opacity:0.9;">Case Record ${i} of ${count}</span>
+            </div>
+
+            <!-- Basic Child Bio -->
+            <div class="form-row-2">
+              <div class="form-field">
+                <label>Child full name *</label>
+                <input type="text" class="child-name" placeholder="Child's full name" required />
+              </div>
+              <div class="form-field">
+                <label>Gender *</label>
+                <select class="child-gender" required>
+                  <option value="">Select Gender</option>
+                  <option value="Female">Female</option>
+                  <option value="Male">Male</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-field">
+                <label>Child Age *</label>
+                <input type="number" class="child-age" min="3" max="21" placeholder="Age (3–21)" required />
+              </div>
+              <div class="form-field">
+                <label>Child Origin (County) *</label>
+                <select class="child-origin" required>
+                  <option value="">Select County of Origin</option>
+                  ${countyOptionsHtml}
+                </select>
+              </div>
+            </div>
+
+            <div class="form-row-2">
+              <div class="form-field">
+                <label>Child's Community / Town *</label>
+                <input type="text" class="child-community" placeholder="Current Community / Town" required />
+              </div>
+              <div class="form-field">
+                <label>Child living with *</label>
+                <select class="child-living-with" required>
+                  <option value="">Select living arrangement</option>
+                  <option value="Full Parent">Full Parent</option>
+                  <option value="Single parent">Single parent</option>
+                  <option value="Grand Parent">Grand Parent</option>
+                  <option value="Guardian">Guardian</option>
+                  <option value="Alone">Alone</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Child Photo (optional)</label>
+              <input type="file" class="child-photo" accept="image/*" />
+              <span style="font-size:11.5px;color:var(--ink-500);margin-top:2px;display:block;">Clear face portrait for identification and sponsorship profile.</span>
+            </div>
+
+            <!-- Parent / Guardian Information -->
+            <div style="font-weight:700;font-size:13px;color:var(--ink-800);margin:14px 0 8px;padding-top:8px;border-top:1px dashed var(--border);">
+              Parent / Guardian Information
+            </div>
+            <div class="form-row-2">
+              <div class="form-field">
+                <label>Parent / Guardian Name</label>
+                <input type="text" class="parent-name" placeholder="Full name of parent/caregiver" />
+              </div>
+              <div class="form-field">
+                <label>Parent / Guardian Phone</label>
+                <input type="tel" class="parent-phone" placeholder="088... or 077..." />
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Parent / Guardian Photo (optional)</label>
+              <input type="file" class="parent-photo" accept="image/*" />
+            </div>
+
+            <!-- Educational Background & Cause of Exclusion -->
+            <div style="font-weight:700;font-size:13px;color:var(--ink-800);margin:14px 0 8px;padding-top:8px;border-top:1px dashed var(--border);">
+              Education Status &amp; Causes of Exclusion
+            </div>
+            <div class="form-row-2">
+              <div class="form-field">
+                <label>Years out of school *</label>
+                <input type="number" class="child-years-out" min="0" max="15" placeholder="e.g. 1, 2" required />
+              </div>
+              <div class="form-field">
+                <label>Current / Last Grade *</label>
+                <input type="text" class="child-class" placeholder="e.g. Grade 2, ABC, Never attended" required />
+              </div>
+            </div>
+
+            <div class="form-field">
+              <label>Primary Cause of Exclusion *</label>
+              <select class="child-cause" required>
+                <option value="">Select Primary Cause of Exclusion</option>
+                <option value="Orphan">Orphan (Loss of parents)</option>
+                <option value="Neglected">Neglected / Abandoned</option>
+                <option value="Financial Hardship / Inability to Pay School Fees">Financial Hardship / Inability to Pay School Fees</option>
+                <option value="Lack of Uniforms, Books or Learning Supplies">Lack of Uniforms, Books or Learning Supplies</option>
+                <option value="Child Labor / Street Selling / Petty Trading">Child Labor / Street Selling / Petty Trading</option>
+                <option value="Extreme Distance to Nearest School">Extreme Distance to Nearest School</option>
+                <option value="Loss of Primary Caregiver">Loss of Primary Caregiver</option>
+                <option value="Adolescent Pregnancy & Early Caregiving">Adolescent Pregnancy & Early Caregiving</option>
+                <option value="Physical Disability or Special Learning Needs">Physical Disability or Special Learning Needs</option>
+                <option value="Family Relocation / Instability">Family Relocation / Instability</option>
+                <option value="Chronic Illness / Health Challenges">Chronic Illness / Health Challenges</option>
+                <option value="Other Community Barrier">Other Community Barrier</option>
+              </select>
+            </div>
+
+            <!-- Abuse Assessment -->
+            <div style="font-weight:700;font-size:13px;color:var(--ink-800);margin:14px 0 8px;padding-top:8px;border-top:1px dashed var(--border);">
+              Safeguarding &amp; Protection Observation
+            </div>
+            <div class="form-field">
+              <label>Is child experiencing any form of abuse? *</label>
+              <select class="child-abuse-obs" required>
+                <option value="No">No</option>
+                <option value="Yes">Yes</option>
+              </select>
+            </div>
+
+            <div class="abuse-specification-box is-hidden">
+              <label style="font-size:12.5px;font-weight:700;color:#92400e;margin-bottom:6px;display:block;">
+                Specify Form of Abuse Experienced *
+              </label>
+              <select class="child-abuse-type">
+                <option value="">Select Form of Abuse</option>
+                <option value="Child Trafficking">Child Trafficking</option>
+                <option value="Maltreatment / Severe Physical Abuse">Maltreatment / Severe Physical Abuse</option>
+                <option value="Street Selling / Commercial Exploitation">Street Selling / Commercial Exploitation</option>
+                <option value="Forced Child Labor">Forced Child Labor</option>
+                <option value="Verbal & Emotional Abuse">Verbal & Emotional Abuse</option>
+                <option value="Sexual Abuse">Sexual Abuse</option>
+                <option value="Deprivation of Food & Care / Neglect">Deprivation of Food & Care / Neglect</option>
+                <option value="Other Form of Abuse">Other Form of Abuse</option>
+              </select>
+            </div>
+
+            <!-- Child Case Story -->
+            <div class="form-field" style="margin-top:10px;">
+              <label>Child Case Narrative / Story *</label>
+              <textarea class="child-statement" rows="3" placeholder="Describe the child's living conditions, daily routine, why they are out of school, and what assistance is needed..." required></textarea>
+            </div>
+
+            <!-- Consent -->
+            <div class="consent-statement-box">
+              <label style="display:flex;align-items:flex-start;gap:8px;font-size:12px;font-weight:600;cursor:pointer;margin:0;">
+                <input type="checkbox" class="child-consent" required style="margin-top:2px;flex-shrink:0;" />
+                <span>I agree that the images and information of my child case should be used by UAF and partners on behalf of my child case for advocacy, seeking sponsorship for the benefit of my child only and should not be used for any purpose after besides *</span>
+              </label>
+            </div>
+          </div>
+        `;
+      }
+
+      container.innerHTML = html;
+
+      // Restore preserved data and wire up abuse toggle
+      const newCards = container.querySelectorAll(".child-profile-card");
+      newCards.forEach((c, idx) => {
+        const abuseSelect = c.querySelector(".child-abuse-obs");
+        const abuseBox = c.querySelector(".abuse-specification-box");
+        const abuseType = c.querySelector(".child-abuse-type");
+
+        function updateAbuseState() {
+          if (abuseSelect.value === "Yes") {
+            abuseBox.classList.remove("is-hidden");
+            abuseType.setAttribute("required", "true");
+          } else {
+            abuseBox.classList.add("is-hidden");
+            abuseType.removeAttribute("required");
+            abuseType.value = "";
+          }
+        }
+
+        abuseSelect.addEventListener("change", updateAbuseState);
+
+        const data = preserved[idx];
+        if (data) {
+          if (c.querySelector(".child-name")) c.querySelector(".child-name").value = data.name;
+          if (c.querySelector(".child-gender")) c.querySelector(".child-gender").value = data.gender;
+          if (c.querySelector(".child-age")) c.querySelector(".child-age").value = data.age;
+          if (c.querySelector(".child-origin")) c.querySelector(".child-origin").value = data.origin;
+          if (c.querySelector(".child-community")) c.querySelector(".child-community").value = data.community;
+          if (c.querySelector(".child-living-with")) c.querySelector(".child-living-with").value = data.livingWith;
+          if (c.querySelector(".parent-name")) c.querySelector(".parent-name").value = data.parentName;
+          if (c.querySelector(".parent-phone")) c.querySelector(".parent-phone").value = data.parentPhone;
+          if (c.querySelector(".child-years-out")) c.querySelector(".child-years-out").value = data.yearsOut;
+          if (c.querySelector(".child-class")) c.querySelector(".child-class").value = data.currentClass;
+          if (c.querySelector(".child-cause")) c.querySelector(".child-cause").value = data.cause;
+          if (abuseSelect) abuseSelect.value = data.abuseObs;
+          if (abuseType) abuseType.value = data.abuseType;
+          if (c.querySelector(".child-statement")) c.querySelector(".child-statement").value = data.statement;
+          if (c.querySelector(".child-consent")) c.querySelector(".child-consent").checked = data.consent;
+          updateAbuseState();
+        }
+      });
+    }
+
+    countInput.addEventListener("input", (e) => {
+      renderChildCards(e.target.value);
+    });
+
+    countInput.addEventListener("change", (e) => {
+      renderChildCards(e.target.value);
+    });
+
+    // Initial render
+    renderChildCards(countInput.value || 1);
+  }
+
+  /* ---------------------------------------------------------
      INIT ON DOM READY & IMMEDIATE EXECUTION FALLBACK
   --------------------------------------------------------- */
   function initApp() {
@@ -769,6 +1038,7 @@
     initDonateToggle();
     updateOnlineStatus();
     renderRoute();
+    setupDynamicChildProfiles();
 
     // Wire up all [data-goto] elements
     document.querySelectorAll("[data-goto]").forEach((el) => {

@@ -912,9 +912,18 @@
     updateCommunityDropdown("");
   }
 
+  function readFileAsBase64(file) {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => resolve("");
+      reader.readAsDataURL(file);
+    });
+  }
+
   /* ---------------------------------------------------------
      FORM 1: OUT-OF-SCHOOL INTAKE (#report-form)
-     Offline-first draft queuing with dynamic community registration
+     Multi-Child Intake & Safeguarding Records with Dynamic Community Registration
   --------------------------------------------------------- */
   function initReportForm() {
     const form = document.getElementById("report-form");
@@ -928,72 +937,121 @@
       const reporterPhone = document.getElementById("rep-phone")?.value.trim() || "";
       const community = document.getElementById("rep-community")?.value.trim() || "";
       const county = document.getElementById("rep-county")?.value.trim() || "";
-      const childCount = Number(document.getElementById("rep-count")?.value) || 0;
+      const childCountInput = document.getElementById("rep-count");
 
-      const childName = document.getElementById("rep-child-name")?.value.trim() || "";
-      const gender = document.getElementById("rep-child-gender")?.value.trim() || "";
-      const childCommunity = document.getElementById("rep-child-community")?.value.trim() || "";
-      const childCounty = document.getElementById("rep-child-county")?.value.trim() || "";
-      const photoInput = document.getElementById("rep-child-photo");
-      const yearsOut = document.getElementById("rep-years-out")?.value.trim() || "";
-      const currentClass = document.getElementById("rep-current-class")?.value.trim() || "";
-      const causeOfExclusion = document.getElementById("rep-cause")?.value.trim() || "";
-      const parentName = document.getElementById("rep-parent-name")?.value.trim() || "";
-      const parentPhone = document.getElementById("rep-parent-phone")?.value.trim() || "";
-      const statement = document.getElementById("rep-statement")?.value.trim() || "";
-      const consent = document.getElementById("rep-consent")?.checked || false;
-
-      if (!reporterName || !reporterPhone || !county || !community || childCount <= 0 || !childName || !gender || !childCommunity || !childCounty || !yearsOut || !currentClass || !causeOfExclusion || !statement || !consent) {
-        window.__uafShowToast?.("Please complete all required fields and verify consent.");
+      if (!reporterName || !reporterPhone || !community || !county) {
+        window.__uafShowToast?.("Please complete all required reporter information.");
         return;
+      }
+
+      const childCards = form.querySelectorAll(".child-profile-card");
+      if (childCards.length === 0) {
+        window.__uafShowToast?.("Please provide at least one child profile.");
+        return;
+      }
+
+      const children = [];
+      for (let i = 0; i < childCards.length; i++) {
+        const card = childCards[i];
+        const name = card.querySelector(".child-name")?.value.trim() || "";
+        const gender = card.querySelector(".child-gender")?.value || "";
+        const age = Number(card.querySelector(".child-age")?.value) || 0;
+        const origin = card.querySelector(".child-origin")?.value || "";
+        const childComm = card.querySelector(".child-community")?.value.trim() || community;
+        const livingWith = card.querySelector(".child-living-with")?.value || "";
+        const parentName = card.querySelector(".parent-name")?.value.trim() || "";
+        const parentPhone = card.querySelector(".parent-phone")?.value.trim() || "";
+        const yearsOut = card.querySelector(".child-years-out")?.value.trim() || "";
+        const currentClass = card.querySelector(".child-class")?.value.trim() || "";
+        const causeOfExclusion = card.querySelector(".child-cause")?.value || "";
+        const abuseObserved = card.querySelector(".child-abuse-obs")?.value || "No";
+        const abuseType = card.querySelector(".child-abuse-type")?.value || "";
+        const statement = card.querySelector(".child-statement")?.value.trim() || "";
+        const consent = card.querySelector(".child-consent")?.checked || false;
+
+        if (!name || !gender || !age || !origin || !livingWith || !causeOfExclusion || !statement || !consent) {
+          window.__uafShowToast?.(`Please complete all required fields and consent for Child #${i + 1}.`);
+          return;
+        }
+
+        // Read child photo
+        const childPhotoInput = card.querySelector(".child-photo");
+        let childPhotoData = "";
+        if (childPhotoInput && childPhotoInput.files && childPhotoInput.files[0]) {
+          try {
+            childPhotoData = await readFileAsBase64(childPhotoInput.files[0]);
+          } catch (_) {}
+        }
+
+        // Read parent photo
+        const parentPhotoInput = card.querySelector(".parent-photo");
+        let parentPhotoData = "";
+        if (parentPhotoInput && parentPhotoInput.files && parentPhotoInput.files[0]) {
+          try {
+            parentPhotoData = await readFileAsBase64(parentPhotoInput.files[0]);
+          } catch (_) {}
+        }
+
+        children.push({
+          childName: name,
+          gender,
+          childAge: age,
+          childOrigin: origin,
+          childCommunity: childComm,
+          livingWith,
+          childPhotoData,
+          parentName,
+          parentPhone,
+          parentPhotoData,
+          yearsOut,
+          currentClass,
+          causeOfExclusion,
+          abuseObserved,
+          abuseType: abuseObserved === "Yes" ? abuseType : "",
+          statement,
+          consent
+        });
       }
 
       submitBtn?.setAttribute("disabled", "true");
 
-      // Read photo as base64 if present
-      let photoData = "";
-      if (photoInput && photoInput.files && photoInput.files[0]) {
-        try {
-          photoData = await new Promise((resolve) => {
-            const reader = new FileReader();
-            reader.onload = () => resolve(reader.result);
-            reader.onerror = () => resolve("");
-            reader.readAsDataURL(photoInput.files[0]);
-          });
-        } catch (err) {
-          console.warn("Photo read failed", err);
-        }
-      }
-
+      const firstChild = children[0] || {};
       const payload = {
         action: "submitOutOfSchoolReport",
         reporterName,
         reporterPhone,
         community,
         county,
-        childCount,
-        childName,
-        gender,
-        childCommunity,
-        childCounty,
-        photoData,
-        yearsOut,
-        currentClass,
-        causeOfExclusion,
-        parentName,
-        parentPhone,
-        statement,
-        consent,
+        childCount: children.length,
+        // Backward compatibility single child aliases
+        childName: children.map((c) => c.childName).join(", "),
+        gender: firstChild.gender || "",
+        childCommunity: firstChild.childCommunity || community,
+        childCounty: firstChild.childOrigin || county,
+        photoData: firstChild.childPhotoData || "",
+        yearsOut: firstChild.yearsOut || "",
+        currentClass: firstChild.currentClass || "",
+        causeOfExclusion: firstChild.causeOfExclusion || "",
+        parentName: firstChild.parentName || "",
+        parentPhone: firstChild.parentPhone || "",
+        statement: firstChild.statement || "",
+        consent: firstChild.consent || false,
+        // Complete multi-child structure
+        children,
         timestamp: new Date().toISOString()
       };
 
       // Register the submitted community dynamically under its respective county
-      registerDynamicCommunity(childCommunity || community, childCounty || county, childCount);
+      registerDynamicCommunity(firstChild.childCommunity || community, firstChild.childOrigin || county, children.length);
 
       // OFFLINE HANDLING
       if (!navigator.onLine) {
-        queueOfflineDraft("submitOutOfSchoolReport", payload, `OSSC: ${childName} (${childCommunity}, ${childCounty})`);
+        queueOfflineDraft("submitOutOfSchoolReport", payload, `OSSC: ${payload.childName} (${payload.childCommunity}, ${payload.childCounty})`);
         form.reset();
+        if (childCountInput) {
+          childCountInput.value = "1";
+          childCountInput.dispatchEvent(new Event("change"));
+        }
         submitBtn?.removeAttribute("disabled");
         return;
       }
@@ -1007,6 +1065,10 @@
 
         window.__uafShowToast?.("Report submitted! A UAF verifier will investigate before publication.");
         form.reset();
+        if (childCountInput) {
+          childCountInput.value = "1";
+          childCountInput.dispatchEvent(new Event("change"));
+        }
         submitBtn?.removeAttribute("disabled");
         return;
       }
@@ -1021,14 +1083,26 @@
         if (json.ok) {
           window.__uafShowToast?.(json.message || "Submitted for verification. Thank you.");
           form.reset();
+          if (childCountInput) {
+            childCountInput.value = "1";
+            childCountInput.dispatchEvent(new Event("change"));
+          }
         } else {
           window.__uafShowToast?.(json.error || "Couldn't submit — saved as offline draft.");
-          queueOfflineDraft("submitOutOfSchoolReport", payload, `OSSC: ${childName}`);
+          queueOfflineDraft("submitOutOfSchoolReport", payload, `OSSC: ${payload.childName}`);
           form.reset();
+          if (childCountInput) {
+            childCountInput.value = "1";
+            childCountInput.dispatchEvent(new Event("change"));
+          }
         }
       } catch (err) {
-        queueOfflineDraft("submitOutOfSchoolReport", payload, `OSSC: ${childName}`);
+        queueOfflineDraft("submitOutOfSchoolReport", payload, `OSSC: ${payload.childName}`);
         form.reset();
+        if (childCountInput) {
+          childCountInput.value = "1";
+          childCountInput.dispatchEvent(new Event("change"));
+        }
       } finally {
         submitBtn?.removeAttribute("disabled");
       }
@@ -1037,7 +1111,7 @@
 
   /* ---------------------------------------------------------
      FORM 2: REQUEST DATA & EVIDENCE (#evidence-form)
-     Offline-first draft queuing
+     Offline-first draft queuing with Reason & Referral Source
   --------------------------------------------------------- */
   function initEvidenceForm() {
     const form = document.getElementById("evidence-form");
@@ -1050,6 +1124,8 @@
       const name = document.getElementById("ev-name")?.value.trim() || "";
       const email = document.getElementById("ev-email")?.value.trim() || "";
       const organization = document.getElementById("ev-org")?.value.trim() || "";
+      const requestReason = document.getElementById("ev-reason")?.value.trim() || "";
+      const referralSource = document.getElementById("ev-source")?.value.trim() || "";
       const requestDetails = document.getElementById("ev-request")?.value.trim() || "";
 
       if (!name || !email || !requestDetails) {
@@ -1062,6 +1138,8 @@
         name,
         email,
         organization,
+        requestReason,
+        referralSource,
         requestDetails,
         timestamp: new Date().toISOString()
       };
@@ -1073,6 +1151,12 @@
       }
 
       if (!isConfigured) {
+        try {
+          const reqs = JSON.parse(localStorage.getItem("uaf_evidence_requests") || "[]");
+          reqs.unshift(payload);
+          localStorage.setItem("uaf_evidence_requests", JSON.stringify(reqs));
+        } catch (_) {}
+
         window.__uafShowToast?.("Evidence request submitted. A UAF verifier will review it.");
         form.reset();
         return;
@@ -1101,6 +1185,120 @@
         submitBtn?.removeAttribute("disabled");
       }
     });
+  }
+
+  /* ---------------------------------------------------------
+     BROCHURE PDF DOWNLOAD (Screen 5: Request Data)
+  --------------------------------------------------------- */
+  function initBrochureDownload() {
+    const downloadBtn = document.getElementById("btn-download-uaf-brochure");
+    if (!downloadBtn) return;
+
+    downloadBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+
+      const customBrochure = localStorage.getItem("uaf_brochure_pdf");
+      if (customBrochure) {
+        const a = document.createElement("a");
+        a.href = customBrochure;
+        a.download = "UAF_Institutional_Brochure_2026.pdf";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.__uafShowToast?.("Downloading official UAF Institutional Brochure (PDF)...");
+        return;
+      }
+
+      // Generate built-in official UAF Institutional Brochure PDF
+      generateDefaultBrochurePDF();
+    });
+  }
+
+  function generateDefaultBrochurePDF() {
+    const pdfContent = `%PDF-1.4
+1 0 obj
+<< /Title (Upskill Africa Foundation - Institutional Overview)
+   /Author (Upskill Africa Foundation)
+   /Creator (UAF Impact Platform)
+   /Producer (UAF Document Engine)
+   /CreationDate (D:20260321120000) >>
+endobj
+2 0 obj
+<< /Type /Catalog /Pages 3 0 R >>
+endobj
+3 0 obj
+<< /Type /Pages /Kids [4 0 R] /Count 1 >>
+endobj
+4 0 obj
+<< /Type /Page /Parent 3 0 R /MediaBox [0 0 612 792] /Contents 5 0 R /Resources << /Font << /F1 6 0 R >> >> >>
+endobj
+5 0 obj
+<< /Length 750 >>
+stream
+BT
+/F1 20 Tf
+50 740 Td
+(UPSKILL AFRICA FOUNDATION - UAF LIBERIA) Tj
+0 -26 Td
+/F1 13 Tf
+(Protecting Children. Promoting Education. Empowering Communities.) Tj
+0 -30 Td
+/F1 11 Tf
+(INSTITUTIONAL BROCHURE & STRATEGIC OVERVIEW (2026-2027)) Tj
+0 -24 Td
+(1. NO INVISIBLE CHILD (NIC): Community identification and school reintegration.) Tj
+0 -18 Td
+(2. CHILD PROTECTION: Rigorous field safeguarding protocols & ethical case monitoring.) Tj
+0 -18 Td
+(3. LIVELIHOOD EMPOWERMENT: Vocational soap making, tie-dye, and household savings.) Tj
+0 -18 Td
+(4. ALTERNATIVE LEARNING PROGRAM (ALP): Digital literacy & basic tech skills for youth.) Tj
+0 -30 Td
+/F1 10 Tf
+(CHILD SAFEGUARDING POLICY & CONFIDENTIALITY:) Tj
+0 -16 Td
+(UAF strictly enforces the Child Rights Law of Liberia. Child identity data is) Tj
+0 -14 Td
+(accessible only to authorized child protection officers and certified partners.) Tj
+0 -30 Td
+(CONTACT & PHYSICAL LOCATION:) Tj
+0 -16 Td
+(Address: Duport Road, Paynesville, Montserrado County, Liberia) Tj
+0 -14 Td
+(Telephone / WhatsApp: +231 889 541 712 | Email: upskillafrica.lr@gmail.com) Tj
+0 -14 Td
+(Website: https://uafalp.blogspot.com/) Tj
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 7
+0000000000 65535 f 
+0000000009 00000 n 
+0000000186 00000 n 
+0000000236 00000 n 
+0000000302 00000 n 
+0000000424 00000 n 
+0000001227 00000 n 
+trailer
+<< /Size 7 /Root 2 0 R /Info 1 0 R >>
+startxref
+1304
+%%EOF`;
+
+    const blob = new Blob([pdfContent], { type: "application/pdf" });
+    const blobUrl = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = blobUrl;
+    a.download = "UAF_Institutional_Brochure_2026.pdf";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(blobUrl), 15000);
+    window.__uafShowToast?.("Downloading official UAF Institutional Brochure (PDF)...");
   }
 
   /* ---------------------------------------------------------
@@ -1238,6 +1436,7 @@
     initSelectorDropdowns();
     initReportForm();
     initEvidenceForm();
+    initBrochureDownload();
     initDonationForm();
     loadPublicData();
     loadFundingSummary();

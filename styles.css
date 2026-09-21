@@ -324,12 +324,35 @@ body.modal-open, html.modal-open {
 }
 
 /* =========================================================
-   SCREEN 1: MENU GRID (Image 1 Style with Global Hero Background)
+   SCREEN 1: MENU GRID (Non-scrollable, Viewport Locked)
    ========================================================= */
+
+body.is-home-screen {
+  overflow: hidden !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  max-height: 100dvh !important;
+  touch-action: none;
+}
+
+body.is-home-screen #app-shell {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+body.is-home-screen .screen[data-screen="menu"] {
+  height: calc(100vh - 64px);
+  height: calc(100dvh - 64px);
+  max-height: calc(100dvh - 64px);
+  overflow: hidden;
+}
 
 .screen[data-screen="menu"] {
   position: relative;
-  min-height: calc(100vh - 64px);
+  height: calc(100vh - 64px);
+  height: calc(100dvh - 64px);
+  max-height: calc(100dvh - 64px);
   background: transparent;
   overflow: hidden;
 }
@@ -342,27 +365,39 @@ body.modal-open, html.modal-open {
   position: relative;
   z-index: 1;
   max-width: 880px;
+  width: 100%;
+  height: 100%;
+  max-height: 100%;
+  box-sizing: border-box;
   margin: 0 auto;
-  padding: 48px 24px 60px;
+  padding: clamp(6px, 1.8vh, 18px) 16px clamp(6px, 1.4vh, 14px);
   text-align: center;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
 }
 
 .menu-title {
   font-family: var(--font-display);
-  font-size: 20px;
+  font-size: clamp(14px, 2.2vh, 19px);
   font-weight: 800;
   letter-spacing: 1.5px;
   color: var(--ink-900);
-  margin: 0 0 36px;
+  margin: 0 0 clamp(4px, 1.2vh, 12px);
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 .menu-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 28px 24px;
+  gap: clamp(8px, 1.6vh, 18px) clamp(8px, 1.6vw, 20px);
   max-width: 780px;
+  width: 100%;
   margin: 0 auto;
+  flex: 1 1 auto;
+  align-content: center;
 }
 
 .menu-card {
@@ -370,32 +405,34 @@ body.modal-open, html.modal-open {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 32px 20px;
+  padding: clamp(8px, 1.6vh, 18px) clamp(8px, 1.2vw, 14px);
   background: rgba(255, 255, 255, 0.94);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1.5px solid rgba(226, 232, 240, 0.85);
-  border-radius: 16px;
+  border-radius: clamp(10px, 1.5vh, 16px);
   cursor: pointer;
   transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 16px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+  box-sizing: border-box;
 }
 
 .menu-card:hover {
   border-color: var(--blue-700);
   background: #ffffff;
-  transform: translateY(-4px);
-  box-shadow: 0 12px 28px rgba(2, 132, 199, 0.16);
+  transform: translateY(-3px);
+  box-shadow: 0 10px 24px rgba(2, 132, 199, 0.16);
 }
 
 .menu-card__icon {
-  width: 64px;
-  height: 64px;
+  width: clamp(34px, 5.2vh, 56px);
+  height: clamp(34px, 5.2vh, 56px);
   color: var(--ink-900);
-  margin-bottom: 16px;
+  margin-bottom: clamp(4px, 1vh, 10px);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .menu-card__icon svg {
@@ -404,30 +441,74 @@ body.modal-open, html.modal-open {
   stroke: var(--ink-900);
 }
 
+.menu-card__custom-icon {
+  width: clamp(34px, 5.2vh, 56px);
+  height: clamp(34px, 5.2vh, 56px);
+  object-fit: contain;
+  border-radius: 8px;
+}
+
 .menu-card__label {
   font-family: var(--font-sans);
-  font-size: 16px;
+  font-size: clamp(12px, 1.8vh, 15px);
   font-weight: 700;
   color: var(--ink-900);
   letter-spacing: -0.1px;
+  line-height: 1.2;
 }
 
 .menu-footer {
-  margin-top: 56px;
-  padding-top: 24px;
-  border-top: 1px solid var(--border);
+  margin-top: clamp(4px, 1vh, 12px);
+  padding-top: clamp(4px, 1vh, 8px);
+  border-top: 1px solid rgba(226, 232, 240, 0.7);
+  flex-shrink: 0;
 }
 
 .menu-footer p {
-  margin: 0 0 4px;
-  font-size: 13.5px;
+  margin: 0 0 2px;
+  font-size: clamp(10.5px, 1.4vh, 12.5px);
   font-weight: 600;
   color: var(--ink-700);
+  line-height: 1.2;
 }
 
 .menu-footer span {
-  font-size: 12px;
+  font-size: clamp(9.5px, 1.2vh, 11px);
   color: var(--ink-400);
+  display: block;
+  line-height: 1.25;
+}
+
+.home-install-wrapper {
+  margin-top: clamp(4px, 0.8vh, 8px);
+  display: flex;
+  justify-content: center;
+}
+
+.btn-home-install {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #004F71 0%, #0284c7 100%);
+  color: #ffffff !important;
+  border: none;
+  border-radius: 9999px;
+  font-family: var(--font-sans);
+  font-weight: 700;
+  font-size: clamp(11px, 1.4vh, 13px);
+  letter-spacing: 0.2px;
+  padding: clamp(6px, 0.9vh, 9px) clamp(16px, 2vw, 24px);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 3px 12px rgba(2, 132, 199, 0.35);
+}
+
+@media (max-width: 640px) {
+  .menu-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: clamp(6px, 1.1vh, 10px);
+  }
 }
 
 /* =========================================================
@@ -2397,4 +2478,141 @@ body.modal-open, html.modal-open {
     font-size: 12.5px;
   }
 }
+
+/* =========================================================
+   DYNAMIC CHILD PROFILES & CASE INTAKE STYLES
+   ========================================================= */
+
+.child-profile-card {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.03);
+}
+
+.child-profile-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #004F71;
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13.5px;
+  margin-bottom: 14px;
+  letter-spacing: 0.2px;
+}
+
+.abuse-specification-box {
+  background: #fffbeb;
+  border: 1.5px solid #fde68a;
+  border-radius: 8px;
+  padding: 12px;
+  margin-top: 10px;
+  margin-bottom: 12px;
+}
+
+.abuse-specification-box.is-hidden {
+  display: none;
+}
+
+.consent-statement-box {
+  background: #f0fdf4;
+  border: 1.5px solid #bbf7d0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #166534;
+  margin-top: 10px;
+}
+
+/* =========================================================
+   UAF BROCHURE DOWNLOAD STYLES (REQUEST DATA TAB)
+   ========================================================= */
+
+.uaf-brochure-card {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1.5px solid #bae6fd;
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.08);
+}
+
+.uaf-brochure-card__info {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.uaf-brochure-card__icon {
+  width: 44px;
+  height: 44px;
+  background: #004F71;
+  color: #ffffff;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.uaf-brochure-card__title {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0c4a6e;
+  margin: 0 0 3px;
+}
+
+.uaf-brochure-card__desc {
+  font-size: 12.5px;
+  color: #0369a1;
+  margin: 0;
+  line-height: 1.4;
+}
+
+.btn-download-brochure {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #004F71;
+  color: #ffffff !important;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 9px 16px;
+  border-radius: 8px;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+  box-shadow: 0 2px 6px rgba(0, 79, 113, 0.25);
+  cursor: pointer;
+  border: none;
+}
+
+.btn-download-brochure:hover {
+  background: #00364d;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(0, 79, 113, 0.35);
+}
+
+@media (max-width: 640px) {
+  .uaf-brochure-card {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .btn-download-brochure {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
 
