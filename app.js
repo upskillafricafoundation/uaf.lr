@@ -472,10 +472,6 @@
     const modal = document.getElementById("story-modal-backdrop");
     const closeBtn = document.getElementById("story-modal-close");
     const doneBtn = document.getElementById("story-modal-done-btn");
-
-    const modal = document.getElementById("story-modal-backdrop");
-    const closeBtn = document.getElementById("story-modal-close");
-    const doneBtn = document.getElementById("story-modal-done-btn");
     const modalSupportBtn = document.getElementById("story-modal-support-btn");
 
     function closeModal() {
