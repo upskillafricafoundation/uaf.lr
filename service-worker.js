@@ -4,7 +4,7 @@
    icons, media assets) for full offline execution and auto-sync.
    ========================================================= */
 
-const CACHE_VERSION = "uaf-impact-shell-v17";
+const CACHE_VERSION = "uaf-impact-shell-v18";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -16,7 +16,7 @@ const APP_SHELL = [
   "./assets/hero-bg.jpg",
   "./assets/uaf-logo.png",
   "./assets/nic-logo.png",
-  "./assets/icon-impact.jpg",
+  "./assets/icon-impact.png",
   "./assets/icon-request.png",
   "./assets/icon-donate.webp",
   "./assets/icon-partners.png",
@@ -29,7 +29,13 @@ const APP_SHELL = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_VERSION).then((cache) => cache.addAll(APP_SHELL))
+    caches.open(CACHE_VERSION).then((cache) => {
+      return Promise.allSettled(
+        APP_SHELL.map((url) =>
+          cache.add(url).catch((err) => console.warn("Failed to cache:", url, err))
+        )
+      );
+    })
   );
   self.skipWaiting();
 });

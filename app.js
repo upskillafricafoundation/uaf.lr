@@ -76,6 +76,16 @@
   }
   window.__uafGoTo = goTo;
 
+  // Universal global click delegation for all [data-goto] elements (menu cards, buttons, links)
+  document.addEventListener("click", (e) => {
+    const gotoEl = e.target.closest("[data-goto]");
+    if (gotoEl) {
+      e.preventDefault();
+      const targetRoute = gotoEl.dataset.goto;
+      if (targetRoute) goTo(targetRoute);
+    }
+  });
+
   /* ---------------------------------------------------------
      DONATION AMOUNT CHIPS & DYNAMIC SUBMIT BUTTON (Image 2 Style)
   --------------------------------------------------------- */
@@ -1263,17 +1273,18 @@
         const abuseType = c.querySelector(".child-abuse-type");
 
         function updateAbuseState() {
+          if (!abuseSelect || !abuseBox) return;
           if (abuseSelect.value === "Yes") {
             abuseBox.classList.remove("is-hidden");
-            abuseType.setAttribute("required", "true");
+            abuseType?.setAttribute("required", "true");
           } else {
             abuseBox.classList.add("is-hidden");
-            abuseType.removeAttribute("required");
-            abuseType.value = "";
+            abuseType?.removeAttribute("required");
+            if (abuseType) abuseType.value = "";
           }
         }
 
-        abuseSelect.addEventListener("change", updateAbuseState);
+        abuseSelect?.addEventListener("change", updateAbuseState);
 
         const data = preserved[idx];
         if (data) {
@@ -1313,20 +1324,20 @@
      INIT ON DOM READY & IMMEDIATE EXECUTION FALLBACK
   --------------------------------------------------------- */
   function initApp() {
-    initDonationControls();
-    initSearchDialog();
-    initInstall();
-    initStoryModal();
-    initDonateToggle();
-    updateOnlineStatus();
-    renderRoute();
-    setupDynamicChildProfiles();
+    try { initDonationControls(); } catch (e) { console.warn("Donation controls init:", e); }
+    try { initSearchDialog(); } catch (e) { console.warn("Search dialog init:", e); }
+    try { initInstall(); } catch (e) { console.warn("Install init:", e); }
+    try { initStoryModal(); } catch (e) { console.warn("Story modal init:", e); }
+    try { initDonateToggle(); } catch (e) { console.warn("Donate toggle init:", e); }
+    try { updateOnlineStatus(); } catch (e) { console.warn("Online status init:", e); }
+    try { renderRoute(); } catch (e) { console.warn("Render route init:", e); }
+    try { setupDynamicChildProfiles(); } catch (e) { console.warn("Child profiles init:", e); }
 
     // Wire up all [data-goto] elements (normal routing without auto-opening donation form)
     document.querySelectorAll("[data-goto]").forEach((el) => {
       el.addEventListener("click", (e) => {
         const goto = el.dataset.goto;
-        goTo(goto);
+        if (goto) goTo(goto);
       });
     });
 
