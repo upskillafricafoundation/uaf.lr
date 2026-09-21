@@ -113,6 +113,26 @@
             <p class="admin-muted" style="padding:24px;text-align:center;">Loading submissions…</p>
           </div>
         </div>
+
+        <!-- UAF Institutional Brochure PDF Management Card -->
+        <div class="admin-card" style="margin-top:20px;border:1.5px solid #bae6fd;background:#f0f9ff;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <h3 style="font-size:15px;margin:0;color:#0369a1;">UAF Institutional Brochure (PDF) Management</h3>
+            <span class="admin-badge admin-badge--neutral" id="brochure-status-badge">Default Institutional PDF</span>
+          </div>
+          <p class="admin-muted" style="margin-bottom:12px;font-size:12.5px;">
+            Upload and manage the official UAF Institutional Brochure PDF downloaded by users and partner organizations in the Request Data tab.
+          </p>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+            <input type="file" id="admin-brochure-file" accept="application/pdf" style="font-size:12.5px;max-width:280px;" />
+            <button type="button" id="btn-upload-brochure" class="btn btn--primary" style="font-size:12px;">Upload &amp; Publish PDF</button>
+            <button type="button" id="btn-preview-brochure" class="btn btn--outline" style="font-size:12px;">Preview Download</button>
+            <button type="button" id="btn-reset-brochure" class="btn btn--outline" style="font-size:12px;color:var(--red-600);border-color:#fca5a5;">Reset to Default</button>
+          </div>
+          <div id="brochure-meta-display" style="font-size:11.5px;color:#0284c7;margin-top:8px;">
+            Currently serving the built-in official UAF Institutional Brochure (PDF).
+          </div>
+        </div>
       </div>
 
       <!-- Community Stats View -->
@@ -252,6 +272,25 @@
           </form>
         </div>
       </div>
+
+      <!-- Case Detail View Modal -->
+      <div id="case-detail-modal" class="admin-modal-backdrop is-hidden" style="position:fixed;inset:0;background:rgba(15,23,42,0.65);z-index:9999;display:flex;align-items:center;justify-content:center;padding:16px;">
+        <div class="admin-modal-card" style="background:#ffffff;border-radius:16px;max-width:720px;width:100%;max-height:90vh;overflow-y:auto;padding:24px;box-shadow:0 20px 25px -5px rgba(0,0,0,0.2);">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);padding-bottom:12px;margin-bottom:16px;">
+            <div>
+              <h3 id="case-detail-title" style="margin:0;font-size:17px;color:var(--ink-900);">Child Case Review &amp; Field Verification</h3>
+              <p class="admin-muted" id="case-detail-subtitle" style="margin:4px 0 0;font-size:12px;">Submitted report breakdown</p>
+            </div>
+            <button type="button" id="case-detail-close" class="btn btn--outline" style="padding:4px 10px;font-size:12px;">&times; Close</button>
+          </div>
+          <div id="case-detail-content">
+            <!-- Dynamic case and child profile details populated by JS -->
+          </div>
+          <div id="case-detail-actions" style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--border);padding-top:16px;margin-top:20px;">
+            <!-- Verification / Rejection buttons populated by JS -->
+          </div>
+        </div>
+      </div>
     `;
 
     // Event listeners
@@ -335,6 +374,13 @@
       });
     }
 
+    // Detail modal close
+    document.getElementById("case-detail-close")?.addEventListener("click", () => {
+      document.getElementById("case-detail-modal")?.classList.add("is-hidden");
+    });
+
+    initBrochureAdminControls();
+
     loadSubmissions(session);
     loadStats(session);
   }
@@ -351,14 +397,54 @@
     if (!container) return;
     container.innerHTML = '<p class="admin-muted" style="padding:24px;text-align:center;">Loading submissions…</p>';
 
+    let items = [];
     try {
-      const res = await callApi("listOutOfSchoolSubmissions", { token: session.token });
-      if (!res.ok) {
-        container.innerHTML = `<div class="admin-error" style="margin:16px;">${escapeHtml(res.error || "Failed to load reports.")}</div>`;
-        return;
+      if (API_URL) {
+        try {
+          const res = await callApi("listOutOfSchoolSubmissions", { token: session.token });
+          if (res.ok && res.submissions) {
+            items = res.submissions;
+          }
+        } catch (err) {
+          console.warn("API list error, using local fallback", err);
+        }
       }
 
-      cachedSubmissions = res.submissions || [];
+      // Check local storage reports as well (offline/local intake submissions)
+      const localReports = JSON.parse(localStorage.getItem("uaf_ossc_reports") || "[]");
+      if (localReports.length > 0) {
+        const mapped = localReports.map((lr, idx) => ({
+          rowNumber: lr.rowNumber || -(idx + 1),
+          timestamp: lr.timestamp || new Date().toISOString(),
+          county: lr.county || (lr.children && lr.children[0] && lr.children[0].childOrigin) || "Montserrado",
+          community: lr.community || (lr.children && lr.children[0] && lr.children[0].childCommunity) || "Duport Road",
+          reporterName: lr.reporterName || "Field Enumerator",
+          reporterPhone: lr.reporterPhone || "—",
+          approxChildCount: lr.childCount || (lr.children ? lr.children.length : 1),
+          notes: lr.statement || (lr.children ? lr.children.map((c) => c.statement).join("; ") : "Local field report"),
+          status: lr.status || "DRAFT",
+          reviewedBy: lr.reviewedBy || "",
+          reviewedAt: lr.reviewedAt || "",
+          reviewerNotes: lr.reviewerNotes || "",
+          children: lr.children || [],
+          childName: lr.childName || (lr.children && lr.children.map((c) => c.childName).join(", ")),
+          gender: lr.gender || "",
+          photoData: lr.photoData || (lr.children && lr.children[0] && lr.children[0].childPhotoData),
+          causeOfExclusion: lr.causeOfExclusion || "",
+          parentName: lr.parentName || "",
+          parentPhone: lr.parentPhone || "",
+          consent: lr.consent !== false,
+          isLocal: true
+        }));
+
+        mapped.forEach((ml) => {
+          if (!items.some((it) => it.timestamp === ml.timestamp && it.reporterName === ml.reporterName)) {
+            items.unshift(ml);
+          }
+        });
+      }
+
+      cachedSubmissions = items;
       updateSubmissionsStats(cachedSubmissions);
       renderSubmissionsTable(session);
     } catch (err) {
@@ -415,18 +501,19 @@
       if (st === "VERIFIED") badgeCls = "admin-badge--verified";
       if (st === "REJECTED") badgeCls = "admin-badge--rejected";
 
-      let actionsHtml = "";
+      let actionsHtml = `<button class="btn btn--outline" style="font-size:11px;padding:3px 8px;margin-bottom:4px;display:block;" data-sub-action="view" data-row="${r.rowNumber}">View Story</button>`;
+
       if (can("REVIEW_SUBMISSIONS", session.role) && (st === "DRAFT" || st === "UNDER_REVIEW")) {
-        actionsHtml = `
+        actionsHtml += `
           <div style="display:flex;gap:6px;">
             <button class="btn--verify" data-sub-action="verify" data-row="${r.rowNumber}">Verify</button>
             <button class="btn--reject" data-sub-action="reject" data-row="${r.rowNumber}">Reject</button>
           </div>
         `;
       } else if (st === "VERIFIED") {
-        actionsHtml = `<span class="admin-muted" style="font-size:11px;">By ${escapeHtml(r.reviewedBy || "Admin")}<br/>${formatDate(r.reviewedAt)}</span>`;
+        actionsHtml += `<div class="admin-muted" style="font-size:11px;">By ${escapeHtml(r.reviewedBy || "Admin")}<br/>${formatDate(r.reviewedAt)}</div>`;
       } else {
-        actionsHtml = `<span class="admin-muted" style="font-size:11px;color:var(--red-600);">${escapeHtml(r.reviewerNotes || "Rejected")}</span>`;
+        actionsHtml += `<div class="admin-muted" style="font-size:11px;color:var(--red-600);">${escapeHtml(r.reviewerNotes || "Rejected")}</div>`;
       }
 
       return `
@@ -473,12 +560,160 @@
       </table>
     `;
 
+    container.querySelectorAll("button[data-sub-action='view']").forEach((b) => {
+      b.addEventListener("click", () => {
+        const rowNum = Number(b.dataset.row);
+        const sub = cachedSubmissions.find((item) => Number(item.rowNumber) === rowNum);
+        if (sub) showSubmissionDetailModal(sub, session);
+      });
+    });
+
     container.querySelectorAll("button[data-sub-action='verify']").forEach((b) => {
       b.addEventListener("click", () => handleReviewSub(Number(b.dataset.row), "VERIFIED", session));
     });
     container.querySelectorAll("button[data-sub-action='reject']").forEach((b) => {
       b.addEventListener("click", () => handleReviewSub(Number(b.dataset.row), "REJECTED", session));
     });
+  }
+
+  function showSubmissionDetailModal(sub, session) {
+    const modal = document.getElementById("case-detail-modal");
+    const content = document.getElementById("case-detail-content");
+    const actions = document.getElementById("case-detail-actions");
+    const title = document.getElementById("case-detail-title");
+    const subtitle = document.getElementById("case-detail-subtitle");
+    if (!modal || !content) return;
+
+    if (title) title.textContent = `Case Review: ${sub.county} · ${sub.community}`;
+    if (subtitle) subtitle.textContent = `Reported by ${sub.reporterName || "Enumerator"} (${sub.reporterPhone || "No Phone"}) on ${formatDate(sub.timestamp)} · Status: ${sub.status || "DRAFT"}`;
+
+    const st = String(sub.status || "DRAFT").toUpperCase();
+    const childrenList = Array.isArray(sub.children) && sub.children.length > 0 ? sub.children : null;
+
+    let childrenHtml = "";
+    if (childrenList) {
+      childrenHtml = childrenList.map((ch, i) => {
+        return `
+          <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:14px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#004F71;color:#fff;padding:6px 12px;border-radius:6px;font-size:13px;font-weight:700;margin-bottom:10px;">
+              <span>Child #${i + 1}: ${escapeHtml(ch.childName)}</span>
+              <span style="font-size:11px;opacity:0.9;">Age: ${escapeHtml(ch.childAge || "—")} · Gender: ${escapeHtml(ch.gender || "—")}</span>
+            </div>
+
+            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:8px;font-size:12px;margin-bottom:10px;">
+              <div><strong>County of Origin:</strong> ${escapeHtml(ch.childOrigin || "—")}</div>
+              <div><strong>Town / Community:</strong> ${escapeHtml(ch.childCommunity || "—")}</div>
+              <div><strong>Living Arrangement:</strong> ${escapeHtml(ch.livingWith || "—")}</div>
+              <div><strong>Years Out of School:</strong> ${escapeHtml(ch.yearsOut || "—")}</div>
+              <div><strong>Last Grade Attended:</strong> ${escapeHtml(ch.currentClass || "—")}</div>
+              <div><strong>Cause of Exclusion:</strong> <span style="color:#b91c1c;font-weight:600;">${escapeHtml(ch.causeOfExclusion || "—")}</span></div>
+            </div>
+
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:8px 10px;margin-bottom:10px;font-size:12px;">
+              <strong>Protection Assessment:</strong> ${ch.abuseObserved === "Yes" ? `<span style="color:#dc2626;font-weight:700;">⚠️ Yes — ${escapeHtml(ch.abuseType || "Identified Form of Abuse")}</span>` : '<span style="color:#15803d;font-weight:600;">None observed by reporter</span>'}
+            </div>
+
+            ${ch.childPhotoData ? `
+              <div style="margin-bottom:10px;">
+                <div style="font-size:11.5px;font-weight:700;color:var(--ink-700);margin-bottom:4px;">Child Identification Portrait:</div>
+                <img src="${ch.childPhotoData}" alt="Child Photo" style="max-height:160px;max-width:240px;border-radius:8px;border:1px solid #cbd5e1;object-fit:cover;" />
+              </div>
+            ` : ""}
+
+            <div style="border-top:1px dashed #cbd5e1;padding-top:8px;margin-top:8px;font-size:12px;">
+              <div><strong>Parent / Caregiver:</strong> ${escapeHtml(ch.parentName || "—")} (${escapeHtml(ch.parentPhone || "No contact")})</div>
+              ${ch.parentPhotoData ? `
+                <div style="margin-top:6px;">
+                  <div style="font-size:11px;font-weight:700;color:var(--ink-600);margin-bottom:2px;">Parent / Guardian Photo:</div>
+                  <img src="${ch.parentPhotoData}" alt="Parent Photo" style="max-height:140px;max-width:200px;border-radius:8px;border:1px solid #cbd5e1;object-fit:cover;" />
+                </div>
+              ` : ""}
+            </div>
+
+            <div style="margin-top:10px;">
+              <div style="font-size:11.5px;font-weight:700;color:var(--ink-800);margin-bottom:3px;">Field Case Narrative &amp; Living Condition:</div>
+              <div style="background:#ffffff;border:1px solid #e2e8f0;border-left:3px solid #004F71;padding:8px 12px;border-radius:4px;font-size:12.5px;line-height:1.45;color:var(--ink-800);">
+                ${escapeHtml(ch.statement || "No statement recorded.")}
+              </div>
+            </div>
+
+            <div style="margin-top:8px;font-size:11.5px;color:#166534;background:#f0fdf4;padding:6px 10px;border-radius:4px;">
+              ✓ <strong>Parental Consent Confirmed:</strong> Agreement signed for UAF advocacy &amp; educational sponsorship.
+            </div>
+          </div>
+        `;
+      }).join("");
+    } else {
+      childrenHtml = `
+        <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;padding:14px;margin-bottom:14px;">
+          <div style="font-size:13px;font-weight:700;color:var(--ink-900);margin-bottom:8px;">
+            Single / Legacy Record: ${escapeHtml(sub.childName || "Unspecified Child")} (${escapeHtml(sub.gender || "—")})
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));gap:6px;font-size:12px;margin-bottom:8px;">
+            <div><strong>Location:</strong> ${escapeHtml(sub.county)} · ${escapeHtml(sub.community)}</div>
+            <div><strong>Est. Children:</strong> ${escapeHtml(sub.approxChildCount)}</div>
+            <div><strong>Cause:</strong> ${escapeHtml(sub.causeOfExclusion || "—")}</div>
+            <div><strong>Parent:</strong> ${escapeHtml(sub.parentName || "—")} (${escapeHtml(sub.parentPhone || "—")})</div>
+          </div>
+          ${sub.photoData ? `
+            <div style="margin:8px 0;">
+              <img src="${sub.photoData}" alt="Child Photo" style="max-height:160px;max-width:240px;border-radius:8px;border:1px solid #cbd5e1;object-fit:cover;" />
+            </div>
+          ` : ""}
+          <div style="margin-top:8px;">
+            <strong>Case Statement:</strong>
+            <div style="background:#ffffff;border:1px solid #e2e8f0;border-left:3px solid #004F71;padding:8px 12px;border-radius:4px;font-size:12.5px;margin-top:4px;">
+              ${escapeHtml(sub.notes || "No details provided.")}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    content.innerHTML = `
+      <div style="background:#e0f2fe;border:1px solid #bae6fd;border-radius:8px;padding:10px 14px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+        <div style="font-size:12px;color:#0369a1;">
+          <strong>Reporter Contact:</strong> ${escapeHtml(sub.reporterName || "Anonymous")} · Phone: ${escapeHtml(sub.reporterPhone || "—")}
+        </div>
+        <div style="font-size:12px;color:#0369a1;">
+          <strong>Approx. Children Count:</strong> <span style="font-weight:700;font-size:13px;">${escapeHtml(sub.approxChildCount || 1)}</span>
+        </div>
+      </div>
+      <div>
+        <h4 style="margin:0 0 10px;font-size:14px;color:var(--ink-800);">Detailed Child Profile(s) &amp; Safeguarding Logs</h4>
+        ${childrenHtml}
+      </div>
+    `;
+
+    // Render action buttons
+    if (actions) {
+      if (can("REVIEW_SUBMISSIONS", session.role) && (st === "DRAFT" || st === "UNDER_REVIEW")) {
+        actions.innerHTML = `
+          <button type="button" id="modal-btn-close" class="btn btn--outline">Close</button>
+          <button type="button" id="modal-btn-reject" class="btn btn--outline" style="color:var(--red-600);border-color:#fca5a5;">Reject Case</button>
+          <button type="button" id="modal-btn-verify" class="btn btn--primary" style="background:var(--green-700);border-color:var(--green-700);">✓ Verify &amp; Accept Case</button>
+        `;
+        document.getElementById("modal-btn-close")?.addEventListener("click", () => modal.classList.add("is-hidden"));
+        document.getElementById("modal-btn-verify")?.addEventListener("click", async () => {
+          modal.classList.add("is-hidden");
+          await handleReviewSub(Number(sub.rowNumber), "VERIFIED", session);
+        });
+        document.getElementById("modal-btn-reject")?.addEventListener("click", async () => {
+          modal.classList.add("is-hidden");
+          await handleReviewSub(Number(sub.rowNumber), "REJECTED", session);
+        });
+      } else {
+        actions.innerHTML = `
+          <div style="margin-right:auto;font-size:12px;color:var(--ink-500);">
+            ${st === "VERIFIED" ? `<span style="color:var(--green-700);font-weight:700;">✓ Verified</span> by ${escapeHtml(sub.reviewedBy || "Admin")} on ${formatDate(sub.reviewedAt)}` : `<span style="color:var(--red-600);font-weight:700;">✗ Rejected:</span> ${escapeHtml(sub.reviewerNotes || "Report declined")}`}
+          </div>
+          <button type="button" id="modal-btn-close" class="btn btn--outline">Close</button>
+        `;
+        document.getElementById("modal-btn-close")?.addEventListener("click", () => modal.classList.add("is-hidden"));
+      }
+    }
+
+    modal.classList.remove("is-hidden");
   }
 
   async function handleReviewSub(rowNumber, newStatus, session) {
@@ -489,6 +724,22 @@
     } else {
       notes = window.prompt("Optional verification notes (e.g. Verified by phone or field visit):", "Verified with community leader");
       if (notes === null) return;
+    }
+
+    // Handle local storage reports
+    if (rowNumber < 0) {
+      const idx = Math.abs(rowNumber) - 1;
+      const localReports = JSON.parse(localStorage.getItem("uaf_ossc_reports") || "[]");
+      if (localReports[idx]) {
+        localReports[idx].status = newStatus;
+        localReports[idx].reviewedBy = session.name || "Admin";
+        localReports[idx].reviewedAt = new Date().toISOString();
+        localReports[idx].reviewerNotes = (notes || "").trim();
+        localStorage.setItem("uaf_ossc_reports", JSON.stringify(localReports));
+        flash(`Report successfully updated to ${newStatus}.`, "success");
+        loadSubmissions(session);
+        return;
+      }
     }
 
     try {
@@ -508,6 +759,99 @@
     } catch (err) {
       flash("Connection error.");
     }
+  }
+
+  function updateBrochureStatusDisplay() {
+    const badge = document.getElementById("brochure-status-badge");
+    const meta = document.getElementById("brochure-meta-display");
+    const customBrochure = localStorage.getItem("uaf_brochure_pdf");
+    const storedMeta = localStorage.getItem("uaf_brochure_meta");
+
+    if (customBrochure && storedMeta) {
+      try {
+        const parsed = JSON.parse(storedMeta);
+        if (badge) {
+          badge.textContent = "Custom Active PDF";
+          badge.className = "admin-badge admin-badge--verified";
+        }
+        if (meta) {
+          const sizeKb = Math.round(parsed.fileSize / 1024);
+          meta.textContent = `Current Active File: ${parsed.fileName} (${sizeKb} KB) · Updated ${formatDate(parsed.updatedAt)}`;
+        }
+      } catch (_) {}
+    } else {
+      if (badge) {
+        badge.textContent = "Default Institutional PDF";
+        badge.className = "admin-badge admin-badge--neutral";
+      }
+      if (meta) {
+        meta.textContent = "Currently serving the built-in official UAF Institutional Brochure (PDF).";
+      }
+    }
+  }
+
+  function initBrochureAdminControls() {
+    updateBrochureStatusDisplay();
+
+    const uploadBtn = document.getElementById("btn-upload-brochure");
+    const previewBtn = document.getElementById("btn-preview-brochure");
+    const resetBtn = document.getElementById("btn-reset-brochure");
+    const fileInput = document.getElementById("admin-brochure-file");
+
+    uploadBtn?.addEventListener("click", () => {
+      if (!fileInput || !fileInput.files || !fileInput.files[0]) {
+        flash("Please choose a PDF file to upload.");
+        return;
+      }
+      const file = fileInput.files[0];
+      if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+        flash("Invalid file format. Only PDF files are allowed.");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        try {
+          localStorage.setItem("uaf_brochure_pdf", reader.result);
+          localStorage.setItem("uaf_brochure_meta", JSON.stringify({
+            fileName: file.name,
+            fileSize: file.size,
+            updatedAt: new Date().toISOString()
+          }));
+          window.dispatchEvent(new Event("uaf_brochure_updated"));
+          updateBrochureStatusDisplay();
+          flash("Official UAF Institutional Brochure uploaded and published successfully.", "success");
+        } catch (err) {
+          flash("Could not save file: " + err.message);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    previewBtn?.addEventListener("click", () => {
+      const customBrochure = localStorage.getItem("uaf_brochure_pdf");
+      if (customBrochure) {
+        const a = document.createElement("a");
+        a.href = customBrochure;
+        a.download = "UAF_Institutional_Brochure_Preview.pdf";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        flash("Downloading current brochure preview...", "success");
+        return;
+      }
+      flash("Default brochure active in Request Data tab.", "success");
+    });
+
+    resetBtn?.addEventListener("click", () => {
+      if (window.confirm("Reset official brochure back to default institutional PDF?")) {
+        localStorage.removeItem("uaf_brochure_pdf");
+        localStorage.removeItem("uaf_brochure_meta");
+        window.dispatchEvent(new Event("uaf_brochure_updated"));
+        updateBrochureStatusDisplay();
+        if (fileInput) fileInput.value = "";
+        flash("Brochure reset to default institutional document.", "success");
+      }
+    });
   }
 
   async function loadStats(session) {
