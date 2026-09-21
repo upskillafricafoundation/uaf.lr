@@ -463,10 +463,19 @@
     const closeBtn = document.getElementById("story-modal-close");
     const doneBtn = document.getElementById("story-modal-done-btn");
 
+    const modal = document.getElementById("story-modal-backdrop");
+    const closeBtn = document.getElementById("story-modal-close");
+    const doneBtn = document.getElementById("story-modal-done-btn");
+    const modalSupportBtn = document.getElementById("story-modal-support-btn");
+
     function closeModal() {
       if (modal) {
         modal.classList.add("is-hidden");
         modal.style.display = "none";
+        delete modal.dataset.activeStoryId;
+      }
+      if (window.__uafStoryCarouselResume) {
+        window.__uafStoryCarouselResume();
       }
     }
 
@@ -483,6 +492,15 @@
       if (e.target === modal) closeModal();
     });
 
+    modalSupportBtn?.addEventListener("click", (e) => {
+      e.preventDefault();
+      const activeStoryId = modal?.dataset.activeStoryId;
+      const story = activeStoryId && window.__uafGetStory ? window.__uafGetStory(activeStoryId) : null;
+      const title = story ? story.title : (document.getElementById("story-modal-title")?.textContent || "Community Story");
+      const category = story ? (story.category || story.tag) : "";
+      tieDonationToStory(activeStoryId, title, category);
+    });
+
     function formatUSD(num) {
       const n = Number(num) || 0;
       return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -491,6 +509,11 @@
     function openStoryDetailModal(storyId) {
       const story = window.__uafGetStory && window.__uafGetStory(storyId);
       if (!story || !modal) return;
+
+      modal.dataset.activeStoryId = storyId;
+      if (window.__uafStoryCarouselPause) {
+        window.__uafStoryCarouselPause();
+      }
 
       // Track and increment view count when user clicks story to read details
       incrementStoryView(storyId);
@@ -553,9 +576,12 @@
 
     // Event delegation on document to handle any dynamically rendered story cards
     document.addEventListener("click", (e) => {
+      // Do not trigger story modal if user clicked "Support this Story" or other buttons
+      if (e.target.closest(".btn-story-support-trigger") || e.target.closest(".btn-story-donate") || e.target.closest(".btn-campaign-donate")) {
+        return;
+      }
       const trigger = e.target.closest("[data-story-id]");
       if (!trigger) return;
-      // Do not trigger if clicking a button with other explicit actions inside
       const storyId = trigger.dataset.storyId;
       if (storyId) {
         e.stopPropagation();
@@ -651,6 +677,262 @@
       };
     }
   }
+
+  /* ---------------------------------------------------------
+     TIE DONATION TO STORY
+     Connects donation directly to a specific community story / child
+  --------------------------------------------------------- */
+  function tieDonationToStory(storyId, storyTitle, storyCategory) {
+    // 1. Close detail modal if open
+    const modal = document.getElementById("story-modal-backdrop");
+    if (modal) {
+      modal.classList.add("is-hidden");
+      modal.style.display = "none";
+      delete modal.dataset.activeStoryId;
+      if (window.__uafStoryCarouselResume) window.__uafStoryCarouselResume();
+    }
+
+    // 2. Set Dedication Banner & Hidden Inputs
+    const alertEl = document.getElementById("don-story-tied-alert");
+    const titleEl = document.getElementById("don-story-tied-title");
+    const idInput = document.getElementById("don-dedicated-story-id");
+    const titleInput = document.getElementById("don-dedicated-story-title");
+
+    const cleanTitle = storyTitle || "Verified Child Story";
+
+    if (alertEl) alertEl.classList.remove("is-hidden");
+    if (titleEl) titleEl.textContent = cleanTitle;
+    if (idInput) idInput.value = storyId || "";
+    if (titleInput) titleInput.value = cleanTitle;
+
+    // 3. Prepopulate dedication note
+    const noteCheckbox = document.getElementById("don-add-note");
+    const noteContainer = document.getElementById("don-message-container");
+    const messageInput = document.getElementById("don-message");
+    if (noteCheckbox && noteContainer && messageInput) {
+      noteCheckbox.checked = true;
+      noteContainer.classList.remove("is-hidden");
+      if (!messageInput.value.trim() || messageInput.value.startsWith("Dedicated gift supporting:")) {
+        messageInput.value = `Dedicated gift supporting: ${cleanTitle}`;
+      }
+    }
+
+    // 4. Map and pre-select Impact Area
+    let impactTarget = "Education Access";
+    const catLower = (storyCategory || cleanTitle).toLowerCase();
+    if (catLower.includes("invisible") || catLower.includes("nic")) {
+      impactTarget = "No Invisible Child";
+    } else if (catLower.includes("women") || catLower.includes("livelihood") || catLower.includes("soap")) {
+      impactTarget = "Women & Youth Livelihoods";
+    } else if (catLower.includes("alp") || catLower.includes("digital") || catLower.includes("computer")) {
+      impactTarget = "Alternative Learning";
+    } else if (catLower.includes("education") || catLower.includes("tuition") || catLower.includes("school")) {
+      impactTarget = "Education Access";
+    }
+
+    // 5. Expand donation form & scroll smoothly
+    openDonationForm(impactTarget);
+    showToast(`Donation tied to: ${cleanTitle}`);
+  }
+  window.__uafTieDonationToStory = tieDonationToStory;
+
+  function clearStoryDonationTie() {
+    const alertEl = document.getElementById("don-story-tied-alert");
+    const idInput = document.getElementById("don-dedicated-story-id");
+    const titleInput = document.getElementById("don-dedicated-story-title");
+    const messageInput = document.getElementById("don-message");
+
+    if (alertEl) alertEl.classList.add("is-hidden");
+    if (idInput) idInput.value = "";
+    if (titleInput) titleInput.value = "";
+
+    if (messageInput && messageInput.value.startsWith("Dedicated gift supporting:")) {
+      messageInput.value = "";
+    }
+
+    const impactAreaSelect = document.getElementById("don-impact-area");
+    if (impactAreaSelect) impactAreaSelect.value = "General Support";
+
+    showToast("Donation updated to General Support — Area of Greatest Need");
+  }
+  window.__uafClearStoryDonationTie = clearStoryDonationTie;
+
+  /* ---------------------------------------------------------
+     30-SECOND SIDE-BY-SIDE STORY CAROUSEL & AUTO-SCROLLER
+     - 2 cards visible on desktop/tablet, 1 on mobile
+     - Auto-advances every 30 seconds
+     - Pauses on mouse hover, mobile touch/hold, or full story modal
+     - Resumes seamlessly when released or modal closed
+  --------------------------------------------------------- */
+  function initStoryCarousel() {
+    const viewport = document.getElementById("stories-carousel-viewport");
+    const track = document.getElementById("fundraising-stories-grid");
+    const statusText = document.getElementById("carousel-status-text");
+    const pulseDot = document.getElementById("carousel-pulse-dot");
+    const progressFill = document.getElementById("carousel-progress-fill");
+    const prevBtn = document.getElementById("carousel-prev-btn");
+    const nextBtn = document.getElementById("carousel-next-btn");
+    const dotsContainer = document.getElementById("carousel-dots-container");
+
+    if (!viewport || !track) return;
+
+    let currentIndex = 0;
+    let isUserHolding = false;
+    let isModalOpen = false;
+    let elapsedMs = 0;
+    const DURATION_MS = 30000; // exactly 30 seconds
+    const TICK_MS = 100;
+
+    function getCards() {
+      return Array.from(track.querySelectorAll(".campaign-card"));
+    }
+
+    function getCardsPerView() {
+      return window.innerWidth <= 640 ? 1 : 2;
+    }
+
+    function updateCarouselPosition() {
+      const cards = getCards();
+      const total = cards.length;
+      if (total === 0) return;
+
+      const perView = getCardsPerView();
+      if (currentIndex >= total) currentIndex = 0;
+      if (currentIndex < 0) currentIndex = Math.max(0, total - 1);
+
+      const firstCard = cards[0];
+      const gap = 20;
+      const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : (track.offsetWidth / perView);
+      const step = cardWidth + gap;
+
+      track.style.transform = `translateX(-${currentIndex * step}px)`;
+
+      if (statusText) {
+        const isPaused = isUserHolding || isModalOpen;
+        const pauseNotice = isPaused ? " (Paused)" : " (30s)";
+        statusText.textContent = `Story ${currentIndex + 1} of ${total} — Active${pauseNotice}`;
+      }
+      if (pulseDot) {
+        pulseDot.classList.toggle("is-paused", isUserHolding || isModalOpen);
+      }
+
+      if (dotsContainer) {
+        const dots = dotsContainer.querySelectorAll(".stories-carousel-dot");
+        dots.forEach((d, i) => {
+          d.classList.toggle("is-active", i === currentIndex);
+        });
+      }
+    }
+
+    function renderDots() {
+      if (!dotsContainer) return;
+      const cards = getCards();
+      dotsContainer.innerHTML = "";
+      cards.forEach((_, idx) => {
+        const dot = document.createElement("button");
+        dot.type = "button";
+        dot.className = "stories-carousel-dot" + (idx === currentIndex ? " is-active" : "");
+        dot.setAttribute("aria-label", `Go to story ${idx + 1}`);
+        dot.addEventListener("click", () => {
+          currentIndex = idx;
+          elapsedMs = 0;
+          updateCarouselPosition();
+        });
+        dotsContainer.appendChild(dot);
+      });
+    }
+
+    function nextStory() {
+      const cards = getCards();
+      const total = cards.length;
+      if (total <= 1) return;
+      currentIndex = (currentIndex + 1) % total;
+      elapsedMs = 0;
+      updateCarouselPosition();
+    }
+
+    function prevStory() {
+      const cards = getCards();
+      const total = cards.length;
+      if (total <= 1) return;
+      currentIndex = (currentIndex - 1 + total) % total;
+      elapsedMs = 0;
+      updateCarouselPosition();
+    }
+
+    // Interval ticker for 30s timer
+    if (window.__uafCarouselInterval) clearInterval(window.__uafCarouselInterval);
+    window.__uafCarouselInterval = setInterval(() => {
+      const activeScreen = document.querySelector(".screen[data-screen='donate']");
+      const isDonateScreenActive = activeScreen && activeScreen.classList.contains("is-active");
+      const isPaused = isUserHolding || isModalOpen || !isDonateScreenActive;
+
+      if (!isPaused) {
+        elapsedMs += TICK_MS;
+        const pct = Math.min(100, (elapsedMs / DURATION_MS) * 100);
+        if (progressFill) progressFill.style.width = `${pct}%`;
+
+        if (elapsedMs >= DURATION_MS) {
+          nextStory();
+          if (progressFill) progressFill.style.width = "0%";
+        }
+      } else {
+        if (pulseDot) pulseDot.classList.add("is-paused");
+        if (statusText && isDonateScreenActive) {
+          const cards = getCards();
+          statusText.textContent = `Story ${currentIndex + 1} of ${cards.length} — Paused`;
+        }
+      }
+    }, TICK_MS);
+
+    // Pause on hover or touch/hold
+    viewport.addEventListener("mouseenter", () => {
+      isUserHolding = true;
+      updateCarouselPosition();
+    });
+    viewport.addEventListener("mouseleave", () => {
+      isUserHolding = false;
+      updateCarouselPosition();
+    });
+    viewport.addEventListener("touchstart", () => {
+      isUserHolding = true;
+      updateCarouselPosition();
+    }, { passive: true });
+    viewport.addEventListener("touchend", () => {
+      isUserHolding = false;
+      updateCarouselPosition();
+    }, { passive: true });
+
+    if (prevBtn) {
+      prevBtn.onclick = (e) => {
+        e.preventDefault();
+        prevStory();
+      };
+    }
+    if (nextBtn) {
+      nextBtn.onclick = (e) => {
+        e.preventDefault();
+        nextStory();
+      };
+    }
+
+    window.__uafStoryCarouselPause = () => {
+      isModalOpen = true;
+      updateCarouselPosition();
+    };
+    window.__uafStoryCarouselResume = () => {
+      isModalOpen = false;
+      updateCarouselPosition();
+    };
+
+    window.addEventListener("resize", () => {
+      updateCarouselPosition();
+    });
+
+    renderDots();
+    updateCarouselPosition();
+  }
+  window.__uafInitStoryCarousel = initStoryCarousel;
 
   /* ---------------------------------------------------------
      OFFLINE STATUS & DRAFT QUEUE BADGE
@@ -1040,27 +1322,45 @@
     renderRoute();
     setupDynamicChildProfiles();
 
-    // Wire up all [data-goto] elements
+    // Wire up all [data-goto] elements (normal routing without auto-opening donation form)
     document.querySelectorAll("[data-goto]").forEach((el) => {
       el.addEventListener("click", (e) => {
         const goto = el.dataset.goto;
-        const impact = el.dataset.impact;
-        if (goto === "donate") {
-          e.preventDefault();
-          openDonationForm(impact);
-        } else {
-          goTo(goto);
-        }
+        goTo(goto);
       });
     });
 
-    // Wire up all donate buttons across the app
+    // Wire up all direct donate buttons across the app
     document.querySelectorAll(".btn-header-donate, .btn-story-donate, .btn-campaign-donate").forEach((btn) => {
       btn.addEventListener("click", (e) => {
         e.preventDefault();
         openDonationForm(btn.dataset.impact);
       });
     });
+
+    // Global delegation for story support triggers and clearing tie
+    document.addEventListener("click", (e) => {
+      const supportTrigger = e.target.closest(".btn-story-support-trigger");
+      if (supportTrigger) {
+        e.preventDefault();
+        e.stopPropagation();
+        const storyId = supportTrigger.dataset.storyId;
+        const storyTitle = supportTrigger.dataset.storyTitle;
+        const storyCat = supportTrigger.dataset.storyCategory;
+        tieDonationToStory(storyId, storyTitle, storyCat);
+        return;
+      }
+
+      const clearTieBtn = e.target.closest("#btn-clear-story-tie");
+      if (clearTieBtn) {
+        e.preventDefault();
+        clearStoryDonationTie();
+        return;
+      }
+    });
+
+    // Initialize 30-Second Side-by-Side Story Carousel
+    initStoryCarousel();
 
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("./service-worker.js").catch(() => {});

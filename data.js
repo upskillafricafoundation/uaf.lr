@@ -171,15 +171,24 @@
               <span class="raised-val">${formatMoney(raised)} raised</span>
               ${goalText}
             </div>
-            <div class="story-card-action">
+            <div class="story-card-action-group">
               <button type="button" class="btn-read-story-trigger" data-story-id="${escapeHtml(storyId)}">
-                <span>Read Full Story &amp; Testimonial</span>
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+                <span>Read Full Story</span>
+              </button>
+              <button type="button" class="btn-story-support-trigger" data-story-id="${escapeHtml(storyId)}" data-story-title="${escapeHtml(s.title)}" data-story-category="${escapeHtml(s.tag || s.category || '')}">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                <span>Support this Story</span>
               </button>
             </div>
           </div>
         </div>
       `;
     }).join("");
+
+    if (window.__uafInitStoryCarousel) {
+      window.__uafInitStoryCarousel();
+    }
   }
   window.__uafRenderFundraisingStories = renderFundraisingStories;
 
@@ -1352,6 +1361,14 @@ startxref
       const anonymous = document.getElementById("don-anon")?.checked || false;
       const consent = document.getElementById("don-consent")?.checked || false;
 
+      const dedicatedStoryTitle = document.getElementById("don-dedicated-story-title")?.value.trim() || "";
+      const dedicatedStoryId = document.getElementById("don-dedicated-story-id")?.value.trim() || "";
+
+      let finalMessage = message;
+      if (dedicatedStoryTitle && !finalMessage.includes(dedicatedStoryTitle)) {
+        finalMessage = finalMessage ? `[Dedicated to: ${dedicatedStoryTitle}] ${finalMessage}` : `[Dedicated to: ${dedicatedStoryTitle}]`;
+      }
+
       if (!name || !phone || !address || !consent) {
         window.__uafShowToast?.("Full name, phone, home address, and communication consent are required.");
         return;
@@ -1375,7 +1392,9 @@ startxref
         frequency,
         impactArea,
         paymentMethod: "manual_momo",
-        message,
+        message: finalMessage,
+        dedicatedStory: dedicatedStoryTitle,
+        dedicatedStoryId: dedicatedStoryId,
         anonymous,
         consent,
         timestamp: new Date().toISOString()
@@ -1383,8 +1402,9 @@ startxref
 
       // OFFLINE HANDLING
       if (!navigator.onLine) {
-        queueOfflineDraft("createDonation", payload, `Donation: ${currency} ${amount} from ${name}`);
+        queueOfflineDraft("createDonation", payload, `Donation: ${currency} ${amount} from ${name}${dedicatedStoryTitle ? ` (For: ${dedicatedStoryTitle})` : ""}`);
         form.reset();
+        window.__uafClearStoryDonationTie && window.__uafClearStoryDonationTie();
         submitBtn?.removeAttribute("disabled");
         if (span) span.textContent = originalText;
         else submitBtn.textContent = originalText;
@@ -1394,6 +1414,7 @@ startxref
       if (!isConfigured) {
         window.__uafShowToast?.(`Thank you! Transfer record submitted. Ref: UAF-MOMO-${Date.now().toString().slice(-6)}`);
         form.reset();
+        window.__uafClearStoryDonationTie && window.__uafClearStoryDonationTie();
         submitBtn?.removeAttribute("disabled");
         if (span) span.textContent = originalText;
         else submitBtn.textContent = originalText;
@@ -1410,15 +1431,18 @@ startxref
 
         if (json.ok) {
           form.reset();
+          window.__uafClearStoryDonationTie && window.__uafClearStoryDonationTie();
           window.__uafShowToast?.(json.message || `Donation Ref: ${json.transactionId}. Awaiting UAF verification.`);
           loadFundingSummary();
         } else {
           queueOfflineDraft("createDonation", payload, `Donation: ${currency} ${amount}`);
           form.reset();
+          window.__uafClearStoryDonationTie && window.__uafClearStoryDonationTie();
         }
       } catch (err) {
         queueOfflineDraft("createDonation", payload, `Donation: ${currency} ${amount}`);
         form.reset();
+        window.__uafClearStoryDonationTie && window.__uafClearStoryDonationTie();
       } finally {
         submitBtn?.removeAttribute("disabled");
         if (span) span.textContent = originalText;
