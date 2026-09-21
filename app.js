@@ -468,7 +468,7 @@
     updateStoryViewsDisplay();
   }
 
-  function initStoryModal() {
+   function initStoryModal() {
     const modal = document.getElementById("story-modal-backdrop");
     const closeBtn = document.getElementById("story-modal-close");
     const doneBtn = document.getElementById("story-modal-done-btn");
