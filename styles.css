@@ -945,6 +945,9 @@ body.is-home-screen .screen[data-screen="menu"] {
   grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
+.form-row-2 > * {
+  min-width: 0;
+}
 
 .form-check {
   display: flex;
@@ -1297,20 +1300,52 @@ body.is-home-screen .screen[data-screen="menu"] {
 
 .campaign-card__img-wrap {
   position: relative;
-  height: 180px;
+  height: 200px;
   overflow: hidden;
-  background: #f1f5f9;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--border);
 }
 
 .campaign-card__img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  background: #ffffff;
+  padding: 8px;
   transition: transform 0.4s ease;
 }
 
 .campaign-card:hover .campaign-card__img {
-  transform: scale(1.05);
+  transform: scale(1.03);
+}
+
+.btn-story-share-dots {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-700);
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.btn-story-share-dots:hover {
+  background: #ffffff;
+  color: var(--blue-700);
+  transform: scale(1.1);
+  box-shadow: 0 3px 10px rgba(2, 132, 199, 0.25);
 }
 
 .campaign-card__body {
@@ -2033,6 +2068,7 @@ body.is-home-screen .screen[data-screen="menu"] {
   .form-row-2 {
     grid-template-columns: 1fr;
   }
+  .stats-8-grid,
   .stats-7-grid {
     grid-template-columns: repeat(2, 1fr) !important;
   }
@@ -2411,9 +2447,10 @@ body.is-home-screen .screen[data-screen="menu"] {
 /* =========================================================
    STATISTICS 7-KPI CARDS GRID
    ========================================================= */
+.stats-8-grid,
 .stats-7-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  grid-template-columns: repeat(4, 1fr);
   gap: 12px;
 }
 

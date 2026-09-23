@@ -202,6 +202,9 @@
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     <span class="story-views-count" data-story-views="story_blessing">0 reads</span>
                   </div>
+                  <button type="button" class="btn-story-share-dots" data-share-story-id="story_blessing" title="Copy link to this story" aria-label="Share story link">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                  </button>
                 </div>
                 <div class="campaign-card__body">
                   <span class="campaign-card__tag">No Invisible Child</span>
@@ -232,6 +235,9 @@
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     <span class="story-views-count" data-story-views="story_comfort">0 reads</span>
                   </div>
+                  <button type="button" class="btn-story-share-dots" data-share-story-id="story_comfort" title="Copy link to this story" aria-label="Share story link">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                  </button>
                 </div>
                 <div class="campaign-card__body">
                   <span class="campaign-card__tag">Livelihood Empowerment</span>
@@ -262,6 +268,9 @@
                     <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                     <span class="story-views-count" data-story-views="story_emmanuel">0 reads</span>
                   </div>
+                  <button type="button" class="btn-story-share-dots" data-share-story-id="story_emmanuel" title="Copy link to this story" aria-label="Share story link">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+                  </button>
                 </div>
                 <div class="campaign-card__body">
                   <span class="campaign-card__tag">Alternative Learning (ALP)</span>
@@ -292,7 +301,7 @@
 
           
         <!-- 3. Donate Form Collapsible Button -->
-        <div class="donate-toggle-wrapper" style="margin-top:36px; text-align:center;">
+        <div class="donate-toggle-wrapper" style="margin-top:36px; margin-bottom:36px; text-align:center;">
           <button type="button" class="btn-toggle-donate-form" id="btn-toggle-donate-form" aria-expanded="false">
             <span id="btn-donate-toggle-text">Donate Now</span>
             <svg class="toggle-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
@@ -468,7 +477,7 @@
         </div>
 
                   <!-- 1. Emotional Funding Request Statement -->
-        <div class="emotional-appeal-card">
+        <div class="emotional-appeal-card" style="margin-top:28px;">
           <h2 class="appeal-title">Every Child Deserves a Chance to Learn and build a better future</h2>
           <div class="appeal-body-text">
             <p>Across Liberia, thousands of vulnerable children remain out of school because of poverty, family hardship, lack of basic school supplies, and unsafe living conditions, while many remain unseen and unrecognized for years. Through the No Invisible Child (NIC) Initiative, Upskill Africa Foundation and collaborative partners work with communities to identify these children, connect them to education and protection services, and support families to keep them in school.</p>
@@ -532,19 +541,16 @@
               </div>
             </div>
 
-            <!-- The 7 Required KPI Cards -->
-            <div class="stats-7-grid" style="margin-top:20px;">
+            <!-- The 8 Required KPI Cards (4 in one row) -->
+            <div class="stats-8-grid" style="margin-top:20px;">
               <div class="stat-kpi-card">
                 <div class="stat-kpi-card__value" id="stat-parents-empowered">0</div>
                 <div class="stat-kpi-card__label">Parents Empowered with Skills</div>
               </div>
-                
-                 <div class="stats-7-grid" style="margin-top:20px;">
               <div class="stat-kpi-card">
-                <div class="stat-kpi-card__value" id="stat-parents-empowered">0</div>
+                <div class="stat-kpi-card__value" id="stat-children-identified">0</div>
                 <div class="stat-kpi-card__label">Out-of-school Children Identified</div>
               </div>
-                     
               <div class="stat-kpi-card">
                 <div class="stat-kpi-card__value" id="stat-children-awaiting">0</div>
                 <div class="stat-kpi-card__label">Children Awaiting Support</div>
@@ -704,42 +710,6 @@
               <p class="program-item__desc">Safeguarding, mandatory reporting protocols, and creating secure learning spaces in partner schools.</p>
               <span class="program-item__tag">Protection</span>
             </div>
-
-            <div class="program-item-card" data-goto="donate">
-              <div class="program-item__icon">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
-              </div>
-              <div class="program-item__title">Women &amp; Households</div>
-              <p class="program-item__desc">Soap making, tie-dye, cake baking, and financial cooperatives enabling mothers to pay school fees.</p>
-              <span class="program-item__tag">Livelihoods</span>
-            </div>
-
-            <div class="program-item-card" data-goto="donate">
-              <div class="program-item__icon">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zM12 6v6l4 2"/></svg>
-              </div>
-              <div class="program-item__title">Women &amp; Youth</div>
-              <p class="program-item__desc">Mentorship, leadership training, digital inclusion, and economic self-reliance for adolescent girls.</p>
-              <span class="program-item__tag">Empowerment</span>
-            </div>
-
-            <div class="program-item-card" onclick="window.open('https://uafalp.blogspot.com/','_blank')">
-              <div class="program-item__icon">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
-              </div>
-              <div class="program-item__title">Alternative Learning</div>
-              <p class="program-item__desc">Practical computer literacy, typing, office productivity, and web basics for young mothers and dropouts (ALP).</p>
-              <span class="program-item__tag">Digital Skills</span>
-            </div>
-
-            <div class="program-item-card">
-              <div class="program-item__icon">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-              </div>
-              <div class="program-item__title">Youth Innovation</div>
-              <p class="program-item__desc">Community innovation incubators, civic technology readiness, and youth-led problem solving.</p>
-              <span class="program-item__tag">Innovation</span>
-            </div>
           </div>
         </div>
 
@@ -838,32 +808,31 @@
               </div>
             </div>
 
-            <div class="form-row-2">
-              <div class="form-field">
-                <label for="ev-reason">Reason for Request *</label>
-                <select id="ev-reason" required>
-                  <option value="">Select primary reason</option>
-                  <option value="Academic Research & Policy Study">Academic Research &amp; Policy Study</option>
-                  <option value="NGO / Program Partnership">NGO / Program Partnership</option>
-                  <option value="Donor Due Diligence & Grant Evaluation">Donor Due Diligence &amp; Grant Evaluation</option>
-                  <option value="Investigative Journalism / Media">Investigative Journalism / Media</option>
-                  <option value="Community Assessment & Field Intervention">Community Assessment &amp; Field Intervention</option>
-                  <option value="Other Institutional Purpose">Other Institutional Purpose</option>
-                </select>
-              </div>
-              <div class="form-field">
-                <label for="ev-source">How did you hear about UAF? *</label>
-                <select id="ev-source" required>
-                  <option value="">Select referral source</option>
-                  <option value="Social Media (Facebook / LinkedIn)">Social Media (Facebook / LinkedIn)</option>
-                  <option value="Search Engine (Google / Bing)">Search Engine (Google / Bing)</option>
-                  <option value="Colleague / Partner Recommendation">Colleague / Partner Recommendation</option>
-                  <option value="Community Outreach / Field Visit">Community Outreach / Field Visit</option>
-                  <option value="News Media / Radio / Press">News Media / Radio / Press</option>
-                  <option value="UAF ALP Blog / Website">UAF ALP Blog / Website</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
+            <div class="form-field">
+              <label for="ev-reason">Reason for Request *</label>
+              <select id="ev-reason" required>
+                <option value="">Select primary reason</option>
+                <option value="Academic Research & Policy Study">Academic Research &amp; Policy Study</option>
+                <option value="NGO / Program Partnership">NGO / Program Partnership</option>
+                <option value="Donor Due Diligence & Grant Evaluation">Donor Due Diligence &amp; Grant Evaluation</option>
+                <option value="Investigative Journalism / Media">Investigative Journalism / Media</option>
+                <option value="Community Assessment & Field Intervention">Community Assessment &amp; Field Intervention</option>
+                <option value="Other Institutional Purpose">Other Institutional Purpose</option>
+              </select>
+            </div>
+
+            <div class="form-field">
+              <label for="ev-source">How did you hear about UAF? *</label>
+              <select id="ev-source" required>
+                <option value="">Select referral source</option>
+                <option value="Social Media (Facebook / LinkedIn)">Social Media (Facebook / LinkedIn)</option>
+                <option value="Search Engine (Google / Bing)">Search Engine (Google / Bing)</option>
+                <option value="Colleague / Partner Recommendation">Colleague / Partner Recommendation</option>
+                <option value="Community Outreach / Field Visit">Community Outreach / Field Visit</option>
+                <option value="News Media / Radio / Press">News Media / Radio / Press</option>
+                <option value="UAF ALP Blog / Website">UAF ALP Blog / Website</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
 
             <div class="form-field">
@@ -962,6 +931,11 @@
                 <label for="rep-phone">Phone number *</label>
                 <input type="tel" id="rep-phone" name="reporterPhone" placeholder="088... or 077..." required />
               </div>
+            </div>
+
+            <div class="form-field">
+              <label for="rep-org">Organization / Institution (Optional)</label>
+              <input type="text" id="rep-org" name="reporterOrg" placeholder="e.g. Community School, CBO, Faith Group, Local Leader" />
             </div>
 
             <div class="form-row-2">

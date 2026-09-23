@@ -162,6 +162,9 @@
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               <span class="story-views-count" data-story-views="${escapeHtml(storyId)}">${views} ${views === 1 ? "read" : "reads"}</span>
             </div>
+            <button type="button" class="btn-story-share-dots" data-share-story-id="${escapeHtml(storyId)}" title="Copy link to this story" aria-label="Share story link">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="12" cy="19" r="2"/></svg>
+            </button>
           </div>
           <div class="campaign-card__body">
             <span class="campaign-card__tag">${escapeHtml(s.tag || s.category || "Field Story")}</span>
@@ -653,6 +656,7 @@
 
     // Elements
     const parentsEl = document.getElementById("stat-parents-empowered");
+    const identifiedEl = document.getElementById("stat-children-identified");
     const awaitingEl = document.getElementById("stat-children-awaiting");
     const commsEl = document.getElementById("stat-communities-reached");
     const schoolsEl = document.getElementById("stat-school-partners");
@@ -667,6 +671,7 @@
 
     if (!rows.length) {
       if (parentsEl) parentsEl.textContent = "0";
+      if (identifiedEl) identifiedEl.textContent = "0";
       if (awaitingEl) awaitingEl.textContent = "0";
       if (commsEl) commsEl.textContent = "0";
       if (schoolsEl) schoolsEl.textContent = "0";
@@ -685,6 +690,7 @@
     }
 
     const parentsEmpowered = sum(rows, "parentsEmpowered");
+    const outOfSchoolIdentified = sum(rows, "outOfSchoolIdentified");
     const childrenAwaiting = sum(rows, "yetToEnroll");
     const communitiesReached = new Set(rows.map((r) => `${r.county}|${r.community}`)).size;
     const schoolPartners = sum(rows, "schoolPartners");
@@ -695,6 +701,7 @@
     const balanceToRaise = Math.max(0, totalNeeded - totalRaised);
 
     if (parentsEl) parentsEl.textContent = fmt(parentsEmpowered);
+    if (identifiedEl) identifiedEl.textContent = fmt(outOfSchoolIdentified);
     if (awaitingEl) awaitingEl.textContent = fmt(childrenAwaiting);
     if (commsEl) commsEl.textContent = fmt(communitiesReached);
     if (schoolsEl) schoolsEl.textContent = fmt(schoolPartners);
@@ -848,6 +855,7 @@
     `).join("");
   }
   window.addEventListener("uaf_partners_updated", renderPartners);
+  window.addEventListener("uaf_programs_updated", renderUafPrograms);
 
   function renderAll() {
     renderCombinedStatistics();
@@ -944,6 +952,7 @@
       const submitBtn = form.querySelector('button[type="submit"]');
       const reporterName = document.getElementById("rep-name")?.value.trim() || "";
       const reporterPhone = document.getElementById("rep-phone")?.value.trim() || "";
+      const reporterOrg = document.getElementById("rep-org")?.value.trim() || "";
       const community = document.getElementById("rep-community")?.value.trim() || "";
       const county = document.getElementById("rep-county")?.value.trim() || "";
       const childCountInput = document.getElementById("rep-count");
@@ -1029,6 +1038,7 @@
         action: "submitOutOfSchoolReport",
         reporterName,
         reporterPhone,
+        reporterOrg,
         community,
         county,
         childCount: children.length,

@@ -344,6 +344,7 @@
       { title: "Request Data & Evidence", type: "Form", route: "request-data", desc: "Request research datasets and program evaluation records" },
       { title: "Submit Out-of-School Children", type: "Form", route: "submit-ossc", desc: "Report children needing school intake and support" },
       { title: "UAF Partners & Collaborators", type: "Page", route: "partners", desc: "Institutional partners, school alliances, child protection" },
+      { title: "Admin Portal & Login", type: "Staff Console", route: "admin", desc: "Authorized staff login, role verification, and admin portal access" },
       { title: "Montserrado County", type: "County", route: "statistics", county: "Montserrado", desc: "West Point, Clara Town, Duala, Red Light, New Kru Town" },
       { title: "Margibi County", type: "County", route: "statistics", county: "Margibi", desc: "Kakata, Harbel, Unification Town" },
       { title: "Bong County", type: "County", route: "statistics", county: "Bong", desc: "Gbarnga, Totota, Suakoko" },
@@ -404,6 +405,10 @@
           const route = el.dataset.searchRoute;
           const county = el.dataset.searchCounty;
           closeSearch();
+          if (route === "admin" || route.startsWith("admin")) {
+            window.location.href = "admin/index.html";
+            return;
+          }
           goTo(route);
           if (county) {
             setTimeout(() => {
@@ -468,7 +473,7 @@
     updateStoryViewsDisplay();
   }
 
-   function initStoryModal() {
+  function initStoryModal() {
     const modal = document.getElementById("story-modal-backdrop");
     const closeBtn = document.getElementById("story-modal-close");
     const doneBtn = document.getElementById("story-modal-done-btn");
@@ -582,8 +587,8 @@
 
     // Event delegation on document to handle any dynamically rendered story cards
     document.addEventListener("click", (e) => {
-      // Do not trigger story modal if user clicked "Support this Story" or other buttons
-      if (e.target.closest(".btn-story-support-trigger") || e.target.closest(".btn-story-donate") || e.target.closest(".btn-campaign-donate")) {
+      // Do not trigger story modal if user clicked "Support this Story" or share dots
+      if (e.target.closest(".btn-story-support-trigger") || e.target.closest(".btn-story-donate") || e.target.closest(".btn-campaign-donate") || e.target.closest(".btn-story-share-dots")) {
         return;
       }
       const trigger = e.target.closest("[data-story-id]");
@@ -594,6 +599,59 @@
         openStoryDetailModal(storyId);
       }
     });
+
+    // 3-dots Story Share Link Handler
+    function fallbackCopyText(text) {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try {
+        document.execCommand("copy");
+        window.__uafShowToast?.("Story link copied to clipboard!");
+      } catch (err) {
+        window.prompt("Copy story link:", text);
+      }
+      document.body.removeChild(ta);
+    }
+
+    document.addEventListener("click", (e) => {
+      const shareBtn = e.target.closest(".btn-story-share-dots");
+      if (!shareBtn) return;
+      e.stopPropagation();
+      e.preventDefault();
+      const storyId = shareBtn.dataset.shareStoryId;
+      if (!storyId) return;
+      const shareUrl = `${window.location.origin}${window.location.pathname}#/donate?story=${encodeURIComponent(storyId)}`;
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(shareUrl).then(() => {
+          window.__uafShowToast?.("Story link copied to clipboard!");
+        }).catch(() => {
+          fallbackCopyText(shareUrl);
+        });
+      } else {
+        fallbackCopyText(shareUrl);
+      }
+    });
+
+    // Deep link support: auto-open story detail modal when #/donate?story=... is visited
+    function handleStoryDeepLink() {
+      const hash = window.location.hash || "";
+      const match = hash.match(/[?&]story=([a-zA-Z0-9_-]+)/);
+      if (match && match[1]) {
+        const storyId = match[1];
+        goTo("donate");
+        setTimeout(() => {
+          if (typeof window.__uafOpenStoryDetailModal === "function") {
+            window.__uafOpenStoryDetailModal(storyId);
+          }
+        }, 300);
+      }
+    }
+    window.addEventListener("hashchange", handleStoryDeepLink);
+    setTimeout(handleStoryDeepLink, 350);
   }
 
   /* ---------------------------------------------------------
@@ -786,7 +844,7 @@
     let isUserHolding = false;
     let isModalOpen = false;
     let elapsedMs = 0;
-    const DURATION_MS = 30000; // exactly 30 seconds
+    const DURATION_MS = 15000; // 15 seconds
     const TICK_MS = 100;
 
     function getCards() {
@@ -815,7 +873,7 @@
 
       if (statusText) {
         const isPaused = isUserHolding || isModalOpen;
-        const pauseNotice = isPaused ? " (Paused)" : " (30s)";
+        const pauseNotice = isPaused ? " (Paused)" : " (15s)";
         statusText.textContent = `Story ${currentIndex + 1} of ${total} — Active${pauseNotice}`;
       }
       if (pulseDot) {
