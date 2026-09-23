@@ -10,14 +10,22 @@
   const API_URL = (window.UAF_CONFIG && window.UAF_CONFIG.API_URL) || "";
 
   const ROLES_LIST = [
+    { key: "ADMIN", label: "Admin (Matches Super Admin - Full Access)" },
     { key: "SUPER_ADMIN", label: "Super Admin (Full System Access)" },
-    { key: "ADMIN", label: "Admin (Operations & Verification)" },
-    { key: "FINANCE", label: "Finance / Accountant (Donations & Funds)" },
-    { key: "VERIFIER", label: "Verifier (Community Data & Submissions)" },
-    { key: "PROGRAM_MANAGER", label: "Program Manager (Media & Programs)" },
-    { key: "SUPPORTER_MANAGER", label: "Supporter Manager (Donors & Outreach)" },
-    { key: "VIEWER", label: "Viewer (Read-Only Insights)" }
+    { key: "EXECUTIVE_STAFF", label: "Executive Staff (Data, Donations, Stories)" },
+    { key: "COORDINATOR", label: "Coordinator (Executive Staff)" },
+    { key: "ADMINISTRATOR", label: "Administrator (Executive Staff)" },
+    { key: "FINANCE", label: "Finance / Accountant (Executive Staff)" },
+    { key: "VERIFIER", label: "Verifier (Executive Staff)" },
+    { key: "PROGRAM_MANAGER", label: "Program Manager (Executive Staff)" },
+    { key: "SUPPORTER_MANAGER", label: "Supporter Manager (Executive Staff)" },
+    { key: "VIEWER", label: "Viewer (Executive Staff)" }
   ];
+
+  function isSuperAdmin(role) {
+    const r = String(role || "").toUpperCase().trim().replace(/[\s-]+/g, "_");
+    return r === "SUPER_ADMIN" || r === "ADMIN" || r === "SUPERADMIN";
+  }
 
   async function callApi(action, payload) {
     const res = await fetch(API_URL, {
@@ -48,11 +56,11 @@
   let cachedUsers = [];
 
   function renderUsersModule(container, session) {
-    if (session.role !== "SUPER_ADMIN" && session.role !== "ADMIN") {
+    if (!isSuperAdmin(session?.role)) {
       container.innerHTML = `
         <div class="admin-card">
           <h2>Access Restricted</h2>
-          <p class="admin-muted">Staff account management is restricted to Administrators.</p>
+          <p class="admin-muted">Staff account management is restricted to Super Admin / Admin.</p>
         </div>
       `;
       return;
@@ -65,7 +73,7 @@
           <p class="admin-muted" style="margin-top:4px;">Manage administrative staff access and role-based permissions across UAF programs.</p>
         </div>
         <div style="display:flex;gap:8px;">
-          ${session.role === "SUPER_ADMIN" ? '<button id="add-user-btn" class="btn btn--primary">+ Add User</button>' : ''}
+          ${isSuperAdmin(session?.role) ? '<button id="add-user-btn" class="btn btn--primary">+ Add User</button>' : ''}
           <button id="users-refresh-btn" class="btn btn--outline">Refresh</button>
         </div>
       </div>
@@ -212,12 +220,16 @@
       const isSelf = u.userId === session.userId;
 
       let actionsHtml = "";
-      if (session.role === "SUPER_ADMIN") {
+      if (isSuperAdmin(session?.role)) {
+        const targetIsAdmin = isSuperAdmin(u.role);
+        // Only Super Admin should be able to disable other admin accounts
+        const canToggle = !isSelf && (!targetIsAdmin || isSuperAdmin(session?.role));
+
         actionsHtml = `
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="btn btn--outline" style="padding:4px 8px;font-size:11.5px;" data-action="edit-role" data-id="${u.userId}" data-role="${u.role}">Role</button>
             <button class="btn btn--outline" style="padding:4px 8px;font-size:11.5px;" data-action="reset-pwd" data-id="${u.userId}">Reset Pwd</button>
-            ${!isSelf ? `<button class="btn btn--outline" style="padding:4px 8px;font-size:11.5px;color:${isActive ? "var(--red-600)" : "var(--green-700)"};" data-action="toggle-status" data-id="${u.userId}">${isActive ? "Disable" : "Enable"}</button>` : ""}
+            ${canToggle ? `<button class="btn btn--outline" style="padding:4px 8px;font-size:11.5px;color:${isActive ? "var(--red-600)" : "var(--green-700)"};" data-action="toggle-status" data-id="${u.userId}">${isActive ? "Disable" : "Enable"}</button>` : ""}
           </div>
         `;
       } else {
@@ -232,6 +244,7 @@
           </td>
           <td>
             <span class="admin-badge admin-badge--verified" style="background:var(--blue-050);color:var(--blue-900);border-color:var(--blue-200);">${escapeHtml(u.role)}</span>
+            <span style="display:block;font-size:10.5px;color:var(--ink-500);margin-top:2px;">${isSuperAdmin(u.role) ? 'Matches Super Admin' : 'Matches Executive Staff'}</span>
           </td>
           <td>
             <span class="admin-badge ${isActive ? "admin-badge--verified" : "admin-badge--failed"}">${escapeHtml(u.status || "ACTIVE")}</span>
@@ -327,10 +340,26 @@
   }
 
   async function handleToggleStatus(userId, session) {
+    if (!isSuperAdmin(session?.role)) {
+      flash("Permission denied. Only Super Admin can disable or activate staff accounts.", "error");
+      return;
+    }
     const user = cachedUsers.find((u) => u.userId === userId);
-    const actionName = user && user.status === "ACTIVE" ? "disable" : "activate";
+    if (!user) return;
 
-    const ok = window.confirm(`Are you sure you want to ${actionName} this user account?`);
+    if (user.userId === session?.userId) {
+      flash("You cannot disable your own admin account.", "error");
+      return;
+    }
+
+    const targetIsAdmin = isSuperAdmin(user.role);
+    if (targetIsAdmin && !isSuperAdmin(session?.role)) {
+      flash("Permission denied. Only Super Admin can disable other admin accounts.", "error");
+      return;
+    }
+
+    const actionName = user.status === "ACTIVE" ? "disable" : "activate";
+    const ok = window.confirm(`Are you sure you want to ${actionName} account for "${user.name}" (${user.role})?`);
     if (!ok) return;
 
     try {

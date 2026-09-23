@@ -19,16 +19,16 @@
 
   // Mirrors Config.gs ROLE_PERMISSIONS - All admin roles have view and export
   const ROLE_CAN = {
-    VIEW_DONATIONS: ["ADMIN", "ADMINISTRATOR", "COORDINATOR", "SUPER_ADMIN", "ACCOUNTANT", "PROGRAM_MANAGER"],
-    VERIFY_DONATION: ["ADMIN", "ADMINISTRATOR", "COORDINATOR", "SUPER_ADMIN", "ACCOUNTANT"],
-    EXPORT_DONATIONS: ["ADMIN", "ADMINISTRATOR", "COORDINATOR", "SUPER_ADMIN", "ACCOUNTANT", "PROGRAM_MANAGER"]
+    VIEW_DONATIONS: ["ADMIN", "ADMINISTRATOR", "COORDINATOR", "SUPER_ADMIN", "ACCOUNTANT", "PROGRAM_MANAGER", "EXECUTIVE_STAFF"],
+    VERIFY_DONATION: ["ADMIN", "ADMINISTRATOR", "COORDINATOR", "SUPER_ADMIN", "ACCOUNTANT", "EXECUTIVE_STAFF"],
+    EXPORT_DONATIONS: ["ADMIN", "ADMINISTRATOR", "COORDINATOR", "SUPER_ADMIN", "ACCOUNTANT", "PROGRAM_MANAGER", "EXECUTIVE_STAFF"]
   };
 
   function can(permission, role) {
     if (!role) return true;
-    const r = String(role).toUpperCase();
-    if (r === "SUPER_ADMIN" || r === "SUPER ADMIN") return true;
-    return (ROLE_CAN[permission] || []).some((p) => p.toUpperCase() === r);
+    const r = String(role).toUpperCase().trim().replace(/[\s-]+/g, "_");
+    if (r === "SUPER_ADMIN" || r === "ADMIN" || r === "SUPERADMIN") return true;
+    return (ROLE_CAN[permission] || []).some((p) => p.toUpperCase().replace(/[\s-]+/g, "_") === r);
   }
 
   async function callApi(action, payload) {

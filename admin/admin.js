@@ -37,13 +37,21 @@
   }
 
   function isSuperAdmin(role) {
-    const r = String(role || "").toUpperCase();
-    return r === "SUPER_ADMIN" || r === "SUPER ADMIN";
+    const r = String(role || "").toUpperCase().trim().replace(/[\s-]+/g, "_");
+    return r === "SUPER_ADMIN" || r === "ADMIN" || r === "SUPERADMIN";
+  }
+
+  function normalizeRole(role) {
+    return isSuperAdmin(role) ? "SUPER_ADMIN" : "EXECUTIVE_STAFF";
+  }
+
+  function getDisplayRole(role) {
+    return isSuperAdmin(role) ? "Admin" : "Executive Staff";
   }
 
   function applyRolePermissions(role) {
     const superUser = isSuperAdmin(role);
-    // Coordinator and Administrator access only community data, Donation, Stories and Evidence
+    // Executive Staff access only community data, Donation, Stories and Evidence
     const allowedModules = ["dashboard", "community", "donations", "stories"];
 
     document.querySelectorAll(".admin-nav__item[data-module]").forEach((item) => {
@@ -58,9 +66,10 @@
 
   function showDashboard(session) {
     window.__uafAdminSession = session;
+    const displayRole = getDisplayRole(session.role);
     document.getElementById("welcome-name").textContent = session.name;
-    document.getElementById("welcome-role").textContent = session.role;
-    document.getElementById("admin-user-label").textContent = session.name + " · " + session.role;
+    document.getElementById("welcome-role").textContent = displayRole;
+    document.getElementById("admin-user-label").textContent = session.name + " · " + displayRole;
     applyRolePermissions(session.role);
     loginScreen.classList.add("is-hidden");
     dashboardScreen.classList.remove("is-hidden");
@@ -72,7 +81,9 @@
     if (!token) return showLogin();
     const result = await callApi("adminWhoAmI", { token });
     if (result.ok) {
-      showDashboard({ token, name: result.name, role: savedRole || result.role || "SUPER_ADMIN" });
+      const serverRole = result.role ? normalizeRole(result.role) : null;
+      const effectiveRole = serverRole || (savedRole ? normalizeRole(savedRole) : "SUPER_ADMIN");
+      showDashboard({ token, name: result.name, role: effectiveRole });
     } else {
       sessionStorage.removeItem("uaf_admin_token");
       sessionStorage.removeItem("uaf_admin_role");
@@ -85,14 +96,20 @@
     loginError.classList.add("is-hidden");
     const email = document.getElementById("login-email").value.trim();
     const password = document.getElementById("login-password").value;
-    const selectedRole = document.getElementById("login-role")?.value || "SUPER_ADMIN";
+    const selectedRole = document.getElementById("login-role")?.value || "ADMIN";
     const submitBtn = loginForm.querySelector('button[type="submit"]');
 
     submitBtn.setAttribute("disabled", "true");
     try {
       const result = await callApi("adminLogin", { email, password });
       if (result.ok) {
-        const effectiveRole = selectedRole || result.role || "SUPER_ADMIN";
+        // Admin must match Super Admin and all other account types should match Executive Staff
+        let effectiveRole;
+        if (result.role) {
+          effectiveRole = normalizeRole(result.role);
+        } else {
+          effectiveRole = normalizeRole(selectedRole);
+        }
         sessionStorage.setItem("uaf_admin_token", result.token);
         sessionStorage.setItem("uaf_admin_role", effectiveRole);
         showDashboard({ token: result.token, name: result.name, role: effectiveRole });
@@ -162,7 +179,7 @@
       modulePanel.innerHTML = `
         <div class="admin-card">
           <h2>Access Restricted</h2>
-          <p class="admin-muted">Your current role (${escapeHtml(session?.role || "Staff")}) only has access to Community Data, Donations, Stories &amp; Evidence. Super Admin privileges are required to access this module.</p>
+          <p class="admin-muted">Your current role (${escapeHtml(getDisplayRole(session?.role))}) only has access to Community Data, Donations, Stories &amp; Evidence. Admin privileges are required to access this module.</p>
         </div>
       `;
       return;

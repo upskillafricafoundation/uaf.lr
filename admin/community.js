@@ -10,13 +10,15 @@
   const API_URL = (window.UAF_CONFIG && window.UAF_CONFIG.API_URL) || "";
 
   const ROLE_CAN = {
-    REVIEW_SUBMISSIONS: ["SUPER_ADMIN", "ADMIN", "VERIFIER"],
-    MANAGE_STATS: ["SUPER_ADMIN", "ADMIN", "PROGRAM_MANAGER", "VERIFIER"]
+    REVIEW_SUBMISSIONS: ["SUPER_ADMIN", "ADMIN", "EXECUTIVE_STAFF", "COORDINATOR", "ADMINISTRATOR", "VERIFIER", "PROGRAM_MANAGER"],
+    MANAGE_STATS: ["SUPER_ADMIN", "ADMIN", "EXECUTIVE_STAFF", "COORDINATOR", "ADMINISTRATOR", "VERIFIER", "PROGRAM_MANAGER"]
   };
 
   function can(perm, role) {
-    if (role === "SUPER_ADMIN") return true;
-    return (ROLE_CAN[perm] || []).indexOf(role) !== -1;
+    if (!role) return true;
+    const r = String(role).toUpperCase().trim().replace(/[\s-]+/g, "_");
+    if (r === "SUPER_ADMIN" || r === "ADMIN" || r === "SUPERADMIN") return true;
+    return (ROLE_CAN[perm] || []).some((p) => p.toUpperCase().replace(/[\s-]+/g, "_") === r);
   }
 
   async function callApi(action, payload) {
