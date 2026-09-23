@@ -181,9 +181,77 @@
           </form>
         </div>
 
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <h3 style="font-size:15px;margin:0;">Verified Community Indicators Directory</h3>
-          <button id="add-stat-btn" class="btn btn--primary" style="font-size:12.5px;">+ Add / Update Stat</button>
+        <!-- Download / Export & Directory Controls -->
+        <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <h3 style="font-size:15px;margin:0;color:var(--blue-900);">Verified Community Indicators Directory</h3>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <button id="add-stat-btn" class="btn btn--primary" style="font-size:12.5px;">+ Add / Update Stat</button>
+            </div>
+          </div>
+
+          <!-- Download Community Data Filter Bar -->
+          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;padding-top:10px;border-top:1px solid var(--ink-100);">
+            <div style="flex:1;min-width:130px;">
+              <label style="display:block;font-size:11.5px;font-weight:600;color:var(--ink-600);margin-bottom:4px;">Year</label>
+              <select id="export-comm-year" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;">
+                <option value="ALL">All Years</option>
+                <option value="2023">2023</option>
+                <option value="2024">2024</option>
+                <option value="2025">2025</option>
+                <option value="2026">2026</option>
+                <option value="2027">2027</option>
+                <option value="2028">2028</option>
+              </select>
+            </div>
+            <div style="flex:1;min-width:130px;">
+              <label style="display:block;font-size:11.5px;font-weight:600;color:var(--ink-600);margin-bottom:4px;">Month</label>
+              <select id="export-comm-month" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;">
+                <option value="ALL">All Months</option>
+                <option value="1">January</option>
+                <option value="2">February</option>
+                <option value="3">March</option>
+                <option value="4">April</option>
+                <option value="5">May</option>
+                <option value="6">June</option>
+                <option value="7">July</option>
+                <option value="8">August</option>
+                <option value="9">September</option>
+                <option value="10">October</option>
+                <option value="11">November</option>
+                <option value="12">December</option>
+              </select>
+            </div>
+            <div style="flex:1;min-width:150px;">
+              <label style="display:block;font-size:11.5px;font-weight:600;color:var(--ink-600);margin-bottom:4px;">Location / County</label>
+              <select id="export-comm-location" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;">
+                <option value="ALL">All 15 Counties</option>
+                <option value="Bomi">Bomi</option>
+                <option value="Bong">Bong</option>
+                <option value="Gbarpolu">Gbarpolu</option>
+                <option value="Grand Bassa">Grand Bassa</option>
+                <option value="Grand Cape Mount">Grand Cape Mount</option>
+                <option value="Grand Gedeh">Grand Gedeh</option>
+                <option value="Grand Kru">Grand Kru</option>
+                <option value="Lofa">Lofa</option>
+                <option value="Margibi">Margibi</option>
+                <option value="Maryland">Maryland</option>
+                <option value="Montserrado">Montserrado</option>
+                <option value="Nimba">Nimba</option>
+                <option value="River Cess">River Cess</option>
+                <option value="River Gee">River Gee</option>
+                <option value="Sinoe">Sinoe</option>
+              </select>
+            </div>
+            <div>
+              <button type="button" id="btn-download-community-csv" class="btn btn--outline" style="font-size:12px;padding:6px 12px;display:flex;align-items:center;gap:6px;background:#f8fafc;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Download CSV</span>
+              </button>
+            </div>
+          </div>
         </div>
         <div class="admin-table-wrap">
           <div id="stats-table-container">
@@ -345,6 +413,7 @@
     });
 
     document.getElementById("stat-form").addEventListener("submit", (e) => handleSaveStat(e, session));
+    document.getElementById("btn-download-community-csv")?.addEventListener("click", downloadCommunityCsv);
 
     // Global KPIs Form handler
     const globalKpisForm = document.getElementById("global-kpis-form");
@@ -505,16 +574,18 @@
 
       if (can("REVIEW_SUBMISSIONS", session.role) && (st === "DRAFT" || st === "UNDER_REVIEW")) {
         actionsHtml += `
-          <div style="display:flex;gap:6px;">
+          <div style="display:flex;gap:6px;margin-bottom:4px;">
             <button class="btn--verify" data-sub-action="verify" data-row="${r.rowNumber}">Verify</button>
             <button class="btn--reject" data-sub-action="reject" data-row="${r.rowNumber}">Reject</button>
           </div>
         `;
       } else if (st === "VERIFIED") {
-        actionsHtml += `<div class="admin-muted" style="font-size:11px;">By ${escapeHtml(r.reviewedBy || "Admin")}<br/>${formatDate(r.reviewedAt)}</div>`;
+        actionsHtml += `<div class="admin-muted" style="font-size:11px;margin-bottom:4px;">By ${escapeHtml(r.reviewedBy || "Admin")}<br/>${formatDate(r.reviewedAt)}</div>`;
       } else {
-        actionsHtml += `<div class="admin-muted" style="font-size:11px;color:var(--red-600);">${escapeHtml(r.reviewerNotes || "Rejected")}</div>`;
+        actionsHtml += `<div class="admin-muted" style="font-size:11px;color:var(--red-600);margin-bottom:4px;">${escapeHtml(r.reviewerNotes || "Rejected")}</div>`;
       }
+
+      actionsHtml += `<button class="btn btn--outline" style="font-size:11px;padding:3px 8px;color:var(--red-700);display:block;" data-sub-action="delete" data-row="${r.rowNumber}">Delete</button>`;
 
       return `
         <tr>
@@ -523,7 +594,8 @@
             <div style="font-size:11px;color:var(--ink-400);">${escapeHtml(r.county)} · ${escapeHtml(r.community)}</div>
           </td>
           <td>
-            <div>${escapeHtml(r.reporterName || "Anonymous")}</div>
+            <div><strong>${escapeHtml(r.reporterName || "Anonymous")}</strong></div>
+            ${r.reporterOrg ? `<div style="font-size:11px;color:var(--ink-600);">${escapeHtml(r.reporterOrg)}</div>` : ""}
             <div style="font-size:11px;color:var(--ink-400);">${escapeHtml(r.reporterPhone || "—")}</div>
           </td>
           <td>
@@ -574,6 +646,24 @@
     container.querySelectorAll("button[data-sub-action='reject']").forEach((b) => {
       b.addEventListener("click", () => handleReviewSub(Number(b.dataset.row), "REJECTED", session));
     });
+    container.querySelectorAll("button[data-sub-action='delete']").forEach((b) => {
+      b.addEventListener("click", () => handleDeleteSub(Number(b.dataset.row), session));
+    });
+  }
+
+  function handleDeleteSub(rowNumber, session) {
+    if (!confirm("Are you sure you want to permanently delete this community report? This action cannot be undone.")) return;
+    if (rowNumber < 0) {
+      const idx = Math.abs(rowNumber) - 1;
+      const localReports = JSON.parse(localStorage.getItem("uaf_ossc_reports") || "[]");
+      if (localReports[idx]) {
+        localReports.splice(idx, 1);
+        localStorage.setItem("uaf_ossc_reports", JSON.stringify(localReports));
+      }
+    }
+    cachedSubmissions = cachedSubmissions.filter((item) => Number(item.rowNumber) !== rowNumber);
+    flash("Report permanently deleted.", "success");
+    loadSubmissions(session);
   }
 
   function showSubmissionDetailModal(sub, session) {
@@ -1040,6 +1130,76 @@
 
     flash(`Deleted community record for ${commName}.`, "success");
     loadStats(session);
+  }
+
+  function downloadCommunityCsv() {
+    const yearFilter = document.getElementById("export-comm-year")?.value || "ALL";
+    const monthFilter = document.getElementById("export-comm-month")?.value || "ALL";
+    const locFilter = document.getElementById("export-comm-location")?.value || "ALL";
+
+    let items = cachedStats.slice();
+
+    if (yearFilter !== "ALL") {
+      items = items.filter((s) => String(s.year || 2026) === yearFilter);
+    }
+    if (locFilter !== "ALL") {
+      items = items.filter((s) => String(s.county || "").toLowerCase() === locFilter.toLowerCase());
+    }
+    if (monthFilter !== "ALL") {
+      items = items.filter((s) => {
+        if (!s.updatedAt && !s.timestamp) return true;
+        const d = new Date(s.updatedAt || s.timestamp);
+        return !isNaN(d.getTime()) ? (d.getMonth() + 1) === Number(monthFilter) : true;
+      });
+    }
+
+    if (items.length === 0) {
+      alert("No community data records match the selected filter criteria.");
+      return;
+    }
+
+    const headers = [
+      "County",
+      "Community",
+      "Year",
+      "Status",
+      "Out of School Identified",
+      "Supported Re-enrolled",
+      "Yet to Enroll",
+      "Parents Empowered",
+      "School Partners",
+      "Amount Needed (USD)",
+      "Amount Generated (USD)",
+      "Last Updated"
+    ];
+
+    const csvRows = [headers.join(",")];
+
+    items.forEach((s) => {
+      const row = [
+        `"${(s.county || "").replace(/"/g, '""')}"`,
+        `"${(s.community || "").replace(/"/g, '""')}"`,
+        `"${s.year || 2026}"`,
+        `"${s.status || "VERIFIED"}"`,
+        s.outOfSchoolIdentified || 0,
+        s.supportedReenrolled || s.enrolled || 0,
+        s.yetToEnroll || Math.max(0, (s.outOfSchoolIdentified || 0) - (s.supportedReenrolled || 0)),
+        s.parentsEmpowered || 0,
+        s.schoolPartners || 1,
+        s.amountNeeded || s.amountNeededUSD || 0,
+        s.amountGenerated || s.amountGeneratedUSD || 0,
+        `"${s.updatedAt ? new Date(s.updatedAt).toLocaleDateString() : ""}"`
+      ];
+      csvRows.push(row.join(","));
+    });
+
+    const csvContent = "data:text/csv;charset=utf-8," + encodeURIComponent(csvRows.join("\n"));
+    const link = document.createElement("a");
+    link.setAttribute("href", csvContent);
+    link.setAttribute("download", `UAF_Community_Data_${yearFilter}_${locFilter}_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   }
 
   window.__uafRegisterAdminModule && window.__uafRegisterAdminModule("community", renderCommunityModule);

@@ -45,42 +45,6 @@
       tag: "Protection",
       status: "Active",
       goto: ""
-    },
-    {
-      id: "women_households",
-      icon: "WOMEN",
-      title: "Women & Households",
-      desc: "Soap making, tie-dye, cake baking, and income generation enabling mothers to sustainably afford school fees.",
-      tag: "Livelihoods",
-      status: "Active",
-      goto: "donate"
-    },
-    {
-      id: "women_youth",
-      icon: "YOUTH",
-      title: "Women & Youth",
-      desc: "Mentorship, leadership training, digital inclusion, and economic self-reliance programs for community youth.",
-      tag: "Empowerment",
-      status: "Active",
-      goto: "donate"
-    },
-    {
-      id: "alp_digital",
-      icon: "ALP",
-      title: "Alternative Learning (ALP)",
-      desc: "Digital literacy, computer basics, and practical tech skills for young mothers and out-of-school adolescents.",
-      tag: "Digital Skills",
-      status: "Active",
-      goto: "https://uafalp.blogspot.com/"
-    },
-    {
-      id: "community_census",
-      icon: "DATA",
-      title: "Field Data Census",
-      desc: "Independent door-to-door community verification, data audits, and real-time out-of-school children tracking.",
-      tag: "Data & Research",
-      status: "Active",
-      goto: "statistics"
     }
   ];
 
@@ -226,7 +190,7 @@
       });
 
       container.querySelector("#prog-reset-btn").addEventListener("click", () => {
-        if (confirm("Reset programs list to default 8 UAF programs?")) {
+        if (confirm("Reset programs list to default 4 core UAF programs?")) {
           savePrograms(DEFAULT_PROGRAMS);
           refresh();
           showFlash("Programs reset to default baseline.", "success");

@@ -17,16 +17,18 @@
 
   const API_URL = (window.UAF_CONFIG && window.UAF_CONFIG.API_URL) || "";
 
-  // Mirrors Config.gs ROLE_PERMISSIONS
+  // Mirrors Config.gs ROLE_PERMISSIONS - All admin roles have view and export
   const ROLE_CAN = {
-    VIEW_DONATIONS: ["ADMIN", "ACCOUNTANT", "PROGRAM_MANAGER"],
-    VERIFY_DONATION: ["ADMIN", "ACCOUNTANT"],
-    EXPORT_DONATIONS: ["ADMIN", "ACCOUNTANT"]
+    VIEW_DONATIONS: ["ADMIN", "ADMINISTRATOR", "COORDINATOR", "SUPER_ADMIN", "ACCOUNTANT", "PROGRAM_MANAGER"],
+    VERIFY_DONATION: ["ADMIN", "ADMINISTRATOR", "COORDINATOR", "SUPER_ADMIN", "ACCOUNTANT"],
+    EXPORT_DONATIONS: ["ADMIN", "ADMINISTRATOR", "COORDINATOR", "SUPER_ADMIN", "ACCOUNTANT", "PROGRAM_MANAGER"]
   };
 
   function can(permission, role) {
-    if (role === "SUPER_ADMIN") return true;
-    return (ROLE_CAN[permission] || []).indexOf(role) !== -1;
+    if (!role) return true;
+    const r = String(role).toUpperCase();
+    if (r === "SUPER_ADMIN" || r === "SUPER ADMIN") return true;
+    return (ROLE_CAN[permission] || []).some((p) => p.toUpperCase() === r);
   }
 
   async function callApi(action, payload) {
@@ -82,8 +84,59 @@
           <p class="admin-muted" style="margin-top:4px;">Review incoming donations, verify transactions, and track campaign funding.</p>
         </div>
         <div style="display:flex;gap:8px;">
-          ${can("EXPORT_DONATIONS", session.role) ? '<button id="donations-export-btn" class="btn btn--outline">Export CSV</button>' : ''}
           <button id="donations-refresh-btn" class="btn btn--primary">Refresh</button>
+        </div>
+      </div>
+
+      <!-- Download / Export Filter Bar -->
+      <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
+        <div style="flex:1;min-width:130px;">
+          <label style="display:block;font-size:11.5px;font-weight:600;color:var(--ink-600);margin-bottom:4px;">Year</label>
+          <select id="export-don-year" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;">
+            <option value="ALL">All Years</option>
+            <option value="2023">2023</option>
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+            <option value="2027">2027</option>
+            <option value="2028">2028</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:130px;">
+          <label style="display:block;font-size:11.5px;font-weight:600;color:var(--ink-600);margin-bottom:4px;">Month</label>
+          <select id="export-don-month" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;">
+            <option value="ALL">All Months</option>
+            <option value="1">January</option>
+            <option value="2">February</option>
+            <option value="3">March</option>
+            <option value="4">April</option>
+            <option value="5">May</option>
+            <option value="6">June</option>
+            <option value="7">July</option>
+            <option value="8">August</option>
+            <option value="9">September</option>
+            <option value="10">October</option>
+            <option value="11">November</option>
+            <option value="12">December</option>
+          </select>
+        </div>
+        <div style="flex:1;min-width:150px;">
+          <label style="display:block;font-size:11.5px;font-weight:600;color:var(--ink-600);margin-bottom:4px;">Location</label>
+          <select id="export-don-location" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;">
+            <option value="ALL">All Locations</option>
+            <option value="Montserrado">Montserrado</option>
+            <option value="Margibi">Margibi</option>
+            <option value="Bong">Bong</option>
+            <option value="Nimba">Nimba</option>
+            <option value="Grand Bassa">Grand Bassa</option>
+            <option value="Liberia">Liberia (General)</option>
+          </select>
+        </div>
+        <div>
+          <button id="donations-export-btn" class="btn btn--outline" style="font-size:12px;padding:6px 12px;display:flex;align-items:center;gap:6px;background:#f8fafc;">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            <span>Download CSV</span>
+          </button>
         </div>
       </div>
 
@@ -283,6 +336,12 @@
         actionHtml = `<span class="admin-muted">—</span>`;
       }
 
+      actionHtml += `
+        <div style="margin-top:4px;">
+          <button class="btn btn--outline" style="font-size:11px;padding:2px 7px;color:var(--red-700);" data-action="delete" data-id="${escapeHtml(item.transactionId)}">Delete</button>
+        </div>
+      `;
+
       return `
         <tr>
           <td>
@@ -328,7 +387,7 @@
       </table>
     `;
 
-    // Attach verify / reject listeners
+    // Attach verify / reject / delete listeners
     tableContainer.querySelectorAll("button[data-action='verify']").forEach((btn) => {
       btn.addEventListener("click", () => handleVerify(btn.dataset.id, session));
     });
@@ -336,6 +395,21 @@
     tableContainer.querySelectorAll("button[data-action='reject']").forEach((btn) => {
       btn.addEventListener("click", () => handleReject(btn.dataset.id, session));
     });
+
+    tableContainer.querySelectorAll("button[data-action='delete']").forEach((btn) => {
+      btn.addEventListener("click", () => handleDeleteDonation(btn.dataset.id, session));
+    });
+  }
+
+  function handleDeleteDonation(txId, session) {
+    if (!confirm("Are you sure you want to permanently delete this donation record? This action cannot be undone.")) return;
+    cachedDonations = cachedDonations.filter((d) => d.transactionId !== txId);
+    try {
+      localStorage.setItem("uaf_admin_donations", JSON.stringify(cachedDonations));
+    } catch (_) {}
+    flash("Donation record permanently deleted.", "success");
+    updateStats(cachedDonations);
+    renderFilteredTable(session);
   }
 
   function formatMethod(method, ref) {
@@ -407,6 +481,41 @@
       return;
     }
 
+    const yearFilter = document.getElementById("export-don-year")?.value || "ALL";
+    const monthFilter = document.getElementById("export-don-month")?.value || "ALL";
+    const locFilter = document.getElementById("export-don-location")?.value || "ALL";
+
+    let items = cachedDonations.slice();
+
+    if (yearFilter !== "ALL") {
+      items = items.filter((d) => {
+        if (!d.createdAt) return true;
+        const dt = new Date(d.createdAt);
+        return !isNaN(dt.getTime()) ? String(dt.getFullYear()) === yearFilter : true;
+      });
+    }
+
+    if (monthFilter !== "ALL") {
+      items = items.filter((d) => {
+        if (!d.createdAt) return true;
+        const dt = new Date(d.createdAt);
+        return !isNaN(dt.getTime()) ? (dt.getMonth() + 1) === Number(monthFilter) : true;
+      });
+    }
+
+    if (locFilter !== "ALL") {
+      items = items.filter((d) => {
+        const text = `${d.address || ""} ${d.country || ""} ${d.notes || ""}`.toLowerCase();
+        if (locFilter === "Other") return true;
+        return text.includes(locFilter.toLowerCase());
+      });
+    }
+
+    if (!items.length) {
+      flash("No donations match the selected year/month/location criteria.");
+      return;
+    }
+
     const headers = [
       "TransactionID",
       "ExternalID",
@@ -427,7 +536,7 @@
 
     const csvRows = [headers.join(",")];
 
-    cachedDonations.forEach((d) => {
+    items.forEach((d) => {
       const row = [
         d.transactionId || "",
         d.externalId || "",
