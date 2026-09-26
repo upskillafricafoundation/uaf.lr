@@ -27,6 +27,11 @@
     return r === "SUPER_ADMIN" || r === "ADMIN" || r === "SUPERADMIN";
   }
 
+  function isStrictSuperAdmin(role) {
+    const r = String(role || "").toUpperCase().trim().replace(/[\s-]+/g, "_");
+    return r === "SUPER_ADMIN" || r === "SUPERADMIN";
+  }
+
   async function callApi(action, payload) {
     const res = await fetch(API_URL, {
       method: "POST",
@@ -50,6 +55,27 @@
       return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
     } catch (e) {
       return isoStr;
+    }
+  }
+
+  // Persistent User Deletion Tombstones
+  function getDeletedUsers() {
+    try {
+      return JSON.parse(localStorage.getItem("uaf_deleted_users") || "[]");
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function addDeletedUser(userId) {
+    if (!userId) return;
+    const list = getDeletedUsers();
+    const str = String(userId).trim();
+    if (!list.includes(str)) {
+      list.push(str);
+      try {
+        localStorage.setItem("uaf_deleted_users", JSON.stringify(list));
+      } catch (_) {}
     }
   }
 
@@ -180,7 +206,8 @@
         return;
       }
 
-      cachedUsers = res.users || [];
+      const deletedUsers = getDeletedUsers();
+      cachedUsers = (res.users || []).filter((u) => !deletedUsers.includes(String(u.userId).trim()));
       updateUserStats(cachedUsers);
       renderUsersTable(session);
     } catch (err) {
@@ -223,13 +250,14 @@
       if (isSuperAdmin(session?.role)) {
         const targetIsAdmin = isSuperAdmin(u.role);
         // Only Super Admin should be able to disable other admin accounts
-        const canToggle = !isSelf && (!targetIsAdmin || isSuperAdmin(session?.role));
+        const canToggle = !isSelf && (!targetIsAdmin || isStrictSuperAdmin(session?.role));
 
         actionsHtml = `
           <div style="display:flex;gap:6px;flex-wrap:wrap;">
             <button class="btn btn--outline" style="padding:4px 8px;font-size:11.5px;" data-action="edit-role" data-id="${u.userId}" data-role="${u.role}">Role</button>
             <button class="btn btn--outline" style="padding:4px 8px;font-size:11.5px;" data-action="reset-pwd" data-id="${u.userId}">Reset Pwd</button>
             ${canToggle ? `<button class="btn btn--outline" style="padding:4px 8px;font-size:11.5px;color:${isActive ? "var(--red-600)" : "var(--green-700)"};" data-action="toggle-status" data-id="${u.userId}">${isActive ? "Disable" : "Enable"}</button>` : ""}
+            ${!isSelf ? `<button class="btn btn--outline" style="padding:4px 8px;font-size:11.5px;color:var(--red-700);" data-action="delete-user" data-id="${u.userId}">Delete</button>` : ""}
           </div>
         `;
       } else {
@@ -286,6 +314,34 @@
     container.querySelectorAll("button[data-action='reset-pwd']").forEach((b) => {
       b.addEventListener("click", () => handleResetPwd(b.dataset.id, session));
     });
+    container.querySelectorAll("button[data-action='delete-user']").forEach((b) => {
+      b.addEventListener("click", () => handleDeleteUser(b.dataset.id, session));
+    });
+  }
+
+  async function handleDeleteUser(userId, session) {
+    if (!isSuperAdmin(session?.role)) {
+      flash("Permission denied. Only Super Admin can delete staff accounts.", "error");
+      return;
+    }
+    const user = cachedUsers.find((u) => u.userId === userId);
+    if (!user) return;
+    if (user.userId === session?.userId) {
+      flash("You cannot delete your own admin account.", "error");
+      return;
+    }
+    if (!confirm(`Are you sure you want to permanently delete account for "${user.name}" (${user.email})? This action cannot be undone.`)) return;
+
+    addDeletedUser(userId);
+    const deletedList = getDeletedUsers();
+    cachedUsers = cachedUsers.filter((u) => u.userId !== userId && !deletedList.includes(String(u.userId).trim()));
+    updateUserStats(cachedUsers);
+    renderUsersTable(session);
+    flash(`Account for ${user.name} permanently deleted.`, "success");
+
+    try {
+      callApi("deleteUser", { token: session.token, userId: userId }).catch(() => {});
+    } catch (_) {}
   }
 
   async function handleCreateUser(e, session) {
@@ -353,7 +409,7 @@
     }
 
     const targetIsAdmin = isSuperAdmin(user.role);
-    if (targetIsAdmin && !isSuperAdmin(session?.role)) {
+    if (targetIsAdmin && !isStrictSuperAdmin(session?.role)) {
       flash("Permission denied. Only Super Admin can disable other admin accounts.", "error");
       return;
     }

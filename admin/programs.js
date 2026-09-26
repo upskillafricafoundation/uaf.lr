@@ -17,7 +17,9 @@
       desc: "Identifying, supporting, and re-enrolling out-of-school children across vulnerable communities (NIC 2026/2027).",
       tag: "Flagship",
       status: "Active",
-      goto: "submit-ossc"
+      goto: "submit-ossc",
+      beneficiaries: "350+ Children",
+      communities: "12 Communities"
     },
     {
       id: "edu_access",
@@ -26,7 +28,9 @@
       desc: "Household-level enrollment, school fee subsidization, and uniform/kit distribution for vulnerable learners.",
       tag: "Access",
       status: "Active",
-      goto: "donate"
+      goto: "donate",
+      beneficiaries: "500+ Students",
+      communities: "15 Communities"
     },
     {
       id: "rights_advocacy",
@@ -35,7 +39,9 @@
       desc: "Advocating for educational rights, community policy awareness, and combating child labor across communities.",
       tag: "Advocacy",
       status: "Active",
-      goto: ""
+      goto: "",
+      beneficiaries: "1,200+ Individuals",
+      communities: "18 Communities"
     },
     {
       id: "child_protection",
@@ -44,19 +50,49 @@
       desc: "Safeguarding, child protection standards, reporting mechanisms, and creating secure learning spaces.",
       tag: "Protection",
       status: "Active",
-      goto: ""
+      goto: "",
+      beneficiaries: "850+ Learners & Staff",
+      communities: "14 Communities"
     }
   ];
 
+  // Persistent Program Deletion Tombstones
+  function getDeletedPrograms() {
+    try {
+      return JSON.parse(localStorage.getItem("uaf_deleted_programs") || "[]");
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function addDeletedProgram(p) {
+    if (!p) return;
+    const list = getDeletedPrograms();
+    const idStr = String(p.id || p.title || "").trim();
+    if (idStr && !list.includes(idStr)) {
+      list.push(idStr);
+      try {
+        localStorage.setItem("uaf_deleted_programs", JSON.stringify(list));
+      } catch (_) {}
+    }
+  }
+
   function getPrograms() {
+    const deletedList = getDeletedPrograms();
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
+      if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter((p) => !deletedList.includes(String(p.id || p.title || "").trim()));
+        }
       }
     } catch (e) {}
-    return DEFAULT_PROGRAMS;
+    const initial = DEFAULT_PROGRAMS.filter((p) => !deletedList.includes(String(p.id || p.title || "").trim()));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+    } catch (_) {}
+    return initial;
   }
 
   function savePrograms(programs) {
@@ -105,6 +141,8 @@
                 <th>Icon</th>
                 <th>Program Name</th>
                 <th>Category Tag</th>
+                <th>Beneficiaries</th>
+                <th># of Communities</th>
                 <th>Description</th>
                 <th>Status</th>
                 <th>Action</th>
@@ -116,7 +154,9 @@
                   <td style="font-size:13px;font-weight:600;text-align:center;"><span class="admin-badge admin-badge--neutral">${escapeHtml(p.icon || "UAF")}</span></td>
                   <td><strong>${escapeHtml(p.title)}</strong></td>
                   <td><span class="admin-badge admin-badge--neutral">${escapeHtml(p.tag || "Core")}</span></td>
-                  <td style="max-width:320px;font-size:12.5px;color:var(--ink-700);">${escapeHtml(p.desc)}</td>
+                  <td style="font-size:12.5px;font-weight:600;color:var(--blue-700);">${escapeHtml(p.beneficiaries || "—")}</td>
+                  <td style="font-size:12.5px;font-weight:600;color:var(--ink-700);">${escapeHtml(p.communities || "—")}</td>
+                  <td style="max-width:280px;font-size:12.5px;color:var(--ink-700);">${escapeHtml(p.desc)}</td>
                   <td>
                     <span class="admin-badge ${p.status === 'Active' ? 'admin-badge--verified' : 'admin-badge--review'}">
                       ${escapeHtml(p.status || 'Active')}
@@ -163,6 +203,16 @@
                   </select>
                 </div>
               </div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <div class="form-field">
+                  <label for="prog-beneficiaries">Number of Beneficiaries</label>
+                  <input type="text" id="prog-beneficiaries" placeholder="e.g. 350+ Children" />
+                </div>
+                <div class="form-field">
+                  <label for="prog-communities"># of Communities</label>
+                  <input type="text" id="prog-communities" placeholder="e.g. 12 Communities" />
+                </div>
+              </div>
               <div class="form-field">
                 <label for="prog-desc">Description</label>
                 <textarea id="prog-desc" rows="3" placeholder="Brief explanation of the program..." required></textarea>
@@ -186,6 +236,8 @@
         document.getElementById("prog-modal-title").textContent = "Add New Program";
         document.getElementById("prog-form").reset();
         document.getElementById("prog-icon").value = "UAF";
+        document.getElementById("prog-beneficiaries").value = "";
+        document.getElementById("prog-communities").value = "";
         document.getElementById("prog-modal").classList.remove("is-hidden");
       });
 
@@ -208,6 +260,8 @@
           document.getElementById("prog-title").value = p.title || "";
           document.getElementById("prog-tag").value = p.tag || "";
           document.getElementById("prog-status").value = p.status || "Active";
+          document.getElementById("prog-beneficiaries").value = p.beneficiaries || "";
+          document.getElementById("prog-communities").value = p.communities || "";
           document.getElementById("prog-desc").value = p.desc || "";
           document.getElementById("prog-goto").value = p.goto || "";
           document.getElementById("prog-modal").classList.remove("is-hidden");
@@ -220,8 +274,11 @@
           const p = programs[idx];
           if (!p) return;
           if (confirm(`Are you sure you want to delete "${p.title}"?`)) {
+            addDeletedProgram(p);
+            const deletedList = getDeletedPrograms();
             programs.splice(idx, 1);
-            savePrograms(programs);
+            const updated = programs.filter((pr) => !deletedList.includes(String(pr.id || pr.title || "").trim()));
+            savePrograms(updated);
             refresh();
             showFlash(`Deleted "${p.title}".`, "success");
           }
@@ -244,6 +301,8 @@
           title: document.getElementById("prog-title").value.trim(),
           tag: document.getElementById("prog-tag").value.trim(),
           status: document.getElementById("prog-status").value,
+          beneficiaries: document.getElementById("prog-beneficiaries").value.trim(),
+          communities: document.getElementById("prog-communities").value.trim(),
           desc: document.getElementById("prog-desc").value.trim(),
           goto: document.getElementById("prog-goto").value.trim()
         };

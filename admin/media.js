@@ -56,6 +56,33 @@
     return div.innerHTML;
   }
 
+  function getDeletedMedia() {
+    try {
+      return JSON.parse(localStorage.getItem("uaf_deleted_media") || "[]");
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function addDeletedMedia(photoId) {
+    if (!photoId) return;
+    const list = getDeletedMedia();
+    const str = String(photoId).trim();
+    if (!list.includes(str)) {
+      list.push(str);
+      try {
+        localStorage.setItem("uaf_deleted_media", JSON.stringify(list));
+      } catch (_) {}
+    }
+  }
+
+  function isMediaDeleted(item, deletedList) {
+    if (!item) return true;
+    const list = deletedList || getDeletedMedia();
+    const id = String(item.photoId || item.id || "").trim();
+    return list.includes(id);
+  }
+
   /* ---------------------------------------------------------
      ENTRY POINT
   --------------------------------------------------------- */
@@ -199,7 +226,7 @@
       return;
     }
 
-    const items = result.items || [];
+    const items = (result.media || result.items || []).filter((it) => !isMediaDeleted(it));
     groupsEl.innerHTML = "";
 
     STATUS_GROUPS.forEach((group) => {
@@ -327,7 +354,18 @@
       return;
     }
 
-    // ARCHIVED — no further actions in Phase 7.
+    if (can("MANAGE_MEDIA", role)) {
+      const delBtn = actionButton("Delete", "btn--outline");
+      delBtn.style.color = "var(--red-700)";
+      delBtn.style.marginLeft = "4px";
+      delBtn.addEventListener("click", () => {
+        if (confirm(`Are you sure you want to permanently delete "${item.title || "this photo"}"? This action cannot be undone.`)) {
+          addDeletedMedia(item.photoId);
+          runAction(delBtn, "deleteMedia", { photoId: item.photoId }, session);
+        }
+      });
+      slot.appendChild(delBtn);
+    }
   }
 
   function actionButton(label, cls) {
