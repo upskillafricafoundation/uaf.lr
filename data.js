@@ -114,14 +114,21 @@
   ];
 
   function getUafStories() {
+    let deletedList = [];
+    try {
+      deletedList = JSON.parse(localStorage.getItem("uaf_deleted_stories") || "[]");
+    } catch (_) {}
+
     try {
       const stored = localStorage.getItem("uaf_stories");
-      if (stored) {
+      if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter((s) => !deletedList.includes(String(s.id || s.storyId).trim()));
+        }
       }
     } catch (_) {}
-    return DEFAULT_STORIES_DATASET;
+    return DEFAULT_STORIES_DATASET.filter((s) => !deletedList.includes(String(s.id || s.storyId).trim()));
   }
   window.__uafGetStories = getUafStories;
 
@@ -244,14 +251,21 @@
   ];
 
   function getUafPartners() {
+    let deletedList = [];
+    try {
+      deletedList = JSON.parse(localStorage.getItem("uaf_deleted_partners") || "[]");
+    } catch (_) {}
+
     try {
       const stored = localStorage.getItem("uaf_partners");
-      if (stored) {
+      if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter((p) => !deletedList.includes(String(p.id || p.name).trim()));
+        }
       }
     } catch (_) {}
-    return DEFAULT_PARTNERS_DATASET;
+    return DEFAULT_PARTNERS_DATASET.filter((p) => !deletedList.includes(String(p.id || p.name).trim()));
   }
   window.__uafGetPartners = getUafPartners;
 
@@ -281,9 +295,21 @@
   // Real-time synchronization event listeners
   window.addEventListener("uaf_stories_updated", renderFundraisingStories);
   window.addEventListener("uaf_partners_updated", renderPartners);
+  window.addEventListener("uaf_communities_updated", () => {
+    refreshMergedDataset();
+    renderAll();
+  });
+  window.addEventListener("uaf_data_updated", () => {
+    refreshMergedDataset();
+    renderAll();
+  });
   window.addEventListener("storage", (e) => {
-    if (e.key === "uaf_stories") renderFundraisingStories();
-    if (e.key === "uaf_partners") renderPartners();
+    if (e.key === "uaf_stories" || e.key === "uaf_deleted_stories") renderFundraisingStories();
+    if (e.key === "uaf_partners" || e.key === "uaf_deleted_partners") renderPartners();
+    if (e.key === "uaf_admin_communities" || e.key === "uaf_dynamic_communities" || e.key === "uaf_deleted_communities" || e.key === "uaf_deleted_stats") {
+      refreshMergedDataset();
+      renderAll();
+    }
   });
 
   /* ---------------------------------------------------------
@@ -345,10 +371,8 @@
     );
 
     if (existingIdx >= 0) {
-      list[existingIdx].outOfSchoolIdentified += count;
-      list[existingIdx].yetToEnroll += count;
-      list[existingIdx].childPopulation = (list[existingIdx].childPopulation || 0) + count * 4;
-      list[existingIdx].amountNeeded = (list[existingIdx].amountNeeded || 0) + count * 125;
+      list[existingIdx].outOfSchoolIdentified = (Number(list[existingIdx].outOfSchoolIdentified) || 0) + count;
+      list[existingIdx].yetToEnroll = Math.max(0, list[existingIdx].outOfSchoolIdentified - (Number(list[existingIdx].supportedReenrolled) || 0));
     } else {
       list.push({
         community: cleanComm,
@@ -357,10 +381,10 @@
         outOfSchoolIdentified: count,
         supportedReenrolled: 0,
         yetToEnroll: count,
-        childPopulation: Math.max(50, count * 4),
-        parentsEmpowered: Math.max(1, Math.round(count * 0.4)),
-        schoolPartners: 1,
-        amountNeeded: count * 125,
+        childPopulation: 0,
+        parentsEmpowered: 0,
+        schoolPartners: 0,
+        amountNeeded: 0,
         amountGenerated: 0
       });
     }
@@ -375,31 +399,185 @@
   }
 
   function getMergedCommunities() {
-    const dynamic = getDynamicCommunities();
-    const adminComms = getAdminCommunities();
-    const base = (publicData && Array.isArray(publicData.communities) && publicData.communities.length > 0)
+    let delComms = [];
+    try {
+      const c1 = JSON.parse(localStorage.getItem("uaf_deleted_communities") || "[]");
+      const c2 = JSON.parse(localStorage.getItem("uaf_deleted_stats") || "[]");
+      delComms = [...c1, ...c2.map((x) => x.key || `${(x.county||"").toLowerCase().trim()}|${(x.community||"").toLowerCase().trim()}`)];
+    } catch (_) {}
+
+    const isDeletedKey = (county, comm) => {
+      const k = `${(county || "").toLowerCase().trim()}|${(comm || "").toLowerCase().trim()}`;
+      return delComms.includes(k);
+    };
+
+    // Load actual children records (filter out deleted)
+    let osscReports = [];
+    try {
+      const stored = localStorage.getItem("uaf_ossc_reports");
+      if (stored) osscReports = JSON.parse(stored);
+    } catch (_) {}
+
+    let deletedSubs = [];
+    try {
+      deletedSubs = JSON.parse(localStorage.getItem("uaf_deleted_submissions") || "[]");
+    } catch (_) {}
+
+    const activeReports = osscReports.filter((r) => {
+      const isDel = deletedSubs.some((d) => {
+        if (d.rowNumber && r.rowNumber && String(d.rowNumber) === String(r.rowNumber)) return true;
+        if (d.id && r.id && String(d.id) === String(r.id)) return true;
+        if (d.childName && r.childName && d.childName.trim().toLowerCase() === r.childName.trim().toLowerCase()) return true;
+        return false;
+      });
+      return !isDel && String(r.status || "").toUpperCase() !== "REJECTED";
+    });
+
+    // Load enrollments
+    let enrollments = [];
+    try {
+      const stored = localStorage.getItem("uaf_child_enrollments");
+      if (stored) enrollments = JSON.parse(stored);
+    } catch (_) {}
+
+    // Load empowerment records
+    let empowermentRecords = [];
+    try {
+      const stored = localStorage.getItem("uaf_empowerment_records");
+      if (stored) empowermentRecords = JSON.parse(stored);
+    } catch (_) {}
+
+    // Load school partnerships
+    let schoolPartnerships = [];
+    try {
+      const stored = localStorage.getItem("uaf_school_partnerships");
+      if (stored) schoolPartnerships = JSON.parse(stored);
+    } catch (_) {}
+
+    // Load verified donations
+    let verifiedDonations = [];
+    try {
+      const stored = localStorage.getItem("uaf_admin_donations");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (Array.isArray(parsed)) {
+          verifiedDonations = parsed.filter((d) => String(d.status || "").toUpperCase() === "VERIFIED");
+        }
+      }
+    } catch (_) {}
+
+    const dynamic = getDynamicCommunities().filter((d) => !isDeletedKey(d.county, d.community));
+    const adminComms = getAdminCommunities().filter((c) => !isDeletedKey(c.county, c.community));
+    const rawBase = (publicData && Array.isArray(publicData.communities) && publicData.communities.length > 0)
       ? publicData.communities
       : (adminComms.length > 0 ? adminComms : DEFAULT_COMMUNITIES);
+    const base = rawBase.filter((c) => !isDeletedKey(c.county, c.community));
 
     const map = new Map();
     base.forEach((c) => {
-      const key = `${(c.county || "").toLowerCase()}|${(c.community || "").toLowerCase()}`;
+      const key = `${(c.county || "").toLowerCase().trim()}|${(c.community || "").toLowerCase().trim()}`;
       map.set(key, { ...c });
     });
 
     dynamic.forEach((d) => {
-      const key = `${(d.county || "").toLowerCase()}|${(d.community || "").toLowerCase()}`;
-      if (map.has(key)) {
-        const item = map.get(key);
-        item.outOfSchoolIdentified = (Number(item.outOfSchoolIdentified) || 0) + (Number(d.outOfSchoolIdentified) || 0);
-        item.yetToEnroll = (Number(item.yetToEnroll) || 0) + (Number(d.yetToEnroll) || 0);
-        item.amountNeeded = (Number(item.amountNeeded) || 0) + (Number(d.amountNeeded) || 0);
-      } else {
+      const key = `${(d.county || "").toLowerCase().trim()}|${(d.community || "").toLowerCase().trim()}`;
+      if (!map.has(key)) {
         map.set(key, { ...d });
       }
     });
 
-    return Array.from(map.values());
+    // Also include any communities directly reported in active child reports
+    activeReports.forEach((r) => {
+      const co = (r.residenceCounty || r.county || "").trim();
+      const cm = (r.community || "").trim();
+      if (co && cm && !isDeletedKey(co, cm)) {
+        const key = `${co.toLowerCase()}|${cm.toLowerCase()}`;
+        if (!map.has(key)) {
+          map.set(key, {
+            community: cm,
+            county: co,
+            year: "2026",
+            outOfSchoolIdentified: 0,
+            supportedReenrolled: 0,
+            yetToEnroll: 0,
+            parentsEmpowered: 0,
+            schoolPartners: 0,
+            amountNeeded: 0,
+            amountGenerated: 0
+          });
+        }
+      }
+    });
+
+    // Accurately compute figures for every community
+    const result = Array.from(map.values()).map((comm) => {
+      const commKey = (comm.community || "").toLowerCase().trim();
+      const countyKey = (comm.county || "").toLowerCase().trim();
+
+      // Count out-of-school children residing here
+      const childCountInComm = activeReports.filter((r) => {
+        const rCo = (r.residenceCounty || r.county || "").toLowerCase().trim();
+        const rCm = (r.community || "").toLowerCase().trim();
+        return rCo === countyKey && (rCm === commKey || !commKey);
+      }).length;
+
+      // Count enrolled children residing here
+      const enrolledInComm = activeReports.filter((r) => {
+        const rCo = (r.residenceCounty || r.county || "").toLowerCase().trim();
+        const rCm = (r.community || "").toLowerCase().trim();
+        const isEnrolled = r.enrolled === true || enrollments.some((en) => String(en.childName || "").toLowerCase().trim() === String(r.childName || "").toLowerCase().trim());
+        return rCo === countyKey && (rCm === commKey || !commKey) && isEnrolled;
+      }).length;
+
+      // Count empowerment training records in this community
+      const empowerCount = empowermentRecords.filter((emp) => {
+        const eCo = (emp.county || "").toLowerCase().trim();
+        const eCm = (emp.community || "").toLowerCase().trim();
+        return eCo === countyKey && (eCm === commKey || !commKey);
+      }).length;
+
+      // Count school partnerships in this community
+      const partnerCount = schoolPartnerships.filter((sp) => {
+        const sCo = (sp.location || sp.county || "").toLowerCase().trim();
+        const sCm = (sp.community || "").toLowerCase().trim();
+        return sCo === countyKey && (sCm === commKey || !commKey);
+      }).length;
+
+      // Real out-of-school: use actual child records if any, or admin specified baseline
+      const outOfSchool = Math.max(childCountInComm, Number(comm.outOfSchoolIdentified) || 0);
+      const supported = Math.max(enrolledInComm, Number(comm.supportedReenrolled || comm.enrolled) || 0);
+      const yetToEnroll = Math.max(0, outOfSchool - supported);
+      const parents = Math.max(empowerCount, Number(comm.parentsEmpowered) || 0);
+      const schools = Math.max(partnerCount, Number(comm.schoolPartners) || 0);
+
+      // Amount to Raise (Needed) — manually set by Admin
+      const needed = Number(comm.amountNeeded || comm.amountNeededUSD) || 0;
+
+      // Amount Raised (Generated) — sum of verified donations for this community/county
+      let donGenerated = 0;
+      verifiedDonations.forEach((d) => {
+        const dText = `${d.campaign || ""} ${d.notes || ""} ${d.message || ""}`.toLowerCase();
+        if (dText.includes(commKey) || (dText.includes(countyKey) && !commKey)) {
+          donGenerated += Number(d.amount) || 0;
+        }
+      });
+      const generated = Math.max(donGenerated, Number(comm.amountGenerated || comm.amountGeneratedUSD) || 0);
+      const balanceToRaise = Math.max(0, needed - generated);
+
+      return {
+        ...comm,
+        outOfSchoolIdentified: outOfSchool,
+        supportedReenrolled: supported,
+        yetToEnroll: yetToEnroll,
+        parentsEmpowered: parents,
+        schoolPartners: schools,
+        amountNeeded: needed,
+        amountGenerated: generated,
+        balanceToRaise: balanceToRaise
+      };
+    });
+
+    return result;
   }
 
   function refreshMergedDataset() {
@@ -751,33 +929,7 @@
      5. # of Students Impacted through Career Development
   --------------------------------------------------------- */
   function renderImpactDashboard() {
-    const screen = document.querySelector('[data-screen="impact-drive"]');
-    if (!screen) return;
-
-    const adminKpis = getAdminImpactKpis();
-    const allRows = getMergedCommunities();
-
-    const childrenTotal = adminKpis?.children != null
-      ? Number(adminKpis.children)
-      : (allRows.length > 0 ? sum(allRows, "supportedReenrolled") : 0);
-    const womenTotal = adminKpis?.women != null
-      ? Number(adminKpis.women)
-      : (allRows.length > 0 ? sum(allRows, "parentsEmpowered") : 0);
-    const computerTotal = adminKpis?.computer != null ? Number(adminKpis.computer) : 0;
-    const youthTotal = adminKpis?.youth != null ? Number(adminKpis.youth) : 0;
-    const careerTotal = adminKpis?.career != null ? Number(adminKpis.career) : 0;
-
-    const elChildren = document.getElementById("impact-kpi-children");
-    const elWomen = document.getElementById("impact-kpi-women");
-    const elComputer = document.getElementById("impact-kpi-computer");
-    const elYouth = document.getElementById("impact-kpi-youth");
-    const elCareer = document.getElementById("impact-kpi-career");
-
-    if (elChildren) elChildren.textContent = childrenTotal > 0 ? fmt(childrenTotal) + "+" : "0";
-    if (elWomen) elWomen.textContent = womenTotal > 0 ? fmt(womenTotal) + "+" : "0";
-    if (elComputer) elComputer.textContent = computerTotal > 0 ? fmt(computerTotal) + "+" : "0";
-    if (elYouth) elYouth.textContent = youthTotal > 0 ? fmt(youthTotal) + "+" : "0";
-    if (elCareer) elCareer.textContent = careerTotal > 0 ? fmt(careerTotal) + "+" : "0";
+    // 5 General Impact Overview boxes removed per design update
   }
 
   /* ---------------------------------------------------------
@@ -794,26 +946,41 @@
         if (Array.isArray(parsed) && parsed.length > 0) programs = parsed;
       }
     } catch (e) {}
-    if (!programs) return; // Keep standard HTML baseline
 
-    grid.innerHTML = programs.map((p) => {
-      const isUrl = p.goto && (p.goto.startsWith("http://") || p.goto.startsWith("https://"));
-      const clickAttr = isUrl ? `onclick="window.open('${p.goto}','_blank')"` : (p.goto ? `data-goto="${p.goto}"` : "");
-      return `
-        <div class="program-item-card" ${clickAttr}>
-          <div class="program-item__icon">${p.icon ? escapeHtml(p.icon) : '<span class="program-badge-bullet"></span>'}</div>
-          <div class="program-item__title">${escapeHtml(p.title)}</div>
-          <p class="program-item__desc">${escapeHtml(p.desc)}</p>
-          <span class="program-item__tag">${escapeHtml(p.tag || "Program")}</span>
-        </div>
-      `;
-    }).join("");
+    const defaultMetrics = {
+      nic: { beneficiaries: "350+ Children", communities: "12 Communities" },
+      edu_access: { beneficiaries: "500+ Students", communities: "15 Communities" },
+      rights_advocacy: { beneficiaries: "1,200+ Individuals", communities: "18 Communities" },
+      child_protection: { beneficiaries: "850+ Learners & Staff", communities: "14 Communities" }
+    };
 
-    grid.querySelectorAll("[data-goto]").forEach((el) => {
-      el.addEventListener("click", () => {
-        window.__uafGoTo && window.__uafGoTo(el.dataset.goto);
+    if (programs) {
+      grid.innerHTML = programs.map((p) => {
+        const isUrl = p.goto && (p.goto.startsWith("http://") || p.goto.startsWith("https://"));
+        const clickAttr = isUrl ? `onclick="window.open('${p.goto}','_blank')"` : (p.goto ? `data-goto="${p.goto}"` : "");
+        const dm = defaultMetrics[p.id] || { beneficiaries: "350+ Learners", communities: "12 Communities" };
+        const ben = p.beneficiaries || dm.beneficiaries;
+        const com = p.communities || dm.communities;
+        return `
+          <div class="program-item-card" ${clickAttr}>
+            <div class="program-item__icon">${p.icon ? escapeHtml(p.icon) : '<span class="program-badge-bullet"></span>'}</div>
+            <div class="program-item__title">${escapeHtml(p.title)}</div>
+            <p class="program-item__desc">${escapeHtml(p.desc)}</p>
+            <span class="program-item__tag">${escapeHtml(p.tag || "Program")}</span>
+            <div class="program-item__metrics">
+              <div class="prog-metric"><span class="prog-metric-lbl">Number of Beneficiaries:</span> <span class="prog-metric-val">${escapeHtml(ben)}</span></div>
+              <div class="prog-metric"><span class="prog-metric-lbl"># of Communities:</span> <span class="prog-metric-val">${escapeHtml(com)}</span></div>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      grid.querySelectorAll("[data-goto]").forEach((el) => {
+        el.addEventListener("click", () => {
+          window.__uafGoTo && window.__uafGoTo(el.dataset.goto);
+        });
       });
-    });
+    }
   }
 
   window.addEventListener("uaf_data_updated", () => {
@@ -975,6 +1142,7 @@
         const gender = card.querySelector(".child-gender")?.value || "";
         const age = Number(card.querySelector(".child-age")?.value) || 0;
         const origin = card.querySelector(".child-origin")?.value || "";
+        const resCounty = card.querySelector(".child-residence-county")?.value || county;
         const childComm = card.querySelector(".child-community")?.value.trim() || community;
         const livingWith = card.querySelector(".child-living-with")?.value || "";
         const parentName = card.querySelector(".parent-name")?.value.trim() || "";
@@ -987,7 +1155,7 @@
         const statement = card.querySelector(".child-statement")?.value.trim() || "";
         const consent = card.querySelector(".child-consent")?.checked || false;
 
-        if (!name || !gender || !age || !origin || !livingWith || !causeOfExclusion || !statement || !consent) {
+        if (!name || !gender || !age || !origin || !resCounty || !childComm || !livingWith || !causeOfExclusion || !statement || !consent) {
           window.__uafShowToast?.(`Please complete all required fields and consent for Child #${i + 1}.`);
           return;
         }
@@ -1015,6 +1183,9 @@
           gender,
           childAge: age,
           childOrigin: origin,
+          originCounty: origin,
+          residenceCounty: resCounty,
+          childCounty: resCounty,
           childCommunity: childComm,
           livingWith,
           childPhotoData,
@@ -1033,39 +1204,65 @@
 
       submitBtn?.setAttribute("disabled", "true");
 
-      const firstChild = children[0] || {};
-      const payload = {
-        action: "submitOutOfSchoolReport",
-        reporterName,
-        reporterPhone,
-        reporterOrg,
-        community,
-        county,
-        childCount: children.length,
-        // Backward compatibility single child aliases
-        childName: children.map((c) => c.childName).join(", "),
-        gender: firstChild.gender || "",
-        childCommunity: firstChild.childCommunity || community,
-        childCounty: firstChild.childOrigin || county,
-        photoData: firstChild.childPhotoData || "",
-        yearsOut: firstChild.yearsOut || "",
-        currentClass: firstChild.currentClass || "",
-        causeOfExclusion: firstChild.causeOfExclusion || "",
-        parentName: firstChild.parentName || "",
-        parentPhone: firstChild.parentPhone || "",
-        statement: firstChild.statement || "",
-        consent: firstChild.consent || false,
-        // Complete multi-child structure
-        children,
-        timestamp: new Date().toISOString()
-      };
+      // Group Child Intake Splitting: save each child as an individual separate record
+      const individualReports = children.map((c, idx) => {
+        const rowNum = Date.now() + idx;
+        return {
+          action: "submitOutOfSchoolReport",
+          rowNumber: rowNum,
+          id: `ossc_${Date.now()}_${idx + 1}`,
+          timestamp: new Date().toISOString(),
+          reporterName,
+          reporterPhone,
+          reporterOrg,
+          community: c.childCommunity || community,
+          county: c.residenceCounty || county,
+          childCounty: c.residenceCounty || county,
+          residenceCounty: c.residenceCounty || county,
+          originCounty: c.childOrigin || "",
+          childOrigin: c.childOrigin || "",
+          childCommunity: c.childCommunity || community,
+          childCount: 1,
+          approxChildCount: 1,
+          childName: c.childName,
+          gender: c.gender,
+          childAge: c.childAge,
+          livingWith: c.livingWith,
+          childPhotoData: c.childPhotoData || "",
+          photoData: c.childPhotoData || "",
+          parentName: c.parentName || "",
+          parentPhone: c.parentPhone || "",
+          parentPhotoData: c.parentPhotoData || "",
+          yearsOut: c.yearsOut || "",
+          currentClass: c.currentClass || "",
+          causeOfExclusion: c.causeOfExclusion || "",
+          abuseObserved: c.abuseObserved || "No",
+          abuseType: c.abuseType || "",
+          statement: c.statement || "",
+          consent: c.consent || false,
+          status: "DRAFT",
+          enrolled: false
+        };
+      });
 
-      // Register the submitted community dynamically under its respective county
-      registerDynamicCommunity(firstChild.childCommunity || community, firstChild.childOrigin || county, children.length);
+      // Register each community dynamically under its residence county
+      individualReports.forEach((cr) => {
+        registerDynamicCommunity(cr.childCommunity, cr.residenceCounty, 1);
+      });
+
+      // Store individually in local storage
+      try {
+        const storedReports = JSON.parse(localStorage.getItem("uaf_ossc_reports") || "[]");
+        individualReports.forEach((cr) => storedReports.unshift(cr));
+        localStorage.setItem("uaf_ossc_reports", JSON.stringify(storedReports));
+      } catch (_) {}
 
       // OFFLINE HANDLING
       if (!navigator.onLine) {
-        queueOfflineDraft("submitOutOfSchoolReport", payload, `OSSC: ${payload.childName} (${payload.childCommunity}, ${payload.childCounty})`);
+        individualReports.forEach((cr) => {
+          queueOfflineDraft("submitOutOfSchoolReport", cr, `OSSC: ${cr.childName} (${cr.childCommunity}, ${cr.residenceCounty})`);
+        });
+        window.__uafShowToast?.(`${individualReports.length} child case(s) saved as offline draft.`);
         form.reset();
         if (childCountInput) {
           childCountInput.value = "1";
@@ -1076,13 +1273,7 @@
       }
 
       if (!isConfigured) {
-        try {
-          const reports = JSON.parse(localStorage.getItem("uaf_ossc_reports") || "[]");
-          reports.unshift(payload);
-          localStorage.setItem("uaf_ossc_reports", JSON.stringify(reports));
-        } catch (_) {}
-
-        window.__uafShowToast?.("Report submitted! A UAF verifier will investigate before publication.");
+        window.__uafShowToast?.(`Report submitted! ${individualReports.length} child profile(s) logged for field verification.`);
         form.reset();
         if (childCountInput) {
           childCountInput.value = "1";
@@ -1092,39 +1283,29 @@
         return;
       }
 
-      try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
-        });
-        const json = await res.json();
-        if (json.ok) {
-          window.__uafShowToast?.(json.message || "Submitted for verification. Thank you.");
-          form.reset();
-          if (childCountInput) {
-            childCountInput.value = "1";
-            childCountInput.dispatchEvent(new Event("change"));
+      for (const cr of individualReports) {
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(cr)
+          });
+          const json = await res.json();
+          if (!json.ok) {
+            queueOfflineDraft("submitOutOfSchoolReport", cr, `OSSC: ${cr.childName}`);
           }
-        } else {
-          window.__uafShowToast?.(json.error || "Couldn't submit — saved as offline draft.");
-          queueOfflineDraft("submitOutOfSchoolReport", payload, `OSSC: ${payload.childName}`);
-          form.reset();
-          if (childCountInput) {
-            childCountInput.value = "1";
-            childCountInput.dispatchEvent(new Event("change"));
-          }
+        } catch (err) {
+          queueOfflineDraft("submitOutOfSchoolReport", cr, `OSSC: ${cr.childName}`);
         }
-      } catch (err) {
-        queueOfflineDraft("submitOutOfSchoolReport", payload, `OSSC: ${payload.childName}`);
-        form.reset();
-        if (childCountInput) {
-          childCountInput.value = "1";
-          childCountInput.dispatchEvent(new Event("change"));
-        }
-      } finally {
-        submitBtn?.removeAttribute("disabled");
       }
+
+      window.__uafShowToast?.(`Submitted ${individualReports.length} child case(s) for verification. Thank you.`);
+      form.reset();
+      if (childCountInput) {
+        childCountInput.value = "1";
+        childCountInput.dispatchEvent(new Event("change"));
+      }
+      submitBtn?.removeAttribute("disabled");
     });
   }
 

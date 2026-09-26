@@ -1135,6 +1135,7 @@
           gender: c.querySelector(".child-gender")?.value || "",
           age: c.querySelector(".child-age")?.value || "",
           origin: c.querySelector(".child-origin")?.value || "",
+          residenceCounty: c.querySelector(".child-residence-county")?.value || "",
           community: c.querySelector(".child-community")?.value || "",
           livingWith: c.querySelector(".child-living-with")?.value || "",
           parentName: c.querySelector(".parent-name")?.value || "",
@@ -1148,6 +1149,9 @@
           consent: c.querySelector(".child-consent")?.checked || false
         });
       });
+
+      const repCountyVal = document.getElementById("rep-county")?.value || "";
+      const repCommVal = document.getElementById("rep-community")?.value || "";
 
       const countyOptionsHtml = ALL_15_LIBERIA_COUNTIES.map(
         (co) => `<option value="${co}">${co} County</option>`
@@ -1195,9 +1199,19 @@
 
             <div class="form-row-2">
               <div class="form-field">
+                <label>Child Current County of Residence *</label>
+                <select class="child-residence-county" required>
+                  <option value="">Select Current County of Residence</option>
+                  ${countyOptionsHtml}
+                </select>
+              </div>
+              <div class="form-field">
                 <label>Child's Community / Town *</label>
                 <input type="text" class="child-community" placeholder="Current Community / Town" required />
               </div>
+            </div>
+
+            <div class="form-row-2">
               <div class="form-field">
                 <label>Child living with *</label>
                 <select class="child-living-with" required>
@@ -1209,12 +1223,11 @@
                   <option value="Alone">Alone</option>
                 </select>
               </div>
-            </div>
-
-            <div class="form-field">
-              <label>Child Photo (optional)</label>
-              <input type="file" class="child-photo" accept="image/*" />
-              <span style="font-size:11.5px;color:var(--ink-500);margin-top:2px;display:block;">Clear face portrait for identification and sponsorship profile.</span>
+              <div class="form-field">
+                <label>Child Photo (optional)</label>
+                <input type="file" class="child-photo" accept="image/*" />
+                <span style="font-size:11.5px;color:var(--ink-500);margin-top:2px;display:block;">Clear face portrait for identification and sponsorship profile.</span>
+              </div>
             </div>
 
             <!-- Parent / Guardian Information -->
@@ -1346,7 +1359,8 @@
           if (c.querySelector(".child-gender")) c.querySelector(".child-gender").value = data.gender;
           if (c.querySelector(".child-age")) c.querySelector(".child-age").value = data.age;
           if (c.querySelector(".child-origin")) c.querySelector(".child-origin").value = data.origin;
-          if (c.querySelector(".child-community")) c.querySelector(".child-community").value = data.community;
+          if (c.querySelector(".child-residence-county")) c.querySelector(".child-residence-county").value = data.residenceCounty || repCountyVal;
+          if (c.querySelector(".child-community")) c.querySelector(".child-community").value = data.community || repCommVal;
           if (c.querySelector(".child-living-with")) c.querySelector(".child-living-with").value = data.livingWith;
           if (c.querySelector(".parent-name")) c.querySelector(".parent-name").value = data.parentName;
           if (c.querySelector(".parent-phone")) c.querySelector(".parent-phone").value = data.parentPhone;
@@ -1358,6 +1372,9 @@
           if (c.querySelector(".child-statement")) c.querySelector(".child-statement").value = data.statement;
           if (c.querySelector(".child-consent")) c.querySelector(".child-consent").checked = data.consent;
           updateAbuseState();
+        } else {
+          if (c.querySelector(".child-residence-county") && repCountyVal) c.querySelector(".child-residence-county").value = repCountyVal;
+          if (c.querySelector(".child-community") && repCommVal) c.querySelector(".child-community").value = repCommVal;
         }
       });
     }
