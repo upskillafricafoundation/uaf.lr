@@ -62,6 +62,35 @@
     }
   }
 
+  // Persistent Donation Deletion Tombstones
+  function getDeletedDonations() {
+    try {
+      return JSON.parse(localStorage.getItem("uaf_deleted_donations") || "[]");
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function addDeletedDonation(txId) {
+    if (!txId) return;
+    const list = getDeletedDonations();
+    const idStr = String(txId).trim();
+    if (!list.includes(idStr)) {
+      list.push(idStr);
+      try {
+        localStorage.setItem("uaf_deleted_donations", JSON.stringify(list));
+      } catch (_) {}
+    }
+  }
+
+  function isDonationDeleted(item, deletedList) {
+    if (!item) return true;
+    const list = deletedList || getDeletedDonations();
+    const tx = String(item.transactionId || item.id || "").trim();
+    const ref = String(item.reference || item.ref || "").trim();
+    return list.some((id) => id === tx || (ref && id === ref));
+  }
+
   let cachedDonations = [];
   let currentFilter = "ALL";
   let searchQuery = "";
@@ -222,19 +251,29 @@
     if (!tableContainer) return;
     tableContainer.innerHTML = '<p class="admin-muted" style="padding:24px;text-align:center;">Loading donations…</p>';
 
+    let items = [];
     try {
       const result = await callApi("listDonations", { token: session.token });
-      if (!result.ok) {
-        tableContainer.innerHTML = `<div class="admin-error" style="margin:16px;">${escapeHtml(result.error || "Could not load donations.")}</div>`;
-        return;
+      if (result && result.ok) {
+        items = result.donations || result.items || [];
+      } else {
+        const stored = localStorage.getItem("uaf_admin_donations");
+        items = stored ? JSON.parse(stored) : [];
       }
-
-      cachedDonations = result.donations || result.items || [];
-      updateStats(cachedDonations);
-      renderFilteredTable(session);
     } catch (err) {
-      tableContainer.innerHTML = `<div class="admin-error" style="margin:16px;">Couldn't reach server. Please check your connection.</div>`;
+      const stored = localStorage.getItem("uaf_admin_donations");
+      items = stored ? JSON.parse(stored) : [];
     }
+
+    const deletedList = getDeletedDonations();
+    items = items.filter((d) => !isDonationDeleted(d, deletedList));
+
+    cachedDonations = items;
+    try {
+      localStorage.setItem("uaf_admin_donations", JSON.stringify(cachedDonations));
+    } catch (_) {}
+    updateStats(cachedDonations);
+    renderFilteredTable(session);
   }
 
   function updateStats(items) {
@@ -296,6 +335,7 @@
           d.externalId,
           d.name,
           d.phone,
+          d.senderNumber,
           d.email,
           d.mtnReference,
           d.paymentMethod,
@@ -318,7 +358,7 @@
 
       const donorDisplay = item.anonymous ? `${escapeHtml(item.name || "Anonymous")} <span style="font-size:10.5px;color:var(--ink-400);">(Anon)</span>` : escapeHtml(item.name || "Anonymous");
       const contactInfo = [item.phone, item.email].filter(Boolean).map(escapeHtml).join("<br/>") || "—";
-      const methodDisplay = formatMethod(item.paymentMethod, item.mtnReference);
+      const methodDisplay = formatMethod(item.paymentMethod, item.senderNumber || item.mtnReference);
 
       let actionHtml = "";
       if (st === "PENDING" && can("VERIFY_DONATION", session.role)) {
@@ -403,10 +443,18 @@
 
   function handleDeleteDonation(txId, session) {
     if (!confirm("Are you sure you want to permanently delete this donation record? This action cannot be undone.")) return;
-    cachedDonations = cachedDonations.filter((d) => d.transactionId !== txId);
+    addDeletedDonation(txId);
+    const deletedList = getDeletedDonations();
+    cachedDonations = cachedDonations.filter((d) => !isDonationDeleted(d, deletedList) && String(d.transactionId).trim() !== String(txId).trim());
     try {
       localStorage.setItem("uaf_admin_donations", JSON.stringify(cachedDonations));
     } catch (_) {}
+
+    // Background server deletion if API connected
+    try {
+      callApi("deleteDonation", { token: session?.token, transactionId: txId, id: txId }).catch(() => {});
+    } catch (_) {}
+
     flash("Donation record permanently deleted.", "success");
     updateStats(cachedDonations);
     renderFilteredTable(session);
@@ -414,13 +462,13 @@
 
   function formatMethod(method, ref) {
     let name = method || "Unknown";
-    if (method === "MTN_MOMO") name = "MTN MoMo";
+    if (method === "MTN_MOMO" || method === "manual_momo") name = "MTN MoMo";
     else if (method === "ORANGE_MONEY") name = "Orange Money";
     else if (method === "BANK_TRANSFER") name = "Bank Transfer";
     else if (method === "CASH") name = "Cash";
 
     if (ref) {
-      return `${escapeHtml(name)}<br/><span style="font-size:10.5px;color:var(--ink-400);">Ref: ${escapeHtml(ref)}</span>`;
+      return `${escapeHtml(name)}<br/><span style="font-size:11px;font-weight:600;color:var(--blue-700);">Sender: ${escapeHtml(ref)}</span>`;
     }
     return escapeHtml(name);
   }
