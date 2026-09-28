@@ -162,7 +162,7 @@
       const goalText = goal > 0 ? `<span class="goal-val">of ${formatMoney(goal)} goal</span>` : "";
 
       return `
-        <div class="campaign-card campaign-card--clickable" data-story-id="${escapeHtml(storyId)}">
+        <div class="campaign-card campaign-card--heroic" data-story-id="${escapeHtml(storyId)}">
           <div class="campaign-card__img-wrap">
             <img src="${s.imageUrl || 'assets/uaf-logo.png'}" alt="${escapeHtml(s.title)}" class="campaign-card__img" onerror="this.src='assets/uaf-logo.png';" />
             <div class="campaign-card__views-badge">
@@ -174,21 +174,38 @@
             </button>
           </div>
           <div class="campaign-card__body">
-            <span class="campaign-card__tag">${escapeHtml(s.tag || s.category || "Field Story")}</span>
-            <h3 class="campaign-card__title">${escapeHtml(s.title)}</h3>
-            <p class="campaign-card__desc">${escapeHtml(s.summary || (s.narrative ? s.narrative.slice(0, 160) + "..." : ""))}</p>
-            <div class="campaign-card__meta">
-              <span class="raised-val">${formatMoney(raised)} raised</span>
-              ${goalText}
+            <div class="campaign-card__tag-wrap">
+              <span class="campaign-card__tag">${escapeHtml(s.tag || s.category || "Field Story")}</span>
             </div>
+            <h2 class="campaign-card__title">${escapeHtml(s.title)}</h2>
+            <p class="campaign-card__lead">${escapeHtml(s.summary || "")}</p>
+            <p class="campaign-card__desc">${escapeHtml(s.narrative ? (s.narrative.length > 240 ? s.narrative.slice(0, 240) + "..." : s.narrative) : "")}</p>
+            
+            <div class="campaign-card__readmore-row">
+              <button type="button" class="btn-story-readmore-link" data-story-id="${escapeHtml(storyId)}">
+                <span>Read more</span>
+                <span class="readmore-arrow">&rarr;</span>
+              </button>
+            </div>
+
+            <div class="campaign-card__funding-box">
+              <div class="campaign-card__meta">
+                <span class="raised-val">${formatMoney(raised)} raised</span>
+                ${goalText}
+              </div>
+              <div class="funding-track-custom" style="height:6px; margin:6px 0 14px; background:#e2e8f0; border-radius:999px; overflow:hidden;">
+                <div style="background:linear-gradient(90deg, #007A99, #0284c7); height:100%; width:${goal > 0 ? Math.min(100, Math.round((raised/goal)*100)) : 100}%;"></div>
+              </div>
+            </div>
+
             <div class="story-card-action-group">
+              <button type="button" class="btn-story-support-trigger" data-story-id="${escapeHtml(storyId)}" data-story-title="${escapeHtml(s.title)}" data-story-category="${escapeHtml(s.tag || s.category || '')}">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+                <span>Support this Story</span>
+              </button>
               <button type="button" class="btn-read-story-trigger" data-story-id="${escapeHtml(storyId)}">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
-                <span>Read Full Story</span>
-              </button>
-              <button type="button" class="btn-story-support-trigger" data-story-id="${escapeHtml(storyId)}" data-story-title="${escapeHtml(s.title)}" data-story-category="${escapeHtml(s.tag || s.category || '')}">
-                <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-                <span>Support this Story</span>
+                <span>View Full Case</span>
               </button>
             </div>
           </div>
@@ -1545,6 +1562,7 @@ startxref
       // 3. Donor Details
       const name = document.getElementById("don-name")?.value.trim() || "";
       const phone = document.getElementById("don-phone")?.value.trim() || "";
+      const senderNumber = document.getElementById("don-sender-number")?.value.trim() || "";
       const email = document.getElementById("don-email")?.value.trim() || "";
       const address = document.getElementById("don-address")?.value.trim() || "";
       const country = document.getElementById("don-country")?.value.trim() || "Liberia";
@@ -1559,9 +1577,12 @@ startxref
       if (dedicatedStoryTitle && !finalMessage.includes(dedicatedStoryTitle)) {
         finalMessage = finalMessage ? `[Dedicated to: ${dedicatedStoryTitle}] ${finalMessage}` : `[Dedicated to: ${dedicatedStoryTitle}]`;
       }
+      if (senderNumber && !finalMessage.includes(`Sender: ${senderNumber}`)) {
+        finalMessage = finalMessage ? `[Sender: ${senderNumber}] ${finalMessage}` : `[Sender: ${senderNumber}]`;
+      }
 
-      if (!name || !phone || !address || !consent) {
-        window.__uafShowToast?.("Full name, phone, home address, and communication consent are required.");
+      if (!name || !phone || !senderNumber || !address || !consent) {
+        window.__uafShowToast?.("Full name, contact phone, sender number, home address, and communication consent are required.");
         return;
       }
 
@@ -1575,6 +1596,8 @@ startxref
         action: "createDonation",
         name,
         phone,
+        senderNumber,
+        mtnReference: senderNumber,
         email,
         address,
         country,
@@ -1584,6 +1607,7 @@ startxref
         impactArea,
         paymentMethod: "manual_momo",
         message: finalMessage,
+        notes: `Sender Number: ${senderNumber} | Address: ${address}`,
         dedicatedStory: dedicatedStoryTitle,
         dedicatedStoryId: dedicatedStoryId,
         anonymous,

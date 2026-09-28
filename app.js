@@ -690,8 +690,6 @@
       if (formWrapper) {
         formWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
       }
-      const nameInput = document.getElementById("don-name");
-      if (nameInput) nameInput.focus();
     }, 120);
   }
   window.__uafOpenDonationForm = openDonationForm;
@@ -711,8 +709,6 @@
       }
       if (textSpan) textSpan.textContent = "Close Donation Form";
       formWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
-      const nameInput = document.getElementById("don-name");
-      if (nameInput) setTimeout(() => nameInput.focus(), 250);
     } else {
       formWrapper.style.display = "none";
       if (toggleBtn) {
@@ -852,7 +848,7 @@
     }
 
     function getCardsPerView() {
-      return window.innerWidth <= 640 ? 1 : 2;
+      return 1;
     }
 
     function updateCarouselPosition() {
