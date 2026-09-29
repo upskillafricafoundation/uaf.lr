@@ -1783,6 +1783,115 @@ body.is-home-screen .screen[data-screen="menu"] {
 }
 
 /* =========================================================
+   DISTINCT PROGRAM CARD COLOR & DESIGN THEMES
+   ========================================================= */
+
+/* 1. No Invisible Child (Flagship - Deep Ocean Teal) */
+.program-item-card--nic {
+  border-top: 4.5px solid #007A99 !important;
+  background: linear-gradient(180deg, #f0f9ff 0%, #ffffff 32%) !important;
+}
+.program-item-card--nic:hover {
+  border-color: #007A99 !important;
+  box-shadow: 0 14px 30px rgba(0, 122, 153, 0.18) !important;
+}
+.program-item-card--nic .program-item__icon {
+  background: #e0f2fe !important;
+  color: #007A99 !important;
+}
+.program-item-card--nic .program-item__tag {
+  background: #e0f2fe !important;
+  color: #007A99 !important;
+}
+.program-item-card--nic .prog-metric-val {
+  color: #007A99 !important;
+}
+
+/* 2. Education Access (Emerald Green) */
+.program-item-card--access {
+  border-top: 4.5px solid #059669 !important;
+  background: linear-gradient(180deg, #f0fdf4 0%, #ffffff 32%) !important;
+}
+.program-item-card--access:hover {
+  border-color: #059669 !important;
+  box-shadow: 0 14px 30px rgba(5, 150, 105, 0.18) !important;
+}
+.program-item-card--access .program-item__icon {
+  background: #d1fae5 !important;
+  color: #059669 !important;
+}
+.program-item-card--access .program-item__tag {
+  background: #d1fae5 !important;
+  color: #059669 !important;
+}
+.program-item-card--access .prog-metric-val {
+  color: #059669 !important;
+}
+
+/* 3. Rights Advocacy (Royal Purple / Indigo) */
+.program-item-card--advocacy {
+  border-top: 4.5px solid #7c3aed !important;
+  background: linear-gradient(180deg, #faf5ff 0%, #ffffff 32%) !important;
+}
+.program-item-card--advocacy:hover {
+  border-color: #7c3aed !important;
+  box-shadow: 0 14px 30px rgba(124, 58, 237, 0.18) !important;
+}
+.program-item-card--advocacy .program-item__icon {
+  background: #ede9fe !important;
+  color: #7c3aed !important;
+}
+.program-item-card--advocacy .program-item__tag {
+  background: #ede9fe !important;
+  color: #7c3aed !important;
+}
+.program-item-card--advocacy .prog-metric-val {
+  color: #7c3aed !important;
+}
+
+/* 4. Child Protection (Crimson / Coral Rose) */
+.program-item-card--protection {
+  border-top: 4.5px solid #e11d48 !important;
+  background: linear-gradient(180deg, #fff1f2 0%, #ffffff 32%) !important;
+}
+.program-item-card--protection:hover {
+  border-color: #e11d48 !important;
+  box-shadow: 0 14px 30px rgba(225, 29, 72, 0.18) !important;
+}
+.program-item-card--protection .program-item__icon {
+  background: #ffe4e6 !important;
+  color: #e11d48 !important;
+}
+.program-item-card--protection .program-item__tag {
+  background: #ffe4e6 !important;
+  color: #e11d48 !important;
+}
+.program-item-card--protection .prog-metric-val {
+  color: #e11d48 !important;
+}
+
+/* 5. Household & Women Empowerment (Amber Gold) */
+.program-item-card--empowerment {
+  border-top: 4.5px solid #d97706 !important;
+  background: linear-gradient(180deg, #fffbeb 0%, #ffffff 32%) !important;
+}
+.program-item-card--empowerment:hover {
+  border-color: #d97706 !important;
+  box-shadow: 0 14px 30px rgba(217, 119, 6, 0.18) !important;
+}
+.program-item-card--empowerment .program-item__icon {
+  background: #fef3c7 !important;
+  color: #d97706 !important;
+}
+.program-item-card--empowerment .program-item__tag {
+  background: #fef3c7 !important;
+  color: #d97706 !important;
+}
+.program-item-card--empowerment .prog-metric-val {
+  color: #d97706 !important;
+}
+
+/* =========================================================
    SCREEN 5 & 6: FORMS (Request Data & Submit OSSC)
    ========================================================= */
 

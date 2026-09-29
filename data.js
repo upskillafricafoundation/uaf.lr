@@ -72,7 +72,7 @@
       narrative: "Blessing was forced out of school when her mother contracted a chronic illness and could no longer afford school registration. For 18 months, Blessing spent 9 hours every day dodging commercial vehicles along the Waterside traffic corridor selling plastic water sachets to generate 250 LRD ($1.30) for daily food. During the UAF door-to-door enumeration, field officers identified Blessing and enrolled her in the No Invisible Child initiative. UAF cleared her outstanding fees at St. Mary Public School, provided study materials, and enrolled her mother into our women's micro-enterprise savings group. Today, Blessing has maintained an exceptional 92% cumulative average and dreams of becoming a pediatric physician in Liberia.",
       summary: "From selling cold water in crowded Waterside traffic to topping her Grade 3 class in West Point after UAF paid her tuition and learning supplies.",
       status: "PUBLISHED",
-      reactions: { like: 28, heart: 54, celebrate: 21 },
+      reactions: { like: 0, heart: 0, celebrate: 0 },
       views: 0
     },
     {
@@ -93,7 +93,7 @@
       narrative: "In Paynesville, single mothers often face severe income volatility that causes their children to be sent home for tuition arrears mid-semester. To break this recurrent cycle, Upskill Africa Foundation established the Duport Road Women's Empowerment Guild. 25 mothers completed practical skill development in industrial liquid soap, dishwashing solution, and laundry bar formulation. Equipped with starter chemical kits and bulk molds, the cooperative now supplies regional vendors and community schools. Profit distribution directly funds a dedicated children's education account, permanently securing the schooling of 68 children who were previously on the verge of school dropout.",
       summary: "How practical soap formulating and savings cooperatives enabled 25 mothers in Duport Road to independently keep 68 children in school.",
       status: "PUBLISHED",
-      reactions: { like: 36, heart: 61, celebrate: 33 },
+      reactions: { like: 0, heart: 0, celebrate: 0 },
       views: 0
     },
     {
@@ -114,7 +114,7 @@
       narrative: "In post-secondary and informal employment across Liberia, basic digital literacy is a mandatory requirement. Adolescents who miss traditional secondary schooling are often locked out of clerical and logistics opportunities. Through the UAF Alternative Learning Program (ALP) Hub in Kakata, Emmanuel and 34 other out-of-school youth attended daily computer sessions powered by solar backup. Over 12 weeks, Emmanuel progressed from zero digital exposure to proficient spreadsheet data entry and typing 45 WPM. Upon graduation, he secured an apprentice recording role with a local produce cooperative, using his earned wage to self-fund his evening high school completion.",
       summary: "Equipping out-of-school adolescent youth in Kakata with computer literacy, office software, and career counseling for workplace readiness.",
       status: "PUBLISHED",
-      reactions: { like: 22, heart: 43, celebrate: 26 },
+      reactions: { like: 0, heart: 0, celebrate: 0 },
       views: 0
     }
   ];
@@ -175,20 +175,30 @@
 
   window.__uafGetStoryReactions = function (storyId) {
     const store = getReactionsStore();
-    const story = window.__uafGetStory(storyId);
-    const defaults = (story && story.reactions) || { like: 12, heart: 24, celebrate: 8 };
-    const saved = store[storyId] || {
-      counts: { ...defaults },
-      voted: {}
-    };
-    return saved;
+    const defaults = { like: 0, heart: 0, celebrate: 0 };
+    if (!store[storyId]) {
+      return { counts: { ...defaults }, voted: {} };
+    }
+    const item = store[storyId];
+    // Sanitize any legacy mock values: if counts exist but no real user vote recorded, reset to 0
+    if (!item.voted) item.voted = {};
+    if (!item.counts) {
+      item.counts = { ...defaults };
+    } else {
+      ["like", "heart", "celebrate"].forEach((k) => {
+        if (!item.voted[k] && Number(item.counts[k]) > 0) {
+          // If never voted by a user in local device, reset fake baseline to 0
+          item.counts[k] = 0;
+        }
+      });
+    }
+    return item;
   };
 
   window.__uafToggleStoryReaction = function (storyId, type) {
     if (!storyId || !type) return null;
     const store = getReactionsStore();
-    const story = window.__uafGetStory(storyId);
-    const defaults = (story && story.reactions) || { like: 12, heart: 24, celebrate: 8 };
+    const defaults = { like: 0, heart: 0, celebrate: 0 };
 
     if (!store[storyId]) {
       store[storyId] = {
@@ -211,8 +221,17 @@
     }
 
     saveReactionsStore(store);
-    window.dispatchEvent(new CustomEvent("uaf_reactions_updated", { detail: { storyId, reactions: item } }));
-    return item;
+    const result = {
+      storyId,
+      type,
+      reacted: !!item.voted[type],
+      count: item.counts[type] || 0,
+      counts: item.counts,
+      voted: item.voted,
+      item
+    };
+    window.dispatchEvent(new CustomEvent("uaf_reactions_updated", { detail: result }));
+    return result;
   };
 
   function getCommentsStore() {
@@ -297,7 +316,7 @@
       const goalText = goal > 0 ? `<span class="goal-val">of ${formatMoney(goal)} goal</span>` : "";
       const shareCode = s.shareCode || storyId;
       const shareUrl = `${window.location.origin}${window.location.pathname}#/c/${encodeURIComponent(shareCode)}`;
-      const reactions = window.__uafGetStoryReactions ? window.__uafGetStoryReactions(storyId) : { counts: { like: 24, heart: 46, celebrate: 19 }, voted: {} };
+      const reactions = window.__uafGetStoryReactions ? window.__uafGetStoryReactions(storyId) : { counts: { like: 0, heart: 0, celebrate: 0 }, voted: {} };
       const counts = reactions.counts || {};
       const voted = reactions.voted || {};
 
@@ -314,9 +333,8 @@
             </button>
           </div>
           <div class="campaign-card__body">
-            <div class="campaign-card__tag-wrap" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div class="campaign-card__tag-wrap" style="margin-bottom:8px;">
               <span class="campaign-card__tag">${escapeHtml(s.tag || s.category || "Field Story")}</span>
-              <span style="font-size:11px;font-family:monospace;color:var(--ink-500);background:#f1f5f9;padding:2px 6px;border-radius:4px;">ref: #${escapeHtml(shareCode)}</span>
             </div>
             <h2 class="campaign-card__title">${escapeHtml(s.title)}</h2>
             <p class="campaign-card__lead">${escapeHtml(s.summary || "")}</p>
@@ -341,15 +359,15 @@
 
             <!-- Reactions Bar -->
             <div class="story-reactions-bar" data-story-id="${escapeHtml(storyId)}">
-              <button type="button" class="btn-story-reaction ${voted.like ? 'is-active' : ''}" data-reaction="like" data-story-id="${escapeHtml(storyId)}" title="Like this story">
+              <button type="button" class="btn-story-reaction ${voted.like ? 'is-active is-reacted' : ''}" data-reaction="like" data-reaction-type="like" data-story-id="${escapeHtml(storyId)}" title="Like this story">
                 <span class="reaction-emoji">👍</span>
                 <span class="reaction-count">${counts.like || 0}</span>
               </button>
-              <button type="button" class="btn-story-reaction ${voted.heart ? 'is-active' : ''}" data-reaction="heart" data-story-id="${escapeHtml(storyId)}" title="Love this story">
+              <button type="button" class="btn-story-reaction ${voted.heart ? 'is-active is-reacted' : ''}" data-reaction="heart" data-reaction-type="heart" data-story-id="${escapeHtml(storyId)}" title="Love this story">
                 <span class="reaction-emoji">❤️</span>
                 <span class="reaction-count">${counts.heart || 0}</span>
               </button>
-              <button type="button" class="btn-story-reaction ${voted.celebrate ? 'is-active' : ''}" data-reaction="celebrate" data-story-id="${escapeHtml(storyId)}" title="Celebrate this story">
+              <button type="button" class="btn-story-reaction ${voted.celebrate ? 'is-active is-reacted' : ''}" data-reaction="celebrate" data-reaction-type="celebrate" data-story-id="${escapeHtml(storyId)}" title="Celebrate this story">
                 <span class="reaction-emoji">🎉</span>
                 <span class="reaction-count">${counts.celebrate || 0}</span>
               </button>
@@ -370,7 +388,7 @@
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
                 <span>LinkedIn</span>
               </a>
-              <button type="button" class="btn-share-social btn-share-copylink" data-share-code="${escapeHtml(shareCode)}" data-share-url="${escapeHtml(shareUrl)}" title="Copy short link">
+              <button type="button" class="btn-share-social btn-share-copylink" data-share-code="${escapeHtml(shareCode)}" data-share-url="${escapeHtml(shareUrl)}" data-copy-url="${escapeHtml(shareUrl)}" title="Copy short link">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
                 <span>Copy Link</span>
               </button>

@@ -9,11 +9,16 @@
      CACHE BUSTING & INSTANT UPDATE PURGE
      Purges old caches on installed devices to ensure immediate updates
   --------------------------------------------------------- */
-  const CURRENT_BUILD_VER = "2026-09-29-uaf-campaign-drive-v25";
+  const CURRENT_BUILD_VER = "2026-09-29-uaf-campaign-drive-v26";
   try {
     const savedBuild = localStorage.getItem("uaf_app_build_version");
     if (savedBuild !== CURRENT_BUILD_VER) {
       localStorage.setItem("uaf_app_build_version", CURRENT_BUILD_VER);
+      // Clean legacy mock reaction cache
+      const rxRaw = localStorage.getItem("uaf_story_reactions");
+      if (rxRaw && (rxRaw.includes('"like":28') || rxRaw.includes('"like":12') || rxRaw.includes('"like":24'))) {
+        localStorage.removeItem("uaf_story_reactions");
+      }
       if ("caches" in window) {
         caches.keys().then((keys) => {
           keys.forEach((k) => caches.delete(k));
@@ -607,25 +612,23 @@
       // Render reactions bar (Like, Heart, Celebrate)
       const reactionsBar = document.getElementById("story-modal-reactions-bar");
       if (reactionsBar) {
-        const reactions = window.__uafGetStoryReactions ? window.__uafGetStoryReactions(storyId) : (story.reactions || { like: 0, heart: 0, celebrate: 0 });
-        let userReactions = {};
-        try {
-          userReactions = JSON.parse(localStorage.getItem(`uaf_user_reactions_${storyId}`) || "{}");
-        } catch (_) {}
+        const reactions = window.__uafGetStoryReactions ? window.__uafGetStoryReactions(storyId) : { counts: { like: 0, heart: 0, celebrate: 0 }, voted: {} };
+        const counts = reactions.counts || {};
+        const voted = reactions.voted || {};
 
         reactionsBar.innerHTML = `
           <div class="story-reactions-bar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 0;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;margin:14px 0;">
-            <button type="button" class="btn-story-reaction ${userReactions.like ? 'is-reacted' : ''}" data-reaction-type="like" data-story-id="${storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${userReactions.like ? '#e0f2fe' : '#ffffff'};color:${userReactions.like ? '#0369a1' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
+            <button type="button" class="btn-story-reaction ${voted.like ? 'is-reacted is-active' : ''}" data-reaction="like" data-reaction-type="like" data-story-id="${storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${voted.like ? '#e0f2fe' : '#ffffff'};color:${voted.like ? '#0369a1' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
               <span>👍 Like</span>
-              <span class="reaction-count" style="font-size:11.5px;font-weight:700;background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:999px;">${reactions.like || 0}</span>
+              <span class="reaction-count" style="font-size:11.5px;font-weight:700;background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:999px;">${counts.like || 0}</span>
             </button>
-            <button type="button" class="btn-story-reaction ${userReactions.heart ? 'is-reacted' : ''}" data-reaction-type="heart" data-story-id="${storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${userReactions.heart ? '#ffe4e6' : '#ffffff'};color:${userReactions.heart ? '#e11d48' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
+            <button type="button" class="btn-story-reaction ${voted.heart ? 'is-reacted is-active' : ''}" data-reaction="heart" data-reaction-type="heart" data-story-id="${storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${voted.heart ? '#ffe4e6' : '#ffffff'};color:${voted.heart ? '#e11d48' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
               <span>❤️ Love</span>
-              <span class="reaction-count" style="font-size:11.5px;font-weight:700;background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:999px;">${reactions.heart || 0}</span>
+              <span class="reaction-count" style="font-size:11.5px;font-weight:700;background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:999px;">${counts.heart || 0}</span>
             </button>
-            <button type="button" class="btn-story-reaction ${userReactions.celebrate ? 'is-reacted' : ''}" data-reaction-type="celebrate" data-story-id="${storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${userReactions.celebrate ? '#fef3c7' : '#ffffff'};color:${userReactions.celebrate ? '#b45309' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
+            <button type="button" class="btn-story-reaction ${voted.celebrate ? 'is-reacted is-active' : ''}" data-reaction="celebrate" data-reaction-type="celebrate" data-story-id="${storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${voted.celebrate ? '#fef3c7' : '#ffffff'};color:${voted.celebrate ? '#b45309' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
               <span>🎉 Celebrate</span>
-              <span class="reaction-count" style="font-size:11.5px;font-weight:700;background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:999px;">${reactions.celebrate || 0}</span>
+              <span class="reaction-count" style="font-size:11.5px;font-weight:700;background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:999px;">${counts.celebrate || 0}</span>
             </button>
           </div>
         `;
@@ -735,22 +738,35 @@
 
     window.__uafOpenStoryDetailModal = openStoryDetailModal;
 
-    // Event delegation on document to handle any dynamically rendered story cards
+    // Event delegation on document to handle Read More & View Full Case
     document.addEventListener("click", (e) => {
-      // Do not trigger story modal if user clicked "Support this Story", reaction, or share buttons
-      if (e.target.closest(".btn-story-support-trigger") || e.target.closest(".btn-story-donate") || e.target.closest(".btn-campaign-donate") || e.target.closest(".btn-story-share-dots") || e.target.closest(".btn-story-reaction") || e.target.closest(".btn-share-social")) {
+      // 1. Explicit Read More & View Full Case click
+      const readMoreBtn = e.target.closest(".btn-story-readmore-link, .btn-read-story-trigger");
+      if (readMoreBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const storyId = readMoreBtn.dataset.storyId || readMoreBtn.closest("[data-story-id]")?.dataset.storyId;
+        if (storyId) {
+          openStoryDetailModal(storyId);
+        }
         return;
       }
-      const trigger = e.target.closest("[data-story-id]");
-      if (!trigger) return;
-      const storyId = trigger.dataset.storyId;
-      if (storyId) {
-        e.stopPropagation();
-        openStoryDetailModal(storyId);
+
+      // 2. Card background click (excluding interactive buttons)
+      if (e.target.closest(".btn-story-support-trigger, .btn-story-donate, .btn-campaign-donate, .btn-story-share-dots, .btn-story-reaction, .btn-share-social, .btn-share-copylink, a")) {
+        return;
+      }
+      const card = e.target.closest(".campaign-card[data-story-id]");
+      if (card) {
+        const storyId = card.dataset.storyId;
+        if (storyId) {
+          e.stopPropagation();
+          openStoryDetailModal(storyId);
+        }
       }
     });
 
-    // 3-dots Story Share Link Handler
+    // 3-dots Story Share Link Handler & Clipboard Fallback
     function fallbackCopyText(text) {
       const ta = document.createElement("textarea");
       ta.value = text;
@@ -760,46 +776,58 @@
       ta.select();
       try {
         document.execCommand("copy");
-        window.__uafShowToast?.("Story link copied to clipboard!");
+        showToast("Story link copied to clipboard!");
       } catch (err) {
         window.prompt("Copy story link:", text);
       }
       document.body.removeChild(ta);
     }
 
-    // Universal Reaction and Share Click Delegation
+    // Universal Reaction, Copy Link, and 3-Dots Share Click Delegation
     document.addEventListener("click", (e) => {
+      // Reaction click
       const rxBtn = e.target.closest(".btn-story-reaction");
       if (rxBtn) {
         e.preventDefault();
         e.stopPropagation();
         const storyId = rxBtn.dataset.storyId;
-        const type = rxBtn.dataset.reactionType;
+        const type = rxBtn.dataset.reactionType || rxBtn.dataset.reaction;
         if (!storyId || !type) return;
 
         if (window.__uafToggleStoryReaction) {
           const res = window.__uafToggleStoryReaction(storyId, type);
           if (res) {
-            rxBtn.classList.toggle("is-reacted", res.reacted);
-            if (res.reacted) {
-              if (type === "like") rxBtn.style.background = "#e0f2fe";
-              if (type === "heart") rxBtn.style.background = "#ffe4e6";
-              if (type === "celebrate") rxBtn.style.background = "#fef3c7";
-            } else {
-              rxBtn.style.background = "#ffffff";
-            }
-            const countEl = rxBtn.querySelector(".reaction-count");
-            if (countEl) countEl.textContent = res.count;
+            // Update all matching reaction buttons across both cards and open story modal
+            document.querySelectorAll(`.btn-story-reaction[data-story-id="${storyId}"]`).forEach((b) => {
+              const bType = b.dataset.reactionType || b.dataset.reaction;
+              if (bType && res.counts && res.counts[bType] != null) {
+                const cnt = b.querySelector(".reaction-count");
+                if (cnt) cnt.textContent = res.counts[bType];
+                const isVoted = !!(res.voted && res.voted[bType]);
+                b.classList.toggle("is-reacted", isVoted);
+                b.classList.toggle("is-active", isVoted);
+                if (bType === "like") b.style.background = isVoted ? "#e0f2fe" : "#ffffff";
+                if (bType === "heart") b.style.background = isVoted ? "#ffe4e6" : "#ffffff";
+                if (bType === "celebrate") b.style.background = isVoted ? "#fef3c7" : "#ffffff";
+              }
+            });
           }
         }
         return;
       }
 
-      const copyBtn = e.target.closest("[data-copy-url]");
+      // Copy Link Button (on card or in modal)
+      const copyBtn = e.target.closest("[data-copy-url], .btn-share-copylink");
       if (copyBtn) {
         e.preventDefault();
         e.stopPropagation();
-        const url = copyBtn.dataset.copyUrl;
+        let url = copyBtn.dataset.copyUrl || copyBtn.dataset.shareUrl;
+        if (!url) {
+          const shareCode = copyBtn.dataset.shareCode || copyBtn.dataset.storyId;
+          if (shareCode) {
+            url = `${window.location.origin}${window.location.pathname}#/c/${encodeURIComponent(shareCode)}`;
+          }
+        }
         if (url) {
           if (navigator.clipboard && navigator.clipboard.writeText) {
             navigator.clipboard.writeText(url).then(() => {
@@ -812,24 +840,23 @@
         return;
       }
 
+      // 3-dots Share Icon on Story Image
       const shareBtn = e.target.closest(".btn-story-share-dots");
       if (shareBtn) {
         e.stopPropagation();
         e.preventDefault();
-        const storyId = shareBtn.dataset.shareStoryId;
-        if (!storyId) return;
-        const story = window.__uafGetStory ? window.__uafGetStory(storyId) : null;
-        const shareCode = story?.shareCode || storyId.replace("story_", "");
-        const shareUrl = `${window.location.origin}${window.location.pathname}#/c/${shareCode}`;
+        const storyId = shareBtn.dataset.shareStoryId || shareBtn.dataset.storyId;
+        const story = storyId && window.__uafGetStory ? window.__uafGetStory(storyId) : null;
+        const shareCode = shareBtn.dataset.shareCode || story?.shareCode || (storyId ? storyId.replace("story_", "") : "");
+        const shareUrl = `${window.location.origin}${window.location.pathname}#/c/${encodeURIComponent(shareCode)}`;
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(shareUrl).then(() => {
-            window.__uafShowToast?.("Story link copied to clipboard!");
-          }).catch(() => {
-            fallbackCopyText(shareUrl);
-          });
+            showToast("Story link copied to clipboard!");
+          }).catch(() => fallbackCopyText(shareUrl));
         } else {
           fallbackCopyText(shareUrl);
         }
+        return;
       }
     });
 
