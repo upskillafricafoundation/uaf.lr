@@ -1,9 +1,33 @@
 /* =========================================================
-   UAF IMPACT — APP SHELL (7-Screen Line-Art UI)
+   UAF CAMPAIGN DRIVE — APP SHELL (Line-Art & Heroic UI)
    ========================================================= */
 
 (() => {
   "use strict";
+
+  /* ---------------------------------------------------------
+     CACHE BUSTING & INSTANT UPDATE PURGE
+     Purges old caches on installed devices to ensure immediate updates
+  --------------------------------------------------------- */
+  const CURRENT_BUILD_VER = "2026-09-29-uaf-campaign-drive-v25";
+  try {
+    const savedBuild = localStorage.getItem("uaf_app_build_version");
+    if (savedBuild !== CURRENT_BUILD_VER) {
+      localStorage.setItem("uaf_app_build_version", CURRENT_BUILD_VER);
+      if ("caches" in window) {
+        caches.keys().then((keys) => {
+          keys.forEach((k) => caches.delete(k));
+        });
+      }
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          for (let reg of registrations) {
+            reg.update();
+          }
+        });
+      }
+    }
+  } catch (_) {}
 
   /* ---------------------------------------------------------
      CONFIG & COUNTIES
@@ -12,14 +36,14 @@
     "Montserrado", "Margibi", "Bong", "Nimba", "Grand Bassa"
   ];
   const YEARS = ["2026", "2027"];
-  const APP_VERSION = "2.0.0-ui-grid";
+  const APP_VERSION = "2.5.0-campaign-drive";
 
   /* ---------------------------------------------------------
      ROUTER (7 Distinct Screens)
      1. menu (Default Home / Grid of Line-Art Icons)
-     2. donate (Image 2 style with USSD auto-dialer)
-     3. statistics (Communities stats, Funding gap, Stories)
-     4. impact-drive (Impact Overview, Directory, Programs)
+     2. donate (Campaigns & Stories with USSD auto-dialer)
+     3. statistics (NIC Communities stats, 8-KPI blocks, Directory)
+     4. impact-drive (Impact Overview, Programs & Interventions)
      5. request-data (Evidence & Data Request Form)
      6. submit-ossc (Out-of-School Children Field Intake Form)
      7. partners (UAF Partners & Collaborators Showcase)
@@ -37,7 +61,8 @@
   function currentRoute() {
     const raw = (location.hash || "#/menu").replace(/^#\/?/, "").toLowerCase();
     if (!raw || raw === "home" || raw === "menu") return "menu";
-    if (raw === "support" || raw === "donate" || raw === "fundraising" || raw === "fundraise") return "donate";
+    if (raw.startsWith("c/") || raw === "c") return "donate";
+    if (raw === "support" || raw === "donate" || raw === "fundraising" || raw === "fundraise" || raw === "campaigns") return "donate";
     if (raw === "statistics" || raw === "stats") return "statistics";
     if (raw === "impact-drive" || raw === "impact" || raw === "communities" || raw === "works") return "impact-drive";
     if (raw === "request-data" || raw === "request" || raw === "evidence") return "request-data";
@@ -579,16 +604,141 @@
       if (actEl) actEl.textContent = story.activities || "Field verification, tuition sponsorship, and learning kits distribution.";
       if (narEl) narEl.textContent = story.narrative || story.summary || "";
 
+      // Render reactions bar (Like, Heart, Celebrate)
+      const reactionsBar = document.getElementById("story-modal-reactions-bar");
+      if (reactionsBar) {
+        const reactions = window.__uafGetStoryReactions ? window.__uafGetStoryReactions(storyId) : (story.reactions || { like: 0, heart: 0, celebrate: 0 });
+        let userReactions = {};
+        try {
+          userReactions = JSON.parse(localStorage.getItem(`uaf_user_reactions_${storyId}`) || "{}");
+        } catch (_) {}
+
+        reactionsBar.innerHTML = `
+          <div class="story-reactions-bar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 0;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;margin:14px 0;">
+            <button type="button" class="btn-story-reaction ${userReactions.like ? 'is-reacted' : ''}" data-reaction-type="like" data-story-id="${storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${userReactions.like ? '#e0f2fe' : '#ffffff'};color:${userReactions.like ? '#0369a1' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
+              <span>👍 Like</span>
+              <span class="reaction-count" style="font-size:11.5px;font-weight:700;background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:999px;">${reactions.like || 0}</span>
+            </button>
+            <button type="button" class="btn-story-reaction ${userReactions.heart ? 'is-reacted' : ''}" data-reaction-type="heart" data-story-id="${storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${userReactions.heart ? '#ffe4e6' : '#ffffff'};color:${userReactions.heart ? '#e11d48' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
+              <span>❤️ Love</span>
+              <span class="reaction-count" style="font-size:11.5px;font-weight:700;background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:999px;">${reactions.heart || 0}</span>
+            </button>
+            <button type="button" class="btn-story-reaction ${userReactions.celebrate ? 'is-reacted' : ''}" data-reaction-type="celebrate" data-story-id="${storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${userReactions.celebrate ? '#fef3c7' : '#ffffff'};color:${userReactions.celebrate ? '#b45309' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
+              <span>🎉 Celebrate</span>
+              <span class="reaction-count" style="font-size:11.5px;font-weight:700;background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:999px;">${reactions.celebrate || 0}</span>
+            </button>
+          </div>
+        `;
+      }
+
+      // Render social share buttons with unique opaque short link
+      const shareBar = document.getElementById("story-modal-share-bar");
+      if (shareBar) {
+        const shareCode = story.shareCode || storyId.replace("story_", "");
+        const storyShortUrl = `${window.location.origin}${window.location.pathname}#/c/${shareCode}`;
+        const shareText = `Read "${story.title}" on UAF Campaign Drive. Support verified education & empowerment in Liberia:`;
+
+        shareBar.innerHTML = `
+          <div class="story-social-share-row" style="margin:12px 0 16px;">
+            <div style="font-size:11.5px;font-weight:700;color:var(--ink-700);margin-bottom:8px;display:flex;align-items:center;gap:6px;">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+              <span>Share this Story:</span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + ' ' + storyShortUrl)}" target="_blank" rel="noopener noreferrer" class="btn-share-social btn-share-whatsapp" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;background:#25D366;color:#ffffff;text-decoration:none;font-size:11.5px;font-weight:700;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.35C9.36 7.35 9.09 7.41 8.86 7.66C8.63 7.91 7.99 8.51 7.99 9.73C7.99 10.95 8.88 12.13 9 12.3C9.13 12.47 10.73 14.95 13.2 16C13.78 16.26 14.24 16.41 14.59 16.53C15.19 16.71 15.73 16.69 16.16 16.63C16.64 16.55 17.65 16.01 17.86 15.42C18.07 14.83 18.07 14.32 18.01 14.22C17.95 14.12 17.78 14.06 17.52 13.93C17.26 13.81 15.99 13.18 15.75 13.1C15.52 13.01 15.35 12.97 15.18 13.22C15.01 13.48 14.53 14.06 14.38 14.22C14.23 14.4 14.09 14.42 13.83 14.29C13.57 14.16 12.74 13.89 11.75 13C10.98 12.32 10.46 11.47 10.31 11.22C10.16 10.97 10.29 10.83 10.42 10.7C10.54 10.58 10.68 10.4 10.82 10.24C10.95 10.07 11 9.95 11.09 9.78C11.17 9.61 11.13 9.46 11.07 9.33C11.01 9.21 10.53 8.03 10.33 7.55C10.14 7.08 9.94 7.15 9.78 7.14C9.64 7.14 9.48 7.35 9.53 7.35Z"/></svg>
+                <span>WhatsApp</span>
+              </a>
+              <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(storyShortUrl)}" target="_blank" rel="noopener noreferrer" class="btn-share-social btn-share-facebook" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;background:#1877F2;color:#ffffff;text-decoration:none;font-size:11.5px;font-weight:700;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/></svg>
+                <span>Facebook</span>
+              </a>
+              <a href="https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(storyShortUrl)}" target="_blank" rel="noopener noreferrer" class="btn-share-social btn-share-linkedin" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;background:#0A66C2;color:#ffffff;text-decoration:none;font-size:11.5px;font-weight:700;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+                <span>LinkedIn</span>
+              </a>
+              <button type="button" class="btn-share-social btn-share-copylink" data-copy-url="${storyShortUrl}" style="display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:6px;background:#f1f5f9;color:#334155;border:1px solid #cbd5e1;font-size:11.5px;font-weight:700;cursor:pointer;">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                <span>Copy Link</span>
+              </button>
+            </div>
+          </div>
+        `;
+      }
+
+      // Render comments list
+      renderModalCommentsList(storyId);
+
       modal.classList.remove("is-hidden");
       modal.style.display = "flex";
+    }
+
+    function renderModalCommentsList(storyId) {
+      const listEl = document.getElementById("story-modal-comments-list");
+      const countEl = document.getElementById("story-modal-comments-count");
+      if (!listEl) return;
+
+      const comments = window.__uafGetStoryComments ? window.__uafGetStoryComments(storyId, false) : [];
+      if (countEl) {
+        countEl.textContent = `${comments.length} comment${comments.length === 1 ? '' : 's'}`;
+      }
+
+      if (comments.length === 0) {
+        listEl.innerHTML = `<div style="font-size:12px;color:var(--ink-500);font-style:italic;padding:8px 0;">No public comments yet. Be the first supporter to leave a note!</div>`;
+        return;
+      }
+
+      listEl.innerHTML = comments.map((c) => `
+        <div class="story-comment-item">
+          <div class="story-comment-meta">
+            <span class="story-comment-author">${escapeHtml(c.author || "Supporter")}</span>
+            <span class="story-comment-time">${escapeHtml(new Date(c.timestamp).toLocaleDateString())}</span>
+          </div>
+          <div class="story-comment-body">${escapeHtml(c.text)}</div>
+        </div>
+      `).join("");
+    }
+
+    // Story comment form handler
+    const commentForm = document.getElementById("story-modal-comment-form");
+    if (commentForm && !commentForm.dataset.bound) {
+      commentForm.dataset.bound = "true";
+      commentForm.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const activeStoryId = modal?.dataset.activeStoryId;
+        if (!activeStoryId) return;
+
+        const authorInput = document.getElementById("story-comment-author");
+        const privateCheck = document.getElementById("story-comment-private");
+        const textInput = document.getElementById("story-comment-text");
+
+        const author = authorInput?.value.trim() || "Anonymous Supporter";
+        const isPrivate = privateCheck?.checked || false;
+        const text = textInput?.value.trim() || "";
+
+        if (!text) return;
+
+        if (window.__uafAddStoryComment) {
+          window.__uafAddStoryComment(activeStoryId, author, text, isPrivate);
+        }
+
+        if (isPrivate) {
+          showToast("Thank you! Your note was sent privately to UAF Admins.");
+        } else {
+          showToast("Comment posted successfully! Thank you for your support.");
+        }
+
+        if (textInput) textInput.value = "";
+        renderModalCommentsList(activeStoryId);
+      });
     }
 
     window.__uafOpenStoryDetailModal = openStoryDetailModal;
 
     // Event delegation on document to handle any dynamically rendered story cards
     document.addEventListener("click", (e) => {
-      // Do not trigger story modal if user clicked "Support this Story" or share dots
-      if (e.target.closest(".btn-story-support-trigger") || e.target.closest(".btn-story-donate") || e.target.closest(".btn-campaign-donate") || e.target.closest(".btn-story-share-dots")) {
+      // Do not trigger story modal if user clicked "Support this Story", reaction, or share buttons
+      if (e.target.closest(".btn-story-support-trigger") || e.target.closest(".btn-story-donate") || e.target.closest(".btn-campaign-donate") || e.target.closest(".btn-story-share-dots") || e.target.closest(".btn-story-reaction") || e.target.closest(".btn-share-social")) {
         return;
       }
       const trigger = e.target.closest("[data-story-id]");
@@ -617,28 +767,92 @@
       document.body.removeChild(ta);
     }
 
+    // Universal Reaction and Share Click Delegation
     document.addEventListener("click", (e) => {
+      const rxBtn = e.target.closest(".btn-story-reaction");
+      if (rxBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const storyId = rxBtn.dataset.storyId;
+        const type = rxBtn.dataset.reactionType;
+        if (!storyId || !type) return;
+
+        if (window.__uafToggleStoryReaction) {
+          const res = window.__uafToggleStoryReaction(storyId, type);
+          if (res) {
+            rxBtn.classList.toggle("is-reacted", res.reacted);
+            if (res.reacted) {
+              if (type === "like") rxBtn.style.background = "#e0f2fe";
+              if (type === "heart") rxBtn.style.background = "#ffe4e6";
+              if (type === "celebrate") rxBtn.style.background = "#fef3c7";
+            } else {
+              rxBtn.style.background = "#ffffff";
+            }
+            const countEl = rxBtn.querySelector(".reaction-count");
+            if (countEl) countEl.textContent = res.count;
+          }
+        }
+        return;
+      }
+
+      const copyBtn = e.target.closest("[data-copy-url]");
+      if (copyBtn) {
+        e.preventDefault();
+        e.stopPropagation();
+        const url = copyBtn.dataset.copyUrl;
+        if (url) {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(url).then(() => {
+              showToast("Story link copied to clipboard!");
+            }).catch(() => fallbackCopyText(url));
+          } else {
+            fallbackCopyText(url);
+          }
+        }
+        return;
+      }
+
       const shareBtn = e.target.closest(".btn-story-share-dots");
-      if (!shareBtn) return;
-      e.stopPropagation();
-      e.preventDefault();
-      const storyId = shareBtn.dataset.shareStoryId;
-      if (!storyId) return;
-      const shareUrl = `${window.location.origin}${window.location.pathname}#/donate?story=${encodeURIComponent(storyId)}`;
-      if (navigator.clipboard && navigator.clipboard.writeText) {
-        navigator.clipboard.writeText(shareUrl).then(() => {
-          window.__uafShowToast?.("Story link copied to clipboard!");
-        }).catch(() => {
+      if (shareBtn) {
+        e.stopPropagation();
+        e.preventDefault();
+        const storyId = shareBtn.dataset.shareStoryId;
+        if (!storyId) return;
+        const story = window.__uafGetStory ? window.__uafGetStory(storyId) : null;
+        const shareCode = story?.shareCode || storyId.replace("story_", "");
+        const shareUrl = `${window.location.origin}${window.location.pathname}#/c/${shareCode}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(shareUrl).then(() => {
+            window.__uafShowToast?.("Story link copied to clipboard!");
+          }).catch(() => {
+            fallbackCopyText(shareUrl);
+          });
+        } else {
           fallbackCopyText(shareUrl);
-        });
-      } else {
-        fallbackCopyText(shareUrl);
+        }
       }
     });
 
-    // Deep link support: auto-open story detail modal when #/donate?story=... is visited
+    // Deep link support: auto-open story detail modal when #/c/<code> or #/donate?story=... is visited
     function handleStoryDeepLink() {
       const hash = window.location.hash || "";
+
+      // 1. Opaque short link: #/c/x7k9p2 or #c/x7k9p2
+      const codeMatch = hash.match(/#\/?c\/([a-zA-Z0-9_-]+)/i);
+      if (codeMatch && codeMatch[1]) {
+        const shareCode = codeMatch[1];
+        const story = window.__uafGetStoryByShareCode ? window.__uafGetStoryByShareCode(shareCode) : null;
+        const targetId = story ? story.id : shareCode;
+        goTo("donate");
+        setTimeout(() => {
+          if (typeof window.__uafOpenStoryDetailModal === "function") {
+            window.__uafOpenStoryDetailModal(targetId);
+          }
+        }, 300);
+        return;
+      }
+
+      // 2. Query param: #/donate?story=...
       const match = hash.match(/[?&]story=([a-zA-Z0-9_-]+)/);
       if (match && match[1]) {
         const storyId = match[1];
@@ -656,6 +870,7 @@
 
   /* ---------------------------------------------------------
      COLLAPSIBLE DONATE FORM TOGGLE (In Fundraising Tab)
+     Starts smoothly from the very first field (Currency & Amount)
   --------------------------------------------------------- */
   function openDonationForm(impactArea) {
     goTo("donate");
@@ -688,9 +903,11 @@
 
     setTimeout(() => {
       if (formWrapper) {
-        formWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+        const yOffset = -75; // Header offset so Select Currency & Amount chips start at the top
+        const y = formWrapper.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
       }
-    }, 120);
+    }, 100);
   }
   window.__uafOpenDonationForm = openDonationForm;
 
@@ -708,7 +925,9 @@
         toggleBtn.setAttribute("aria-expanded", "true");
       }
       if (textSpan) textSpan.textContent = "Close Donation Form";
-      formWrapper.scrollIntoView({ behavior: "smooth", block: "start" });
+      const yOffset = -75;
+      const y = formWrapper.getBoundingClientRect().top + window.pageYOffset + yOffset;
+      window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
     } else {
       formWrapper.style.display = "none";
       if (toggleBtn) {
@@ -1388,6 +1607,56 @@
   }
 
   /* ---------------------------------------------------------
+     TIMED DONATION ENGAGEMENT POPUP
+     "Please Donate, Educate a Kid or Empower a household"
+     Pops up after reading/browsing for ~75 seconds (with X and Donate button)
+  --------------------------------------------------------- */
+  function initDonationEngagementPopup() {
+    const modal = document.getElementById("donation-engagement-modal");
+    const closeBtn = document.getElementById("donation-engagement-close");
+    const donateBtn = document.getElementById("donation-engagement-donate-btn");
+    const dismissBtn = document.getElementById("donation-engagement-dismiss-btn");
+    if (!modal) return;
+
+    function hidePopup() {
+      modal.classList.add("is-hidden");
+      modal.style.display = "none";
+      try {
+        sessionStorage.setItem("uaf_engagement_prompt_dismissed", "true");
+      } catch (_) {}
+    }
+
+    closeBtn?.addEventListener("click", hidePopup);
+    dismissBtn?.addEventListener("click", hidePopup);
+    modal.addEventListener("click", (e) => {
+      if (e.target === modal) hidePopup();
+    });
+
+    donateBtn?.addEventListener("click", () => {
+      hidePopup();
+      openDonationForm();
+    });
+
+    // Check if previously dismissed in this session
+    try {
+      if (sessionStorage.getItem("uaf_engagement_prompt_dismissed") === "true") {
+        return;
+      }
+    } catch (_) {}
+
+    // Pop up after user has been browsing for 75 seconds
+    setTimeout(() => {
+      try {
+        if (sessionStorage.getItem("uaf_engagement_prompt_dismissed") === "true") {
+          return;
+        }
+      } catch (_) {}
+      modal.classList.remove("is-hidden");
+      modal.style.display = "flex";
+    }, 75000);
+  }
+
+  /* ---------------------------------------------------------
      INIT ON DOM READY & IMMEDIATE EXECUTION FALLBACK
   --------------------------------------------------------- */
   function initApp() {
@@ -1396,6 +1665,7 @@
     try { initInstall(); } catch (e) { console.warn("Install init:", e); }
     try { initStoryModal(); } catch (e) { console.warn("Story modal init:", e); }
     try { initDonateToggle(); } catch (e) { console.warn("Donate toggle init:", e); }
+    try { initDonationEngagementPopup(); } catch (e) { console.warn("Engagement popup init:", e); }
     try { updateOnlineStatus(); } catch (e) { console.warn("Online status init:", e); }
     try { renderRoute(); } catch (e) { console.warn("Render route init:", e); }
     try { setupDynamicChildProfiles(); } catch (e) { console.warn("Child profiles init:", e); }

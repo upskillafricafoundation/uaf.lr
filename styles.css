@@ -3048,4 +3048,320 @@ body.is-home-screen .screen[data-screen="menu"] {
   }
 }
 
+/* =========================================================
+   TIMED DONATION ENGAGEMENT POPUP MODAL
+   ========================================================= */
+.donation-engagement-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.donation-engagement-card {
+  background: #ffffff;
+  border-radius: 20px;
+  max-width: 450px;
+  width: 100%;
+  padding: 30px 24px 24px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  animation: modalPopUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPopUp {
+  0% {
+    opacity: 0;
+    transform: scale(0.92) translateY(12px);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.donation-engagement-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: #f1f5f9;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ink-500);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.donation-engagement-close:hover {
+  background: #e2e8f0;
+  color: var(--ink-900);
+  transform: rotate(90deg);
+}
+
+.donation-engagement-icon-wrap {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #ffe4e6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 12px;
+  box-shadow: 0 4px 12px rgba(225, 29, 72, 0.15);
+}
+
+.donation-engagement-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #007A99;
+  margin-bottom: 6px;
+}
+
+.donation-engagement-title {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.35;
+  margin: 0 0 12px;
+}
+
+.donation-engagement-desc {
+  font-size: 13.5px;
+  color: #475569;
+  line-height: 1.55;
+  margin: 0 0 22px;
+}
+
+.donation-engagement-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.btn-engagement-donate {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 20px;
+  background: linear-gradient(135deg, #007A99 0%, #00566B 100%);
+  color: #ffffff !important;
+  font-size: 15px;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0, 122, 153, 0.35);
+  transition: all 0.18s ease;
+}
+
+.btn-engagement-donate:hover {
+  background: linear-gradient(135deg, #006078 0%, #004455 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 18px rgba(0, 122, 153, 0.45);
+}
+
+.btn-engagement-dismiss {
+  background: transparent;
+  border: none;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px;
+  cursor: pointer;
+  transition: color 0.15s;
+}
+
+.btn-engagement-dismiss:hover {
+  color: #0f172a;
+}
+
+/* =========================================================
+   STORY REACTIONS, SOCIAL SHARING & COMMUNITY COMMENTS
+   ========================================================= */
+.story-reactions-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+
+.btn-story-reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.btn-story-reaction:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.btn-story-reaction.is-active {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+  font-weight: 700;
+  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.2);
+}
+
+.btn-story-reaction .reaction-emoji {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.btn-story-reaction .reaction-count {
+  font-size: 11.5px;
+  background: #f1f5f9;
+  padding: 1px 7px;
+  border-radius: 999px;
+}
+
+.btn-story-reaction.is-active .reaction-count {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+/* Social Media Share Buttons */
+.story-social-share-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+
+.social-share-label {
+  font-size: 11.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #64748b;
+  margin-right: 2px;
+}
+
+.btn-share-social {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+}
+
+.btn-share-social:hover {
+  transform: translateY(-1px);
+  filter: brightness(0.95);
+}
+
+.btn-share-whatsapp {
+  background: #25D366;
+  color: #ffffff !important;
+}
+
+.btn-share-facebook {
+  background: #1877F2;
+  color: #ffffff !important;
+}
+
+.btn-share-linkedin {
+  background: #0A66C2;
+  color: #ffffff !important;
+}
+
+.btn-share-copylink {
+  background: #f1f5f9;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
+/* Story Comments */
+.story-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.story-comment-item {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 12.5px;
+  line-height: 1.45;
+}
+
+.story-comment-item--private {
+  background: #fffbeb;
+  border-color: #fef3c7;
+}
+
+.story-comment-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+
+.story-comment-author {
+  font-weight: 700;
+  color: #1e293b;
+  font-size: 12px;
+}
+
+.story-comment-time {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.story-comment-badge-private {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 6px;
+}
+
 

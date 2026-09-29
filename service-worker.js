@@ -1,10 +1,11 @@
 /* =========================================================
-   UAF IMPACT — SERVICE WORKER (OFFLINE-FIRST ENGINE v9)
-   Caches the complete app shell (markup, styles, scripts,
-   icons, media assets) for full offline execution and auto-sync.
+   UAF CAMPAIGN DRIVE — SERVICE WORKER (v25)
+   Features auto-update, network-first strategy for app code,
+   and instant cache invalidation so installed devices always
+   receive the latest updates immediately.
    ========================================================= */
 
-const CACHE_VERSION = "uaf-impact-shell-v23";
+const CACHE_VERSION = "uaf-campaign-drive-v25";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -27,12 +28,13 @@ const APP_SHELL = [
   "./icons/favicon-16.png"
 ];
 
+// Install: pre-cache app shell and immediately activate
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_VERSION).then((cache) => {
       return Promise.allSettled(
         APP_SHELL.map((url) =>
-          cache.add(url).catch((err) => console.warn("Failed to cache:", url, err))
+          cache.add(url).catch((err) => console.warn("PWA pre-cache notice:", url, err))
         )
       );
     })
@@ -40,6 +42,7 @@ self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
+// Activate: delete ALL old caches immediately and take control of all open clients
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((keys) =>
@@ -48,24 +51,39 @@ self.addEventListener("activate", (event) => {
           .filter((key) => key !== CACHE_VERSION)
           .map((key) => caches.delete(key))
       )
-    )
+    ).then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
+// Message listener for manual client-side commands
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.action === "skipWaiting") {
+    self.skipWaiting();
+  }
+  if (event.data && event.data.action === "clearCache") {
+    caches.keys().then((names) => Promise.all(names.map((name) => caches.delete(name))));
+  }
+});
+
+// Fetch: Network-First for core code & navigation, Cache-First for static media
 self.addEventListener("fetch", (event) => {
   const req = event.request;
-
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.includes("/admin") || url.pathname.includes("/api")) return;
 
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req)
+  const isCodeOrDoc = req.mode === "navigate" ||
+                      url.pathname.endsWith(".html") ||
+                      url.pathname.endsWith(".js") ||
+                      url.pathname.endsWith(".css") ||
+                      url.pathname.endsWith(".json");
+
+  if (isCodeOrDoc) {
+    // Network-first strategy for rapid code updates
+    event.respondWith(
+      fetch(req)
         .then((res) => {
           if (res && res.status === 200) {
             const clone = res.clone();
@@ -74,11 +92,29 @@ self.addEventListener("fetch", (event) => {
           return res;
         })
         .catch(() => {
-          if (req.mode === "navigate") {
-            return caches.match("./index.html").then((fallback) => fallback || caches.match("./"));
+          return caches.match(req).then((cached) => {
+            if (cached) return cached;
+            if (req.mode === "navigate") {
+              return caches.match("./index.html").then((fb) => fb || caches.match("./"));
+            }
+            return cached;
+          });
+        })
+    );
+  } else {
+    // Cache-first for images/assets with background refresh
+    event.respondWith(
+      caches.match(req).then((cached) => {
+        const fetchPromise = fetch(req).then((res) => {
+          if (res && res.status === 200) {
+            const clone = res.clone();
+            caches.open(CACHE_VERSION).then((cache) => cache.put(req, clone));
           }
-          return cached;
-        });
-    })
-  );
+          return res;
+        }).catch(() => null);
+
+        return cached || fetchPromise;
+      })
+    );
+  }
 });
