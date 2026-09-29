@@ -56,15 +56,43 @@
     }
   ];
 
+  // Persistent Partner Deletion Tombstones
+  function getDeletedPartners() {
+    try {
+      return JSON.parse(localStorage.getItem("uaf_deleted_partners") || "[]");
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function addDeletedPartner(id) {
+    if (!id) return;
+    const list = getDeletedPartners();
+    const str = String(id).trim();
+    if (!list.includes(str)) {
+      list.push(str);
+      try {
+        localStorage.setItem("uaf_deleted_partners", JSON.stringify(list));
+      } catch (_) {}
+    }
+  }
+
   function getPartners() {
+    const deletedList = getDeletedPartners();
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
+      if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter((p) => !deletedList.includes(String(p.id || p.name).trim()));
+        }
       }
     } catch (e) {}
-    return DEFAULT_PARTNERS;
+    const initial = DEFAULT_PARTNERS.filter((p) => !deletedList.includes(String(p.id || p.name).trim()));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+    } catch (_) {}
+    return initial;
   }
 
   function savePartners(partners) {
@@ -337,7 +365,9 @@
           const target = partners.find((p) => p.id === id);
           if (!target) return;
           if (confirm(`Are you sure you want to delete "${target.name}"?`)) {
-            const updatedList = partners.filter((p) => p.id !== id);
+            addDeletedPartner(id);
+            const deletedList = getDeletedPartners();
+            const updatedList = partners.filter((p) => p.id !== id && !deletedList.includes(String(p.id || p.name).trim()));
             if (editingPartnerId === id) editingPartnerId = null;
             savePartners(updatedList);
             refresh();
