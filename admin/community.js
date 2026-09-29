@@ -1377,7 +1377,10 @@
         <td>${formatDate(p.partnershipDate)}</td>
         <td><a href="tel:${escapeHtml(p.telephone)}" style="color:var(--blue-700);text-decoration:none;">${escapeHtml(p.telephone)}</a></td>
         <td>
-          <button class="btn btn--outline" style="padding:4px 8px;font-size:11px;color:var(--red-700);" data-delete-partner="${p.id || p.schoolName}">Delete</button>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn--outline" style="padding:4px 9px;font-size:11.5px;" data-edit-partner="${p.id || p.schoolName}">Edit</button>
+            <button class="btn btn--outline" style="padding:4px 9px;font-size:11.5px;color:var(--red-700);" data-delete-partner="${p.id || p.schoolName}">Delete</button>
+          </div>
         </td>
       </tr>
     `).join("");
@@ -1400,13 +1403,38 @@
       </table>
     `;
 
+    container.querySelectorAll("button[data-edit-partner]").forEach(b => {
+      b.addEventListener("click", () => handleEditPartnership(b.dataset.editPartner, session));
+    });
+
     container.querySelectorAll("button[data-delete-partner]").forEach(b => {
       b.addEventListener("click", () => handleDeletePartnership(b.dataset.deletePartner, session));
     });
   }
 
+  function handleEditPartnership(id, session) {
+    const p = cachedPartnerships.find(x => (x.id || x.schoolName) === id);
+    if (!p) return;
+    document.getElementById("partner-id").value = p.id || p.schoolName;
+    document.getElementById("partner-school-name").value = p.schoolName || "";
+    document.getElementById("partner-county").value = p.county || p.location || "Montserrado";
+    document.getElementById("partner-community").value = p.community || "";
+    document.getElementById("partner-rep-name").value = p.repName || "";
+    document.getElementById("partner-telephone").value = p.telephone || "";
+    if (p.partnershipDate) {
+      document.getElementById("partner-date").value = p.partnershipDate.split("T")[0];
+    } else {
+      document.getElementById("partner-date").value = new Date().toISOString().split("T")[0];
+    }
+    const titleEl = document.getElementById("partnership-modal-title");
+    if (titleEl) titleEl.textContent = `Edit School Partnership: ${p.schoolName}`;
+    const modal = document.getElementById("partnership-modal");
+    if (modal) modal.classList.remove("is-hidden");
+  }
+
   async function handleSavePartnership(e, session) {
     e.preventDefault();
+    const existingId = document.getElementById("partner-id").value.trim();
     const schoolName = document.getElementById("partner-school-name").value.trim();
     const county = document.getElementById("partner-county").value;
     const community = document.getElementById("partner-community").value.trim();
@@ -1414,30 +1442,67 @@
     const date = document.getElementById("partner-date").value;
     const tel = document.getElementById("partner-telephone").value.trim();
 
-    const newPartner = {
-      id: "sp_" + Date.now(),
-      schoolName: schoolName,
-      location: county,
-      county: county,
-      community: community,
-      repName: repName,
-      partnershipDate: date,
-      telephone: tel,
-      createdAt: new Date().toISOString()
-    };
+    if (existingId) {
+      const idx = cachedPartnerships.findIndex(x => (x.id || x.schoolName) === existingId);
+      if (idx >= 0) {
+        cachedPartnerships[idx] = {
+          ...cachedPartnerships[idx],
+          schoolName: schoolName,
+          location: county,
+          county: county,
+          community: community,
+          repName: repName,
+          partnershipDate: date,
+          telephone: tel,
+          updatedAt: new Date().toISOString()
+        };
+      }
+      try {
+        localStorage.setItem("uaf_school_partnerships", JSON.stringify(cachedPartnerships));
+      } catch (_) {}
 
-    cachedPartnerships.unshift(newPartner);
-    try {
-      localStorage.setItem("uaf_school_partnerships", JSON.stringify(cachedPartnerships));
-    } catch (_) {}
+      try {
+        callApi("updateSchoolPartnership", {
+          token: session.token,
+          id: existingId,
+          schoolName: schoolName,
+          location: county,
+          county: county,
+          community: community,
+          repName: repName,
+          partnershipDate: date,
+          telephone: tel
+        }).catch(() => {});
+      } catch (_) {}
 
-    // Background backend call
-    try {
-      callApi("createSchoolPartnership", Object.assign({ token: session.token }, newPartner)).catch(() => {});
-    } catch (_) {}
+      document.getElementById("partnership-modal").classList.add("is-hidden");
+      flash(`School partnership "${schoolName}" updated successfully.`, "success");
+    } else {
+      const newPartner = {
+        id: "sp_" + Date.now(),
+        schoolName: schoolName,
+        location: county,
+        county: county,
+        community: community,
+        repName: repName,
+        partnershipDate: date,
+        telephone: tel,
+        createdAt: new Date().toISOString()
+      };
 
-    document.getElementById("partnership-modal").classList.add("is-hidden");
-    flash(`School partnership "${schoolName}" saved successfully.`, "success");
+      cachedPartnerships.unshift(newPartner);
+      try {
+        localStorage.setItem("uaf_school_partnerships", JSON.stringify(cachedPartnerships));
+      } catch (_) {}
+
+      try {
+        callApi("createSchoolPartnership", Object.assign({ token: session.token }, newPartner)).catch(() => {});
+      } catch (_) {}
+
+      document.getElementById("partnership-modal").classList.add("is-hidden");
+      flash(`School partnership "${schoolName}" saved successfully.`, "success");
+    }
+
     loadPartnerships(session);
     loadStats(session);
     window.dispatchEvent(new Event("uaf_data_updated"));
@@ -1482,29 +1547,17 @@
     if (!items.length) {
       try {
         const stored = localStorage.getItem("uaf_empowerment_records");
-        items = stored ? JSON.parse(stored) : [
-          {
-            id: "emp_1",
-            name: "Mother Comfort Toe",
-            gender: "Female",
-            county: "Montserrado",
-            community: "Duport Road",
-            skill: "Soap Making",
-            connectedChild: "Blessing K.",
-            contact: "0770223344"
-          },
-          {
-            id: "emp_2",
-            name: "Ma Musu Koroma",
-            gender: "Female",
-            county: "Montserrado",
-            community: "West Point",
-            skill: "Tie-Dye / Batik",
-            connectedChild: "Emmanuel Flomo",
-            contact: "0886112233"
-          }
-        ];
+        if (stored) {
+          items = JSON.parse(stored);
+        }
       } catch (_) {}
+    }
+
+    // Default to the 27 authentic Liberian Women across verified communities if empty or unseeded
+    if (!items.length || (items.length < 27 && !localStorage.getItem("uaf_empowerment_customized"))) {
+      if (window.DEFAULT_EMPOWERMENT_RECORDS && window.DEFAULT_EMPOWERMENT_RECORDS.length) {
+        items = JSON.parse(JSON.stringify(window.DEFAULT_EMPOWERMENT_RECORDS));
+      }
     }
 
     const delList = getDeletedEmpowerment();
@@ -1551,7 +1604,10 @@
         <td>${e.connectedChild ? `<span style="color:var(--blue-700);font-weight:600;">${escapeHtml(e.connectedChild)}</span>` : '<span style="color:var(--ink-400);">None</span>'}</td>
         <td><a href="tel:${escapeHtml(e.contact)}" style="color:var(--blue-700);text-decoration:none;">${escapeHtml(e.contact)}</a></td>
         <td>
-          <button class="btn btn--outline" style="padding:4px 8px;font-size:11px;color:var(--red-700);" data-delete-empower="${e.id || e.name}">Delete</button>
+          <div style="display:flex;gap:6px;">
+            <button class="btn btn--outline" style="padding:4px 9px;font-size:11.5px;" data-edit-empower="${e.id || e.name}">Edit</button>
+            <button class="btn btn--outline" style="padding:4px 9px;font-size:11.5px;color:var(--red-700);" data-delete-empower="${e.id || e.name}">Delete</button>
+          </div>
         </td>
       </tr>
     `).join("");
@@ -1574,9 +1630,35 @@
       </table>
     `;
 
+    container.querySelectorAll("button[data-edit-empower]").forEach(b => {
+      b.addEventListener("click", () => handleEditEmpowerment(b.dataset.editEmpower, session));
+    });
+
     container.querySelectorAll("button[data-delete-empower]").forEach(b => {
       b.addEventListener("click", () => handleDeleteEmpowerment(b.dataset.deleteEmpower, session));
     });
+  }
+
+  function handleEditEmpowerment(id, session) {
+    const e = cachedEmpowerment.find(x => (x.id || x.name) === id);
+    if (!e) return;
+    document.getElementById("empower-id").value = e.id || e.name;
+    document.getElementById("empower-name").value = e.name || "";
+    document.getElementById("empower-gender").value = e.gender || "Female";
+    document.getElementById("empower-county").value = e.county || "Montserrado";
+    document.getElementById("empower-community").value = e.community || "";
+    document.getElementById("empower-skill").value = e.skill || "Soap Making";
+    document.getElementById("empower-contact").value = e.contact || "";
+
+    populateConnectedChildrenDropdown();
+    if (e.connectedChild) {
+      document.getElementById("empower-child-select").value = e.connectedChild;
+    }
+
+    const titleEl = document.getElementById("empowerment-modal-title");
+    if (titleEl) titleEl.textContent = `Edit Empowerment Record: ${e.name}`;
+    const modal = document.getElementById("empowerment-modal");
+    if (modal) modal.classList.remove("is-hidden");
   }
 
   function populateConnectedChildrenDropdown() {
@@ -1594,6 +1676,7 @@
 
   async function handleSaveEmpowerment(e, session) {
     e.preventDefault();
+    const existingId = document.getElementById("empower-id").value.trim();
     const name = document.getElementById("empower-name").value.trim();
     const gender = document.getElementById("empower-gender").value;
     const county = document.getElementById("empower-county").value;
@@ -1615,31 +1698,71 @@
       } catch (_) {}
     }
 
-    const newEmpower = {
-      id: "emp_" + Date.now(),
-      name,
-      gender,
-      county,
-      community,
-      skill,
-      connectedChild,
-      contact,
-      photoData,
-      createdAt: new Date().toISOString()
-    };
+    if (existingId) {
+      const idx = cachedEmpowerment.findIndex(x => (x.id || x.name) === existingId);
+      if (idx >= 0) {
+        cachedEmpowerment[idx] = {
+          ...cachedEmpowerment[idx],
+          name,
+          gender,
+          county,
+          community,
+          skill,
+          connectedChild,
+          contact,
+          photoData: photoData || cachedEmpowerment[idx].photoData,
+          updatedAt: new Date().toISOString()
+        };
+      }
+      try {
+        localStorage.setItem("uaf_empowerment_records", JSON.stringify(cachedEmpowerment));
+        localStorage.setItem("uaf_empowerment_customized", "true");
+      } catch (_) {}
 
-    cachedEmpowerment.unshift(newEmpower);
-    try {
-      localStorage.setItem("uaf_empowerment_records", JSON.stringify(cachedEmpowerment));
-    } catch (_) {}
+      try {
+        callApi("updateEmpowermentData", {
+          token: session.token,
+          id: existingId,
+          name,
+          gender,
+          county,
+          community,
+          skill,
+          connectedChild,
+          contact
+        }).catch(() => {});
+      } catch (_) {}
 
-    // Background backend call
-    try {
-      callApi("createEmpowermentData", Object.assign({ token: session.token }, newEmpower)).catch(() => {});
-    } catch (_) {}
+      document.getElementById("empowerment-modal").classList.add("is-hidden");
+      flash(`Empowerment record for "${name}" updated successfully.`, "success");
+    } else {
+      const newEmpower = {
+        id: "emp_" + Date.now(),
+        name,
+        gender,
+        county,
+        community,
+        skill,
+        connectedChild,
+        contact,
+        photoData,
+        createdAt: new Date().toISOString()
+      };
 
-    document.getElementById("empowerment-modal").classList.add("is-hidden");
-    flash(`Empowerment record for "${name}" saved successfully.`, "success");
+      cachedEmpowerment.unshift(newEmpower);
+      try {
+        localStorage.setItem("uaf_empowerment_records", JSON.stringify(cachedEmpowerment));
+        localStorage.setItem("uaf_empowerment_customized", "true");
+      } catch (_) {}
+
+      // Background backend call
+      try {
+        callApi("createEmpowermentData", Object.assign({ token: session.token }, newEmpower)).catch(() => {});
+      } catch (_) {}
+
+      document.getElementById("empowerment-modal").classList.add("is-hidden");
+      flash(`Empowerment record for "${name}" saved successfully.`, "success");
+    }
     loadEmpowerment(session);
     loadStats(session);
     window.dispatchEvent(new Event("uaf_data_updated"));
@@ -1777,7 +1900,7 @@
       // Amount to Raise (Target): Admin sets manually
       const targetNeeded = Number(comm.amountNeeded || comm.amountNeededUSD) || 0;
 
-      // Amount Raised (Donations): sum of verified donations for this community/county
+      // Amount Raised (Donations): strictly verified donations for this community/county
       let donGenerated = 0;
       verifiedDonations.forEach((d) => {
         const dText = `${d.campaign || ""} ${d.notes || ""} ${d.message || ""}`.toLowerCase();
@@ -1785,7 +1908,7 @@
           donGenerated += Number(d.amount) || 0;
         }
       });
-      const generated = Math.max(donGenerated, Number(comm.amountGenerated || comm.amountGeneratedUSD) || 0);
+      const generated = donGenerated;
 
       // Balance to Raise = Amount Needed - Amount Raised
       const balanceToRaise = Math.max(0, targetNeeded - generated);
@@ -1970,15 +2093,75 @@
   }
 
   /* ---------------------------------------------------------
-     BROCHURE CONTROLS & CSV EXPORT
+     BROCHURE CONTROLS & CSV EXPORT (Quota-Safe IndexedDB Engine)
   --------------------------------------------------------- */
-  function updateBrochureStatusDisplay() {
-    const customBrochure = localStorage.getItem("uaf_brochure_pdf");
+  const IDB_DOC_DB = "UAF_Doc_Store";
+  const IDB_DOC_STORE = "docs";
+  const BROCHURE_DOC_KEY = "uaf_brochure_pdf";
+
+  function openBrochureDB() {
+    return new Promise((resolve, reject) => {
+      if (!window.indexedDB) {
+        reject(new Error("IndexedDB not available in this browser."));
+        return;
+      }
+      const req = indexedDB.open(IDB_DOC_DB, 1);
+      req.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(IDB_DOC_STORE)) {
+          db.createObjectStore(IDB_DOC_STORE);
+        }
+      };
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => reject(req.error || new Error("Failed to open document database"));
+    });
+  }
+
+  async function saveBrochureToIDB(dataUrl) {
+    const db = await openBrochureDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction(IDB_DOC_STORE, "readwrite");
+      const store = tx.objectStore(IDB_DOC_STORE);
+      const req = store.put(dataUrl, BROCHURE_DOC_KEY);
+      req.onsuccess = () => resolve();
+      req.onerror = () => reject(req.error || new Error("Failed to write brochure to IndexedDB"));
+    });
+  }
+
+  async function getBrochureFromIDB() {
+    try {
+      const db = await openBrochureDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_DOC_STORE, "readonly");
+        const store = tx.objectStore(IDB_DOC_STORE);
+        const req = store.get(BROCHURE_DOC_KEY);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror = () => reject(req.error);
+      });
+    } catch (_) {
+      return null;
+    }
+  }
+
+  async function deleteBrochureFromIDB() {
+    try {
+      const db = await openBrochureDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction(IDB_DOC_STORE, "readwrite");
+        const store = tx.objectStore(IDB_DOC_STORE);
+        const req = store.delete(BROCHURE_DOC_KEY);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      });
+    } catch (_) {}
+  }
+
+  async function updateBrochureStatusDisplay() {
     const metaStr = localStorage.getItem("uaf_brochure_meta");
     const badge = document.getElementById("brochure-status-badge");
     const meta = document.getElementById("brochure-meta-display");
 
-    if (customBrochure && metaStr) {
+    if (metaStr) {
       try {
         const parsed = JSON.parse(metaStr);
         if (badge) {
@@ -1986,8 +2169,8 @@
           badge.className = "admin-badge admin-badge--verified";
         }
         if (meta) {
-          const sizeKb = Math.round(parsed.fileSize / 1024);
-          meta.textContent = `Current Active File: ${parsed.fileName} (${sizeKb} KB) · Updated ${formatDate(parsed.updatedAt)}`;
+          const sizeKb = Math.round((parsed.fileSize || 0) / 1024);
+          meta.textContent = `Current Active File: ${parsed.fileName || "UAF_Brochure.pdf"} (${sizeKb} KB) · Updated ${formatDate(parsed.updatedAt)}`;
         }
       } catch (_) {}
     } else {
@@ -2019,31 +2202,59 @@
         flash("Invalid file format. Only PDF files are allowed.");
         return;
       }
+      uploadBtn.setAttribute("disabled", "true");
+      const origText = uploadBtn.textContent;
+      uploadBtn.textContent = "Saving to Database...";
+
       const reader = new FileReader();
-      reader.onload = () => {
+      reader.onload = async () => {
         try {
-          localStorage.setItem("uaf_brochure_pdf", reader.result);
+          // Store PDF in IndexedDB to completely avoid localStorage 5MB quota errors
+          await saveBrochureToIDB(reader.result);
+          // Store lightweight metadata in localStorage
           localStorage.setItem("uaf_brochure_meta", JSON.stringify({
             fileName: file.name,
             fileSize: file.size,
             updatedAt: new Date().toISOString()
           }));
+          // Clean up any stale localStorage large item
+          try { localStorage.removeItem("uaf_brochure_pdf"); } catch (_) {}
+
           window.dispatchEvent(new Event("uaf_brochure_updated"));
-          updateBrochureStatusDisplay();
-          flash("Official UAF Institutional Brochure uploaded and published successfully.", "success");
+          await updateBrochureStatusDisplay();
+          flash("Official UAF Institutional Brochure uploaded and saved successfully into document store.", "success");
         } catch (err) {
           flash("Could not save file: " + err.message);
+        } finally {
+          uploadBtn.removeAttribute("disabled");
+          uploadBtn.textContent = origText;
         }
+      };
+      reader.onerror = () => {
+        uploadBtn.removeAttribute("disabled");
+        uploadBtn.textContent = origText;
+        flash("Failed to read file.");
       };
       reader.readAsDataURL(file);
     });
 
-    previewBtn?.addEventListener("click", () => {
-      const customBrochure = localStorage.getItem("uaf_brochure_pdf");
+    previewBtn?.addEventListener("click", async () => {
+      let customBrochure = await getBrochureFromIDB();
+      if (!customBrochure) {
+        customBrochure = localStorage.getItem("uaf_brochure_pdf");
+      }
       if (customBrochure) {
+        const metaStr = localStorage.getItem("uaf_brochure_meta");
+        let dlName = "UAF_Institutional_Brochure_Preview.pdf";
+        if (metaStr) {
+          try {
+            const meta = JSON.parse(metaStr);
+            if (meta.fileName) dlName = meta.fileName;
+          } catch (_) {}
+        }
         const a = document.createElement("a");
         a.href = customBrochure;
-        a.download = "UAF_Institutional_Brochure_Preview.pdf";
+        a.download = dlName;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
@@ -2053,12 +2264,15 @@
       flash("Default brochure active in Request Data tab.", "success");
     });
 
-    resetBtn?.addEventListener("click", () => {
+    resetBtn?.addEventListener("click", async () => {
       if (window.confirm("Reset official brochure back to default institutional PDF?")) {
-        localStorage.removeItem("uaf_brochure_pdf");
-        localStorage.removeItem("uaf_brochure_meta");
+        await deleteBrochureFromIDB();
+        try {
+          localStorage.removeItem("uaf_brochure_pdf");
+          localStorage.removeItem("uaf_brochure_meta");
+        } catch (_) {}
         window.dispatchEvent(new Event("uaf_brochure_updated"));
-        updateBrochureStatusDisplay();
+        await updateBrochureStatusDisplay();
         if (fileInput) fileInput.value = "";
         flash("Brochure reset to default institutional document.", "success");
       }

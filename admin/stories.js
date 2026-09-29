@@ -32,6 +32,7 @@
   const DEFAULT_STORIES = [
     {
       id: "story_blessing",
+      shareCode: "x7k9p2",
       title: "Blessing's Journey Back to the Classroom",
       category: "No Invisible Child",
       tag: "No Invisible Child Flagship",
@@ -47,11 +48,13 @@
       narrative: "Blessing was forced out of school when her mother contracted a chronic illness and could no longer afford school registration. For 18 months, Blessing spent 9 hours every day dodging commercial vehicles along the Waterside traffic corridor selling plastic water sachets to generate 250 LRD ($1.30) for daily food. During the UAF door-to-door enumeration, field officers identified Blessing and enrolled her in the No Invisible Child initiative. UAF cleared her outstanding fees at St. Mary Public School, provided study materials, and enrolled her mother into our women's micro-enterprise savings group. Today, Blessing has maintained an exceptional 92% cumulative average and dreams of becoming a pediatric physician in Liberia.",
       summary: "From selling cold water in crowded Waterside traffic to topping her Grade 3 class in West Point after UAF paid her tuition and learning supplies.",
       status: "PUBLISHED",
+      reactions: { like: 28, heart: 54, celebrate: 21 },
       createdBy: "Field Team",
       views: 0
     },
     {
       id: "story_comfort",
+      shareCode: "w4m8q5",
       title: "Mother Comfort's Soap-Making Cooperative",
       category: "Women Livelihood Empowerment",
       tag: "Women Livelihood Empowerment",
@@ -67,11 +70,13 @@
       narrative: "In Paynesville, single mothers often face severe income volatility that causes their children to be sent home for tuition arrears mid-semester. To break this recurrent cycle, Upskill Africa Foundation established the Duport Road Women's Empowerment Guild. 25 mothers completed practical skill development in industrial liquid soap, dishwashing solution, and laundry bar formulation. Equipped with starter chemical kits and bulk molds, the cooperative now supplies regional vendors and community schools. Profit distribution directly funds a dedicated children's education account, permanently securing the schooling of 68 children who were previously on the verge of school dropout.",
       summary: "How practical soap formulating and savings cooperatives enabled 25 mothers in Duport Road to independently keep 68 children in school.",
       status: "PUBLISHED",
+      reactions: { like: 36, heart: 61, celebrate: 33 },
       createdBy: "Livelihoods Unit",
       views: 0
     },
     {
       id: "story_emmanuel",
+      shareCode: "b2v6y8",
       title: "Breaking the Digital Divide in Margibi",
       category: "Alternative Learning (ALP)",
       tag: "Alternative Learning Program (ALP)",
@@ -87,20 +92,57 @@
       narrative: "In post-secondary and informal employment across Liberia, basic digital literacy is a mandatory requirement. Adolescents who miss traditional secondary schooling are often locked out of clerical and logistics opportunities. Through the UAF Alternative Learning Program (ALP) Hub in Kakata, Emmanuel and 34 other out-of-school youth attended daily computer sessions powered by solar backup. Over 12 weeks, Emmanuel progressed from zero digital exposure to proficient spreadsheet data entry and typing 45 WPM. Upon graduation, he secured an apprentice recording role with a local produce cooperative, using his earned wage to self-fund his evening high school completion.",
       summary: "Equipping out-of-school adolescent youth in Kakata with computer literacy, office software, and career counseling for workplace readiness.",
       status: "PUBLISHED",
+      reactions: { like: 19, heart: 42, celebrate: 15 },
       createdBy: "ALP Coordinator",
       views: 0
     }
   ];
 
+  // Persistent Story Deletion Tombstones
+  function getDeletedStories() {
+    try {
+      return JSON.parse(localStorage.getItem("uaf_deleted_stories") || "[]");
+    } catch (_) {
+      return [];
+    }
+  }
+
+  function addDeletedStory(id) {
+    if (!id) return;
+    const list = getDeletedStories();
+    const str = String(id).trim();
+    if (!list.includes(str)) {
+      list.push(str);
+      try {
+        localStorage.setItem("uaf_deleted_stories", JSON.stringify(list));
+      } catch (_) {}
+    }
+  }
+
+  function isStoryDeleted(id, deletedList) {
+    if (!id) return false;
+    const list = deletedList || getDeletedStories();
+    const str = String(id).trim();
+    return list.includes(str);
+  }
+
   function getLocalStories() {
+    const deletedList = getDeletedStories();
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
+      if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed)) {
+          return parsed.filter((s) => !isStoryDeleted(s.id || s.storyId, deletedList));
+        }
       }
     } catch (_) {}
-    return DEFAULT_STORIES;
+
+    const initial = DEFAULT_STORIES.filter((s) => !isStoryDeleted(s.id || s.storyId, deletedList));
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+    } catch (_) {}
+    return initial;
   }
 
   function saveLocalStories(stories) {
@@ -199,6 +241,19 @@
         <div class="admin-table-wrap">
           <div id="evidence-table-container">
             <p class="admin-muted" style="padding:24px;text-align:center;">Loading evidence requests…</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Story Comments Modal for Admin Review -->
+      <div id="story-comments-modal" class="admin-modal-overlay is-hidden">
+        <div class="admin-modal" style="max-width:580px;max-height:85vh;overflow-y:auto;border-radius:12px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--ink-100);padding-bottom:12px;margin-bottom:16px;">
+            <h3 id="story-comments-modal-title" style="margin:0;color:var(--blue-900);font-size:16px;">Review Story Comments</h3>
+            <button type="button" id="story-comments-modal-close" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink-500);line-height:1;">&times;</button>
+          </div>
+          <div id="story-comments-modal-content">
+            <!-- Populated via JS -->
           </div>
         </div>
       </div>
@@ -511,13 +566,16 @@
             activities,
             narrative,
             imageUrl: image,
-            status: status
+            status: status,
+            shareCode: stories[idx].shareCode || Math.random().toString(36).substring(2, 8)
           };
           flash(`Updated story "${title}".`, "success");
         }
       } else {
         const newStory = {
           id: "story_" + Date.now(),
+          shareCode: Math.random().toString(36).substring(2, 8),
+          reactions: { like: 0, heart: 0, celebrate: 0 },
           title,
           category,
           tag,
@@ -592,6 +650,16 @@
       const goal = Number(s.fundingGoal || 0);
       const goalStr = goal > 0 ? ` / ${formatMoney(goal)}` : "";
       const storyId = s.id || s.storyId;
+      const shareCode = s.shareCode || storyId.replace("story_", "") || "c" + Math.random().toString(36).substring(2, 8);
+      const shortLink = `#/c/${shareCode}`;
+
+      let commentsCount = 0;
+      try {
+        const stored = localStorage.getItem(`uaf_story_comments_${storyId}`);
+        if (stored) commentsCount = JSON.parse(stored).length;
+      } catch (_) {}
+
+      const rx = s.reactions || { like: 0, heart: 0, celebrate: 0 };
 
       return `
         <tr>
@@ -605,6 +673,12 @@
             <div style="font-size:11.5px;color:var(--ink-500);margin-top:2px;">
               <span class="admin-badge admin-badge--neutral" style="font-size:10.5px;padding:1px 6px;">${escapeHtml(s.category)}</span>
               <span>${escapeHtml(s.community ? s.community + ", " : "")}${escapeHtml(s.county || "Liberia")}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;">
+              <span style="font-family:monospace;font-size:11px;background:#f1f5f9;color:#0f172a;padding:2px 6px;border-radius:4px;border:1px solid #cbd5e1;">${shortLink}</span>
+              <button type="button" class="btn btn--outline admin-copy-story-link" data-copy-link="${shortLink}" style="padding:1px 6px;font-size:10.5px;">Copy Link</button>
+              <button type="button" class="btn btn--outline admin-story-comments-btn" data-story-id="${storyId}" style="padding:1px 6px;font-size:10.5px;color:#0369a1;background:#f0f9ff;border-color:#bae6fd;">💬 Comments (${commentsCount})</button>
+              <span style="font-size:10.5px;color:#64748b;margin-left:4px;">👍 ${rx.like || 0} ❤️ ${rx.heart || 0} 🎉 ${rx.celebrate || 0}</span>
             </div>
           </td>
           <td>
@@ -702,14 +776,95 @@
         const target = stories.find((x) => (x.id || x.storyId) === id);
         if (!target) return;
         if (confirm(`Are you sure you want to permanently delete "${target.title}"?`)) {
-          const updated = stories.filter((x) => (x.id || x.storyId) !== id);
+          addDeletedStory(id);
+          const updated = stories.filter((x) => (x.id || x.storyId) !== id && !isStoryDeleted(x.id || x.storyId));
           saveLocalStories(updated);
           cachedStories = updated;
+
+          // Background server deletion if API connected
+          try {
+            callApi("deleteStory", { token: session?.token, id: id, storyId: id }).catch(() => {});
+          } catch (_) {}
+
           flash(`Deleted "${target.title}".`, "success");
           renderStoriesTable(session);
         }
       });
     });
+
+    // Copy link handler
+    container.querySelectorAll(".admin-copy-story-link").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const link = btn.dataset.copyLink;
+        const fullUrl = `${window.location.origin}${window.location.pathname.replace(/\/admin(\/.*)?$/, "/")}${link}`;
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(fullUrl).then(() => {
+            flash(`Story link copied: ${link}`, "success");
+          }).catch(() => {
+            window.prompt("Copy story link:", fullUrl);
+          });
+        } else {
+          window.prompt("Copy story link:", fullUrl);
+        }
+      });
+    });
+
+    // View comments handler
+    container.querySelectorAll(".admin-story-comments-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        handleViewStoryComments(btn.dataset.storyId);
+      });
+    });
+  }
+
+  function handleViewStoryComments(storyId) {
+    const s = cachedStories.find((x) => (x.id || x.storyId) === storyId);
+    if (!s) return;
+    const modal = document.getElementById("story-comments-modal");
+    const titleEl = document.getElementById("story-comments-modal-title");
+    const contentEl = document.getElementById("story-comments-modal-content");
+    const closeBtn = document.getElementById("story-comments-modal-close");
+    if (!modal || !contentEl) return;
+
+    if (titleEl) titleEl.textContent = `Community Comments: ${s.title}`;
+
+    if (closeBtn) {
+      closeBtn.onclick = () => {
+        modal.classList.add("is-hidden");
+      };
+    }
+    modal.onclick = (e) => {
+      if (e.target === modal) modal.classList.add("is-hidden");
+    };
+
+    let comments = [];
+    try {
+      const stored = localStorage.getItem(`uaf_story_comments_${storyId}`);
+      if (stored) comments = JSON.parse(stored);
+    } catch (_) {}
+
+    if (!comments.length) {
+      contentEl.innerHTML = '<p class="admin-muted" style="padding:24px;text-align:center;">No comments posted for this story yet.</p>';
+    } else {
+      contentEl.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          ${comments.map((c) => `
+            <div style="background:${c.isPrivate ? '#fffbeb' : '#ffffff'};border:1px solid ${c.isPrivate ? '#fde68a' : '#e2e8f0'};border-radius:8px;padding:12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <strong style="font-size:13px;color:var(--ink-900);">${escapeHtml(c.author || "Supporter")}</strong>
+                  ${c.isPrivate ? '<span style="background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;padding:1px 6px;border-radius:4px;font-size:10.5px;font-weight:700;">🔒 Private to Admin</span>' : '<span style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;padding:1px 6px;border-radius:4px;font-size:10.5px;font-weight:700;">Public Comment</span>'}
+                </div>
+                <span style="font-size:11px;color:var(--ink-500);">${formatDate(c.timestamp)}</span>
+              </div>
+              <p style="margin:0;font-size:12.5px;color:var(--ink-800);line-height:1.5;">${escapeHtml(c.text)}</p>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
+    modal.classList.remove("is-hidden");
   }
 
   function flash(message, kind) {

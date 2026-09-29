@@ -35,6 +35,11 @@
       </div>
       <div id="login-error" class="admin-error is-hidden"></div>
       <button type="submit" class="btn btn--primary btn--full">Sign in</button>
+      <div style="margin-top:14px;text-align:center;">
+        <a href="../index.html#/menu" class="btn btn--outline" style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;text-decoration:none;padding:8px 14px;border-radius:var(--radius-sm);">
+          ← Return to Public Website Menu
+        </a>
+      </div>
     </form>
   </div>
 
@@ -45,7 +50,10 @@
         <img src="../assets/uaf-logo.png" alt="" />
         <strong>UAF Impact Admin</strong>
       </div>
-      <div class="admin-header__user">
+      <div class="admin-header__user" style="display:flex;align-items:center;gap:10px;">
+        <a href="../index.html#/menu" class="btn btn--outline" style="font-size:12px;padding:5px 12px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
+          ← Public Website Menu
+        </a>
         <span id="admin-user-label"></span>
         <button id="logout-btn" class="btn btn--outline">Log out</button>
       </div>
@@ -58,7 +66,6 @@
         <div class="admin-nav__item" data-module="community">Community Data</div>
         <div class="admin-nav__item" data-module="programs">UAF Programs</div>
         <div class="admin-nav__item" data-module="partners">Partners &amp; Logos</div>
-        <div class="admin-nav__item" data-module="media">Media Review</div>
         <div class="admin-nav__item" data-module="donations">Donations</div>
         <div class="admin-nav__item" data-module="stories">Stories &amp; Evidence</div>
         <div class="admin-nav__item" data-module="users">Users &amp; Roles</div>
@@ -69,9 +76,9 @@
         <div class="admin-card" style="max-width:680px;">
           <h2>Administrator Portal</h2>
           <p>You're authenticated as <strong id="welcome-name"></strong> (<span id="welcome-role"></span>).</p>
-          <p class="admin-muted">All administrative and operational modules are online. Use the navigation sidebar on the left to review community reports, approve safeguarding media, verify incoming mobile money and bank donations, publish field stories, manage staff accounts, or inspect system audit logs.</p>
+          <p class="admin-muted">All administrative and operational modules are online. Use the navigation sidebar on the left to review community reports, verify incoming mobile money and bank donations, publish field stories, manage staff accounts, or inspect system audit logs.</p>
           <div style="margin-top:20px;padding:16px;background:var(--blue-050);border-radius:var(--radius-md);font-size:13px;color:var(--blue-900);">
-            <strong>Platform Integrity Notice:</strong> All public-facing statistics adhere strictly to the Zero-Fabrication protocol. Only submissions, media, and donations explicitly marked as <code>VERIFIED</code> or <code>PUBLISHED</code> by authorized staff will be reflected on the public PWA.
+            <strong>Platform Integrity Notice:</strong> All public-facing statistics adhere strictly to the Zero-Fabrication protocol. Only submissions and donations explicitly marked as <code>VERIFIED</code> or <code>PUBLISHED</code> by authorized staff will be reflected on the public PWA.
           </div>
         </div>
       </section>
@@ -83,15 +90,14 @@
 
 </div>
 
-<script src="../config.js"></script>
-<script src="admin.js"></script>
-<script src="community.js"></script>
-<script src="programs.js"></script>
-<script src="partners.js"></script>
-<script src="media.js"></script>
-<script src="donations.js"></script>
-<script src="stories.js"></script>
-<script src="users.js"></script>
-<script src="audit.js"></script>
+<script src="../config.js?v=25"></script>
+<script src="admin.js?v=25"></script>
+<script src="community.js?v=25"></script>
+<script src="programs.js?v=25"></script>
+<script src="partners.js?v=25"></script>
+<script src="donations.js?v=25"></script>
+<script src="stories.js?v=25"></script>
+<script src="users.js?v=25"></script>
+<script src="audit.js?v=25"></script>
 </body>
 </html>
