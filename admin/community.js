@@ -611,6 +611,101 @@
           <div id="case-detail-actions" style="display:flex;justify-content:flex-end;gap:10px;border-top:1px solid var(--border);padding-top:16px;margin-top:20px;"></div>
         </div>
       </div>
+
+      <!-- MODAL 6: Edit Identified Child Record Modal -->
+      <div id="child-edit-modal" class="admin-modal-overlay is-hidden">
+        <div class="admin-modal" style="max-width:620px;">
+          <h3 id="child-edit-modal-title">Edit Identified Child Record</h3>
+          <p class="admin-muted" style="font-size:12px;margin:2px 0 14px;">Update demographics, location, exclusion causes, and verified case status.</p>
+          <form id="child-edit-form">
+            <input type="hidden" id="child-edit-row" />
+            <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
+              <div class="form-field">
+                <label for="child-edit-name">Child Full Name *</label>
+                <input type="text" id="child-edit-name" required placeholder="Full Name" />
+              </div>
+              <div class="form-field">
+                <label for="child-edit-gender">Gender *</label>
+                <select id="child-edit-gender" required>
+                  <option value="Female">Female</option>
+                  <option value="Male">Male</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
+              <div class="form-field">
+                <label for="child-edit-age">Child Age *</label>
+                <input type="number" id="child-edit-age" min="3" max="21" required />
+              </div>
+              <div class="form-field">
+                <label for="child-edit-residence-county">Residence County *</label>
+                <select id="child-edit-residence-county" required>
+                  ${LIBERIA_COUNTIES.map(c => `<option value="${c}">${c}</option>`).join("")}
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="child-edit-community">Community / Town *</label>
+                <input type="text" id="child-edit-community" required placeholder="e.g. West Point" />
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="form-field">
+                <label for="child-edit-origin-county">County of Origin</label>
+                <select id="child-edit-origin-county">
+                  <option value="">-- Same as Residence / Not Specified --</option>
+                  ${LIBERIA_COUNTIES.map(c => `<option value="${c}">${c}</option>`).join("")}
+                </select>
+              </div>
+              <div class="form-field">
+                <label for="child-edit-living-with">Living Arrangement</label>
+                <select id="child-edit-living-with">
+                  <option value="Both Parents">Both Parents</option>
+                  <option value="Single Mother">Single Mother</option>
+                  <option value="Single Father">Single Father</option>
+                  <option value="Grandparent(s)">Grandparent(s)</option>
+                  <option value="Aunt / Uncle / Relative">Aunt / Uncle / Relative</option>
+                  <option value="Foster / Guardian">Foster / Guardian</option>
+                  <option value="Self / Independent / Peer">Self / Independent / Peer</option>
+                </select>
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="form-field">
+                <label for="child-edit-parent-name">Caregiver / Parent Name</label>
+                <input type="text" id="child-edit-parent-name" placeholder="Caregiver Name" />
+              </div>
+              <div class="form-field">
+                <label for="child-edit-parent-phone">Caregiver Contact Phone</label>
+                <input type="tel" id="child-edit-parent-phone" placeholder="088... or 077..." />
+              </div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+              <div class="form-field">
+                <label for="child-edit-cause">Cause of Exclusion *</label>
+                <input type="text" id="child-edit-cause" required placeholder="e.g. Inability to pay tuition, child labor" />
+              </div>
+              <div class="form-field">
+                <label for="child-edit-status">Verification Status *</label>
+                <select id="child-edit-status" required>
+                  <option value="DRAFT">Draft / Pending</option>
+                  <option value="VERIFIED">Verified</option>
+                  <option value="ENROLLED">Enrolled in School</option>
+                  <option value="REJECTED">Rejected</option>
+                </select>
+              </div>
+            </div>
+            <div class="form-field">
+              <label for="child-edit-notes">Field Enumerator Statement &amp; Notes</label>
+              <textarea id="child-edit-notes" rows="3" placeholder="Case narrative, family background, or notes..."></textarea>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
+              <button type="button" id="child-edit-modal-cancel" class="btn btn--outline">Cancel</button>
+              <button type="submit" class="btn btn--primary">Save Child Details</button>
+            </div>
+          </form>
+        </div>
+      </div>
     `;
 
     // Tab switcher events
@@ -679,6 +774,13 @@
       enrollModal.classList.add("is-hidden");
     });
     document.getElementById("child-enrollment-form")?.addEventListener("submit", (e) => handleSaveEnrollment(e, session));
+
+    // Child Edit Modal handlers
+    const childEditModal = document.getElementById("child-edit-modal");
+    document.getElementById("child-edit-modal-cancel")?.addEventListener("click", () => {
+      childEditModal.classList.add("is-hidden");
+    });
+    document.getElementById("child-edit-form")?.addEventListener("submit", (e) => handleSaveSubEdit(e, session));
 
     // School Partnerships Modal handlers
     const partnerModal = document.getElementById("partnership-modal");
@@ -923,7 +1025,12 @@
         `;
       }
 
-      let actionsHtml = `<button class="btn btn--outline" style="font-size:11px;padding:3px 8px;margin-bottom:4px;display:block;" data-sub-action="view" data-row="${r.rowNumber}">View Case</button>`;
+      let actionsHtml = `
+        <div style="display:flex;gap:4px;margin-bottom:4px;">
+          <button class="btn btn--outline" style="font-size:10.5px;padding:3px 7px;" data-sub-action="view" data-row="${r.rowNumber}">View</button>
+          <button class="btn btn--outline" style="font-size:10.5px;padding:3px 7px;color:var(--blue-700);border-color:#bae6fd;" data-sub-action="edit" data-row="${r.rowNumber}">Edit</button>
+        </div>
+      `;
 
       if (can("REVIEW_SUBMISSIONS", session.role) && (st === "DRAFT" || st === "UNDER_REVIEW")) {
         actionsHtml += `
@@ -1005,6 +1112,13 @@
       });
     });
 
+    container.querySelectorAll("button[data-sub-action='edit']").forEach((b) => {
+      b.addEventListener("click", () => {
+        const rowNum = Number(b.dataset.row);
+        handleEditSub(rowNum, session);
+      });
+    });
+
     container.querySelectorAll("button[data-sub-action='verify']").forEach((b) => {
       b.addEventListener("click", () => handleReviewSub(Number(b.dataset.row), "VERIFIED", session));
     });
@@ -1053,6 +1167,100 @@
         childName: target?.childName
       }).catch(() => {});
     } catch (_) {}
+  }
+
+  function handleEditSub(rowNumber, session) {
+    const sub = cachedSubmissions.find((item) => Number(item.rowNumber) === Number(rowNumber));
+    if (!sub) return;
+
+    document.getElementById("child-edit-row").value = sub.rowNumber;
+    document.getElementById("child-edit-name").value = sub.childName || "";
+    document.getElementById("child-edit-gender").value = (sub.gender === "Female" || sub.gender === "Male" || sub.gender === "Other") ? sub.gender : "Female";
+    document.getElementById("child-edit-age").value = sub.childAge || "";
+    document.getElementById("child-edit-residence-county").value = sub.residenceCounty || sub.county || "Montserrado";
+    document.getElementById("child-edit-community").value = sub.community || "";
+    document.getElementById("child-edit-origin-county").value = sub.originCounty || "";
+    document.getElementById("child-edit-living-with").value = sub.livingWith || "Both Parents";
+    document.getElementById("child-edit-parent-name").value = sub.parentName === "—" ? "" : (sub.parentName || "");
+    document.getElementById("child-edit-parent-phone").value = sub.parentPhone === "—" ? "" : (sub.parentPhone || "");
+    document.getElementById("child-edit-cause").value = sub.causeOfExclusion === "—" ? "" : (sub.causeOfExclusion || "School tuition arrears");
+    document.getElementById("child-edit-status").value = sub.enrolled ? "ENROLLED" : (sub.status || "DRAFT");
+    document.getElementById("child-edit-notes").value = sub.notes || "";
+
+    const titleEl = document.getElementById("child-edit-modal-title");
+    if (titleEl) titleEl.textContent = `Edit Child Record: ${sub.childName}`;
+    document.getElementById("child-edit-modal").classList.remove("is-hidden");
+  }
+
+  function handleSaveSubEdit(e, session) {
+    e.preventDefault();
+    const rowNumber = Number(document.getElementById("child-edit-row").value);
+    const sub = cachedSubmissions.find((item) => Number(item.rowNumber) === rowNumber);
+    if (!sub) return;
+
+    const newName = document.getElementById("child-edit-name").value.trim();
+    const newGender = document.getElementById("child-edit-gender").value;
+    const newAge = Number(document.getElementById("child-edit-age").value) || sub.childAge;
+    const newResCounty = document.getElementById("child-edit-residence-county").value;
+    const newCommunity = document.getElementById("child-edit-community").value.trim();
+    const newOrigCounty = document.getElementById("child-edit-origin-county").value;
+    const newLiving = document.getElementById("child-edit-living-with").value;
+    const newParentName = document.getElementById("child-edit-parent-name").value.trim() || "—";
+    const newParentPhone = document.getElementById("child-edit-parent-phone").value.trim() || "—";
+    const newCause = document.getElementById("child-edit-cause").value.trim() || "Out of school";
+    const newStatus = document.getElementById("child-edit-status").value;
+    const newNotes = document.getElementById("child-edit-notes").value.trim();
+
+    // Update in cachedSubmissions
+    sub.childName = newName;
+    sub.gender = newGender;
+    sub.childAge = newAge;
+    sub.residenceCounty = newResCounty;
+    sub.county = newResCounty;
+    sub.community = newCommunity;
+    sub.originCounty = newOrigCounty;
+    sub.livingWith = newLiving;
+    sub.parentName = newParentName;
+    sub.parentPhone = newParentPhone;
+    sub.causeOfExclusion = newCause;
+    sub.status = newStatus;
+    sub.enrolled = newStatus === "ENROLLED" || sub.enrolled;
+    sub.notes = newNotes;
+    sub.updatedAt = new Date().toISOString();
+
+    // Update in local storage
+    try {
+      const localReports = JSON.parse(localStorage.getItem("uaf_ossc_reports") || "[]");
+      const target = localReports.find((r) => Number(r.rowNumber) === rowNumber) || localReports.find((r) => r.childName === sub.childName);
+      if (target) {
+        target.childName = newName;
+        target.gender = newGender;
+        target.childAge = newAge;
+        target.residenceCounty = newResCounty;
+        target.county = newResCounty;
+        target.community = newCommunity;
+        target.childCommunity = newCommunity;
+        target.originCounty = newOrigCounty;
+        target.livingWith = newLiving;
+        target.parentName = newParentName;
+        target.parentPhone = newParentPhone;
+        target.causeOfExclusion = newCause;
+        target.status = newStatus;
+        target.enrolled = sub.enrolled;
+        target.notes = newNotes;
+        target.statement = newNotes;
+      } else {
+        localReports.unshift({ ...sub });
+      }
+      localStorage.setItem("uaf_ossc_reports", JSON.stringify(localReports));
+    } catch (_) {}
+
+    document.getElementById("child-edit-modal").classList.add("is-hidden");
+    flash(`Child record for "${newName}" updated successfully.`, "success");
+    updateSubmissionsStats(cachedSubmissions);
+    renderSubmissionsTable(session);
+    loadStats(session);
+    window.dispatchEvent(new Event("uaf_data_updated"));
   }
 
   function showSubmissionDetailModal(sub, session) {
@@ -1113,10 +1321,15 @@
       if (can("REVIEW_SUBMISSIONS", session.role) && (st === "DRAFT" || st === "UNDER_REVIEW")) {
         actions.innerHTML = `
           <button type="button" id="modal-btn-close" class="btn btn--outline">Close</button>
+          <button type="button" id="modal-btn-edit-case" class="btn btn--outline" style="color:var(--blue-700);border-color:#bae6fd;">Edit Details</button>
           <button type="button" id="modal-btn-reject" class="btn btn--outline" style="color:var(--red-600);border-color:#fca5a5;">Reject Case</button>
           <button type="button" id="modal-btn-verify" class="btn btn--primary" style="background:var(--green-700);border-color:var(--green-700);">✓ Verify &amp; Accept Case</button>
         `;
         document.getElementById("modal-btn-close")?.addEventListener("click", () => modal.classList.add("is-hidden"));
+        document.getElementById("modal-btn-edit-case")?.addEventListener("click", () => {
+          modal.classList.add("is-hidden");
+          handleEditSub(Number(sub.rowNumber), session);
+        });
         document.getElementById("modal-btn-verify")?.addEventListener("click", async () => {
           modal.classList.add("is-hidden");
           await handleReviewSub(Number(sub.rowNumber), "VERIFIED", session);
@@ -1130,9 +1343,14 @@
           <div style="margin-right:auto;font-size:12px;color:var(--ink-500);">
             ${st === "VERIFIED" || sub.enrolled ? `<span style="color:var(--green-700);font-weight:700;">✓ Verified</span> by ${escapeHtml(sub.reviewedBy || "Admin")} on ${formatDate(sub.reviewedAt)}` : `<span style="color:var(--red-600);font-weight:700;">✗ Rejected:</span> ${escapeHtml(sub.reviewerNotes || "Report declined")}`}
           </div>
+          <button type="button" id="modal-btn-edit-case" class="btn btn--outline" style="color:var(--blue-700);border-color:#bae6fd;">Edit Details</button>
           <button type="button" id="modal-btn-close" class="btn btn--outline">Close</button>
         `;
         document.getElementById("modal-btn-close")?.addEventListener("click", () => modal.classList.add("is-hidden"));
+        document.getElementById("modal-btn-edit-case")?.addEventListener("click", () => {
+          modal.classList.add("is-hidden");
+          handleEditSub(Number(sub.rowNumber), session);
+        });
       }
     }
 
