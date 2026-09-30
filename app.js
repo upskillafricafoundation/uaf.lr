@@ -9,7 +9,7 @@
      CACHE BUSTING & INSTANT UPDATE PURGE
      Purges old caches on installed devices to ensure immediate updates
   --------------------------------------------------------- */
-  const CURRENT_BUILD_VER = "2026-09-29-uaf-campaign-drive-v26";
+  const CURRENT_BUILD_VER = "2026-09-30-uaf-campaign-drive-v27";
   try {
     const savedBuild = localStorage.getItem("uaf_app_build_version");
     if (savedBuild !== CURRENT_BUILD_VER) {
@@ -33,6 +33,15 @@
       }
     }
   } catch (_) {}
+
+  /* ---------------------------------------------------------
+     HTML ESCAPER (Safe sanitization)
+  --------------------------------------------------------- */
+  function escapeHtml(str) {
+    const div = document.createElement("div");
+    div.textContent = str == null ? "" : String(str);
+    return div.innerHTML;
+  }
 
   /* ---------------------------------------------------------
      CONFIG & COUNTIES
@@ -495,6 +504,15 @@
 
   function incrementStoryView(storyId) {
     if (!storyId) return;
+    try {
+      // Prevent inflating reads on repeated clicks within the same user session
+      const sessionKey = "uaf_read_sess_" + String(storyId).toLowerCase();
+      if (sessionStorage.getItem(sessionKey)) {
+        return;
+      }
+      sessionStorage.setItem(sessionKey, "1");
+    } catch (_) {}
+
     const views = getStoryViews();
     views[storyId] = (Number(views[storyId]) || 0) + 1;
     try {
@@ -515,6 +533,7 @@
         modal.style.display = "none";
         delete modal.dataset.activeStoryId;
       }
+      document.body.style.overflow = "";
       if (window.__uafStoryCarouselResume) {
         window.__uafStoryCarouselResume();
       }
@@ -548,16 +567,50 @@
     }
 
     function openStoryDetailModal(storyId) {
-      const story = window.__uafGetStory && window.__uafGetStory(storyId);
-      if (!story || !modal) return;
+      if (!modal) return;
 
-      modal.dataset.activeStoryId = storyId;
+      // Resilient story lookup: function, shareCode, or DOM fallback
+      let story = null;
+      if (typeof window.__uafGetStory === "function") {
+        story = window.__uafGetStory(storyId);
+      }
+      if (!story && typeof window.__uafGetStoryByShareCode === "function") {
+        story = window.__uafGetStoryByShareCode(storyId);
+      }
+      if (!story) {
+        const cleanId = String(storyId || "").trim();
+        const cardEl = document.querySelector(`.campaign-card[data-story-id="${cleanId}"], .campaign-card[data-share-code="${cleanId}"]`);
+        if (cardEl) {
+          const title = cardEl.querySelector(".campaign-card__title")?.textContent || "Community Story";
+          const summary = cardEl.querySelector(".campaign-card__lead")?.textContent || "";
+          const narrative = cardEl.querySelector(".campaign-card__desc")?.textContent || summary;
+          const tag = cardEl.querySelector(".campaign-card__tag")?.textContent || "Community Story";
+          const img = cardEl.querySelector(".campaign-card__img")?.src || "assets/uaf-logo.png";
+          story = {
+            id: cleanId,
+            title,
+            summary,
+            narrative,
+            tag,
+            category: tag,
+            imageUrl: img,
+            testimonial: summary,
+            speaker: "Beneficiary Story",
+            activities: "Community verification, tuition waiver sponsorship, and learning kit distribution.",
+            amountRaised: 0,
+            fundingGoal: 0
+          };
+        }
+      }
+      if (!story) return;
+
+      modal.dataset.activeStoryId = story.id || storyId;
       if (window.__uafStoryCarouselPause) {
         window.__uafStoryCarouselPause();
       }
 
-      // Track and increment view count when user clicks story to read details
-      incrementStoryView(storyId);
+      // Track and increment view count once per unique reader session
+      incrementStoryView(story.id || storyId);
 
       const tagEl = document.getElementById("story-modal-tag");
       const locEl = document.getElementById("story-modal-location");
@@ -612,21 +665,21 @@
       // Render reactions bar (Like, Heart, Celebrate)
       const reactionsBar = document.getElementById("story-modal-reactions-bar");
       if (reactionsBar) {
-        const reactions = window.__uafGetStoryReactions ? window.__uafGetStoryReactions(storyId) : { counts: { like: 0, heart: 0, celebrate: 0 }, voted: {} };
+        const reactions = window.__uafGetStoryReactions ? window.__uafGetStoryReactions(story.id || storyId) : { counts: { like: 0, heart: 0, celebrate: 0 }, voted: {} };
         const counts = reactions.counts || {};
         const voted = reactions.voted || {};
 
         reactionsBar.innerHTML = `
           <div class="story-reactions-bar" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:12px 0;border-top:1px solid #f1f5f9;border-bottom:1px solid #f1f5f9;margin:14px 0;">
-            <button type="button" class="btn-story-reaction ${voted.like ? 'is-reacted is-active' : ''}" data-reaction="like" data-reaction-type="like" data-story-id="${storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${voted.like ? '#e0f2fe' : '#ffffff'};color:${voted.like ? '#0369a1' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
+            <button type="button" class="btn-story-reaction ${voted.like ? 'is-reacted is-active' : ''}" data-reaction="like" data-reaction-type="like" data-story-id="${story.id || storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${voted.like ? '#e0f2fe' : '#ffffff'};color:${voted.like ? '#0369a1' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
               <span>👍 Like</span>
               <span class="reaction-count" style="font-size:11.5px;font-weight:700;background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:999px;">${counts.like || 0}</span>
             </button>
-            <button type="button" class="btn-story-reaction ${voted.heart ? 'is-reacted is-active' : ''}" data-reaction="heart" data-reaction-type="heart" data-story-id="${storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${voted.heart ? '#ffe4e6' : '#ffffff'};color:${voted.heart ? '#e11d48' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
+            <button type="button" class="btn-story-reaction ${voted.heart ? 'is-reacted is-active' : ''}" data-reaction="heart" data-reaction-type="heart" data-story-id="${story.id || storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${voted.heart ? '#ffe4e6' : '#ffffff'};color:${voted.heart ? '#e11d48' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
               <span>❤️ Love</span>
               <span class="reaction-count" style="font-size:11.5px;font-weight:700;background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:999px;">${counts.heart || 0}</span>
             </button>
-            <button type="button" class="btn-story-reaction ${voted.celebrate ? 'is-reacted is-active' : ''}" data-reaction="celebrate" data-reaction-type="celebrate" data-story-id="${storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${voted.celebrate ? '#fef3c7' : '#ffffff'};color:${voted.celebrate ? '#b45309' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
+            <button type="button" class="btn-story-reaction ${voted.celebrate ? 'is-reacted is-active' : ''}" data-reaction="celebrate" data-reaction-type="celebrate" data-story-id="${story.id || storyId}" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;border:1px solid #e2e8f0;background:${voted.celebrate ? '#fef3c7' : '#ffffff'};color:${voted.celebrate ? '#b45309' : '#334155'};font-size:12.5px;font-weight:600;cursor:pointer;">
               <span>🎉 Celebrate</span>
               <span class="reaction-count" style="font-size:11.5px;font-weight:700;background:rgba(0,0,0,0.06);padding:1px 6px;border-radius:999px;">${counts.celebrate || 0}</span>
             </button>
@@ -637,7 +690,7 @@
       // Render social share buttons with unique opaque short link
       const shareBar = document.getElementById("story-modal-share-bar");
       if (shareBar) {
-        const shareCode = story.shareCode || storyId.replace("story_", "");
+        const shareCode = story.shareCode || (story.id ? story.id.replace("story_", "") : storyId);
         const storyShortUrl = `${window.location.origin}${window.location.pathname}#/c/${shareCode}`;
         const shareText = `Read "${story.title}" on UAF Campaign Drive. Support verified education & empowerment in Liberia:`;
 
@@ -669,11 +722,16 @@
         `;
       }
 
-      // Render comments list
-      renderModalCommentsList(storyId);
+      // Render comments list with safe try-catch
+      try {
+        renderModalCommentsList(story.id || storyId);
+      } catch (cErr) {
+        console.warn("Comments rendering notice:", cErr);
+      }
 
       modal.classList.remove("is-hidden");
       modal.style.display = "flex";
+      document.body.style.overflow = "hidden";
     }
 
     function renderModalCommentsList(storyId) {
@@ -752,8 +810,8 @@
         return;
       }
 
-      // 2. Card background click (excluding interactive buttons)
-      if (e.target.closest(".btn-story-support-trigger, .btn-story-donate, .btn-campaign-donate, .btn-story-share-dots, .btn-story-reaction, .btn-share-social, .btn-share-copylink, a")) {
+      // 2. Card background click (excluding interactive buttons, views badge, controls, and links)
+      if (e.target.closest(".btn-story-support-trigger, .btn-story-donate, .btn-campaign-donate, .btn-story-share-dots, .btn-story-reaction, .btn-share-social, .btn-share-copylink, .campaign-card__views-badge, .stories-carousel-header-bar, .btn-carousel-arrow, a, button")) {
         return;
       }
       const card = e.target.closest(".campaign-card[data-story-id]");
@@ -1102,24 +1160,19 @@
       const total = cards.length;
       if (total === 0) return;
 
-      const perView = getCardsPerView();
       if (currentIndex >= total) currentIndex = 0;
       if (currentIndex < 0) currentIndex = Math.max(0, total - 1);
 
-      const firstCard = cards[0];
-      const gap = 20;
-      const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : (track.offsetWidth / perView);
-      const step = cardWidth + gap;
+      const targetCard = cards[currentIndex];
+      const offset = targetCard ? targetCard.offsetLeft : 0;
+      track.style.transform = `translateX(-${offset}px)`;
 
-      track.style.transform = `translateX(-${currentIndex * step}px)`;
-
+      const isPaused = isUserHolding || isModalOpen;
       if (statusText) {
-        const isPaused = isUserHolding || isModalOpen;
-        const pauseNotice = isPaused ? " (Paused)" : " (15s)";
-        statusText.textContent = `Story ${currentIndex + 1} of ${total} — Active${pauseNotice}`;
+        statusText.textContent = `Story ${currentIndex + 1} of ${total}${isPaused ? " (Paused)" : ""}`;
       }
       if (pulseDot) {
-        pulseDot.classList.toggle("is-paused", isUserHolding || isModalOpen);
+        pulseDot.classList.toggle("is-paused", isPaused);
       }
 
       if (dotsContainer) {
@@ -1142,6 +1195,7 @@
         dot.addEventListener("click", () => {
           currentIndex = idx;
           elapsedMs = 0;
+          if (progressFill) progressFill.style.width = "0%";
           updateCarouselPosition();
         });
         dotsContainer.appendChild(dot);
@@ -1154,6 +1208,7 @@
       if (total <= 1) return;
       currentIndex = (currentIndex + 1) % total;
       elapsedMs = 0;
+      if (progressFill) progressFill.style.width = "0%";
       updateCarouselPosition();
     }
 
@@ -1163,10 +1218,11 @@
       if (total <= 1) return;
       currentIndex = (currentIndex - 1 + total) % total;
       elapsedMs = 0;
+      if (progressFill) progressFill.style.width = "0%";
       updateCarouselPosition();
     }
 
-    // Interval ticker for 30s timer
+    // Interval ticker for 15s timer
     if (window.__uafCarouselInterval) clearInterval(window.__uafCarouselInterval);
     window.__uafCarouselInterval = setInterval(() => {
       const activeScreen = document.querySelector(".screen[data-screen='donate']");
@@ -1186,7 +1242,7 @@
         if (pulseDot) pulseDot.classList.add("is-paused");
         if (statusText && isDonateScreenActive) {
           const cards = getCards();
-          statusText.textContent = `Story ${currentIndex + 1} of ${cards.length} — Paused`;
+          statusText.textContent = `Story ${currentIndex + 1} of ${cards.length} (Paused)`;
         }
       }
     }, TICK_MS);

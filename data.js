@@ -139,8 +139,16 @@
   window.__uafGetStories = getUafStories;
 
   window.__uafGetStory = function (storyId) {
+    if (!storyId) return null;
+    const clean = String(storyId).trim().toLowerCase();
+    const cleanNoPrefix = clean.replace(/^story_/, "");
     const list = getUafStories();
-    const found = list.find((s) => (s.id || s.storyId) === storyId);
+    const found = list.find((s) => {
+      const sId = String(s.id || s.storyId || "").trim().toLowerCase();
+      const sIdNoPrefix = sId.replace(/^story_/, "");
+      const sCode = String(s.shareCode || "").trim().toLowerCase();
+      return sId === clean || sIdNoPrefix === cleanNoPrefix || sCode === clean || sCode === cleanNoPrefix;
+    });
     if (found) return found;
     return null;
   };
