@@ -1158,6 +1158,7 @@
         }
       };
       renderAll();
+      syncRemoteStories();
       return;
     }
     try {
@@ -1165,8 +1166,22 @@
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "Unknown API error");
       publicData = json;
+      if (json && Array.isArray(json.stories) && json.stories.length > 0) {
+        let deletedList = [];
+        try {
+          deletedList = JSON.parse(localStorage.getItem("uaf_deleted_stories") || "[]");
+        } catch (_) {}
+        const filtered = json.stories.filter((s) => !deletedList.includes(String(s.id || s.storyId).trim()));
+        if (filtered.length > 0) {
+          try {
+            localStorage.setItem("uaf_stories", JSON.stringify(filtered));
+          } catch (_) {}
+          renderFundraisingStories();
+        }
+      }
       refreshMergedDataset();
       renderAll();
+      syncRemoteStories();
     } catch (err) {
       console.warn("UAF Impact: failed to load live public data, using local storage baseline.", err);
       const adminFunding = getAdminFunding();
@@ -1179,8 +1194,71 @@
         }
       };
       renderAll();
+      syncRemoteStories();
     }
   }
+
+  /* ---------------------------------------------------------
+     FETCH — REMOTE STORIES SYNC
+     Fetches live published stories from Google Apps Script backend
+     and synchronizes them into local storage so all client devices (Android,
+     iOS, desktop) instantly display stories added by administrators.
+  --------------------------------------------------------- */
+  async function syncRemoteStories() {
+    if (!isConfigured) return;
+    try {
+      let remoteStories = null;
+
+      // 1. Try GET request with route=stories
+      try {
+        const res = await fetch(`${API_URL}?route=stories`);
+        const json = await res.json();
+        if (json && json.ok && Array.isArray(json.stories) && json.stories.length > 0) {
+          remoteStories = json.stories;
+        } else if (Array.isArray(json) && json.length > 0) {
+          remoteStories = json;
+        }
+      } catch (_) {}
+
+      // 2. Check if publicData already included stories
+      if (!remoteStories && publicData && Array.isArray(publicData.stories) && publicData.stories.length > 0) {
+        remoteStories = publicData.stories;
+      }
+
+      // 3. Fallback: try POST with action=listStories
+      if (!remoteStories) {
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "listStories" })
+          });
+          const json = await res.json();
+          if (json && json.ok && Array.isArray(json.stories) && json.stories.length > 0) {
+            remoteStories = json.stories;
+          }
+        } catch (_) {}
+      }
+
+      if (Array.isArray(remoteStories) && remoteStories.length > 0) {
+        let deletedList = [];
+        try {
+          deletedList = JSON.parse(localStorage.getItem("uaf_deleted_stories") || "[]");
+        } catch (_) {}
+        const filtered = remoteStories.filter((s) => !deletedList.includes(String(s.id || s.storyId).trim()));
+        if (filtered.length > 0) {
+          try {
+            localStorage.setItem("uaf_stories", JSON.stringify(filtered));
+          } catch (_) {}
+          renderFundraisingStories();
+          window.dispatchEvent(new Event("uaf_stories_updated"));
+        }
+      }
+    } catch (err) {
+      console.warn("UAF Impact: could not sync remote stories.", err);
+    }
+  }
+  window.__uafSyncRemoteStories = syncRemoteStories;
 
   /* ---------------------------------------------------------
      FETCH — FUNDING SUMMARY
@@ -1455,7 +1533,13 @@
     refreshMergedDataset();
     renderAll();
   });
+  window.addEventListener("uaf_stories_updated", () => {
+    renderFundraisingStories();
+  });
   window.addEventListener("storage", (e) => {
+    if (e.key === "uaf_stories" || e.key === "uaf_deleted_stories") {
+      renderFundraisingStories();
+    }
     if (e.key && e.key.startsWith("uaf_")) {
       refreshMergedDataset();
       renderAll();
@@ -1493,6 +1577,7 @@
   window.addEventListener("uaf_programs_updated", renderUafPrograms);
 
   function renderAll() {
+    renderFundraisingStories();
     renderCombinedStatistics();
     renderImpactDashboard();
     renderUafPrograms();
@@ -2187,5 +2272,6 @@ startxref
     initDonationForm();
     loadPublicData();
     loadFundingSummary();
+    syncRemoteStories();
   };
 })();

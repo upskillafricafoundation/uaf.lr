@@ -9,7 +9,7 @@
      CACHE BUSTING & INSTANT UPDATE PURGE
      Purges old caches on installed devices to ensure immediate updates
   --------------------------------------------------------- */
-  const CURRENT_BUILD_VER = "2026-09-30-uaf-campaign-drive-v27";
+  const CURRENT_BUILD_VER = "2026-10-01-uaf-campaign-drive-v28";
   try {
     const savedBuild = localStorage.getItem("uaf_app_build_version");
     if (savedBuild !== CURRENT_BUILD_VER) {
@@ -31,6 +31,12 @@
           }
         });
       }
+      // Trigger instant remote stories sync for updated admin content
+      setTimeout(() => {
+        if (typeof window.__uafSyncRemoteStories === "function") {
+          window.__uafSyncRemoteStories();
+        }
+      }, 500);
     }
   } catch (_) {}
 
@@ -99,6 +105,11 @@
 
     // Toggle non-scrollable home screen mode
     document.body.classList.toggle("is-home-screen", route === "menu");
+
+    // Dynamic story refresh on navigating to donate screen
+    if (route === "donate" && typeof window.__uafRenderFundraisingStories === "function") {
+      window.__uafRenderFundraisingStories();
+    }
 
     // Scroll to top on route change
     const main = document.getElementById("app-main");
