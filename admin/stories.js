@@ -204,7 +204,11 @@
           <h2 style="font-family:'Lorem ipsum dolor sit amet' !important;">Field Stories &amp; Evidence Management</h2>
           <p class="admin-muted" style="margin-top:4px;font-family:'Lorem ipsum dolor sit amet' !important;">Create and publish unlimited field impact stories with photos, track amounts raised, and process evidence requests.</p>
         </div>
-        <div style="display:flex;gap:8px;">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button id="stories-sync-btn" class="btn btn--outline" style="font-size:12px;" title="Sync stories with cloud backend">☁ Sync Cloud</button>
+          <button id="stories-export-btn" class="btn btn--outline" style="font-size:12px;" title="Export all stories as JSON file">Export JSON</button>
+          <button id="stories-import-btn" class="btn btn--outline" style="font-size:12px;" title="Import stories from JSON file">Import JSON</button>
+          <input type="file" id="stories-import-file" accept="application/json" style="display:none;" />
           <button id="stories-reset-btn" class="btn btn--outline" style="font-size:12px;">Reset Defaults</button>
           <button id="stories-refresh-btn" class="btn btn--outline" style="font-size:12px;">Refresh</button>
           <button id="create-story-btn" class="btn btn--primary" style="font-size:12px;">+ Post Field Story</button>
@@ -473,6 +477,51 @@
       });
     });
 
+    // Cloud Sync button
+    document.getElementById("stories-sync-btn")?.addEventListener("click", () => {
+      syncCloudStories(session, true);
+    });
+
+    // Export JSON button
+    document.getElementById("stories-export-btn")?.addEventListener("click", () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(getLocalStories(), null, 2));
+      const dlAnchor = document.createElement("a");
+      dlAnchor.setAttribute("href", dataStr);
+      dlAnchor.setAttribute("download", `uaf_field_stories_${new Date().toISOString().slice(0, 10)}.json`);
+      document.body.appendChild(dlAnchor);
+      dlAnchor.click();
+      dlAnchor.remove();
+      flash("Exported field stories JSON backup.", "success");
+    });
+
+    // Import JSON button & file input
+    const fileInput = document.getElementById("stories-import-file");
+    document.getElementById("stories-import-btn")?.addEventListener("click", () => {
+      fileInput?.click();
+    });
+    fileInput?.addEventListener("change", (e) => {
+      const file = e.target.files && e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const imported = JSON.parse(evt.target.result);
+          if (Array.isArray(imported) && imported.length > 0) {
+            saveLocalStories(imported);
+            cachedStories = imported;
+            renderStoriesTable(session);
+            flash(`Imported ${imported.length} field stories successfully!`, "success");
+          } else {
+            flash("Invalid JSON format. Expected an array of stories.");
+          }
+        } catch (err) {
+          flash("Could not parse JSON file: " + err.message);
+        }
+      };
+      reader.readAsText(file);
+      fileInput.value = "";
+    });
+
     // Reset button
     document.getElementById("stories-reset-btn")?.addEventListener("click", () => {
       if (confirm("Reset stories to default UAF field stories baseline?")) {
@@ -488,6 +537,7 @@
       cachedStories = getLocalStories();
       renderStoriesTable(session);
       if (currentTab === "evidence") loadEvidence(session);
+      syncCloudStories(session, false);
       flash("Refreshed stories list.", "success");
     });
 
@@ -620,6 +670,56 @@
     }
 
     renderStoriesTable(session);
+    syncCloudStories(session, false);
+  }
+
+  async function syncCloudStories(session, notify = false) {
+    if (!API_URL || API_URL.includes("PASTE_YOUR")) return;
+    try {
+      let remoteStories = null;
+      try {
+        const res = await fetch(`${API_URL}?route=stories`);
+        const json = await res.json();
+        if (json && json.ok && Array.isArray(json.stories) && json.stories.length > 0) {
+          remoteStories = json.stories;
+        } else if (Array.isArray(json) && json.length > 0) {
+          remoteStories = json;
+        }
+      } catch (_) {}
+
+      if (!remoteStories) {
+        try {
+          const res = await callApi("listStories", { token: session?.token });
+          if (res && res.ok && Array.isArray(res.stories) && res.stories.length > 0) {
+            remoteStories = res.stories;
+          }
+        } catch (_) {}
+      }
+
+      if (Array.isArray(remoteStories) && remoteStories.length > 0) {
+        const deletedList = getDeletedStories();
+        const current = getLocalStories();
+        const mergedMap = new Map();
+        current.forEach((s) => mergedMap.set(String(s.id || s.storyId), s));
+        remoteStories.forEach((s) => {
+          const key = String(s.id || s.storyId);
+          if (!isStoryDeleted(key, deletedList)) {
+            if (!mergedMap.has(key)) {
+              mergedMap.set(key, s);
+            }
+          }
+        });
+        const merged = Array.from(mergedMap.values());
+        saveLocalStories(merged);
+        cachedStories = merged;
+        renderStoriesTable(session);
+        if (notify) flash(`Successfully synced ${remoteStories.length} stories from cloud!`, "success");
+      } else if (notify) {
+        flash("Cloud stories are up-to-date.", "success");
+      }
+    } catch (err) {
+      if (notify) flash("Could not connect to cloud: " + err.message);
+    }
   }
 
   function renderStoriesTable(session) {
