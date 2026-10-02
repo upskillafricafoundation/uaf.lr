@@ -53,71 +53,7 @@
     return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  const DEFAULT_STORIES_DATASET = [
-    {
-      id: "story_blessing",
-      shareCode: "x7k9p2",
-      title: "Blessing's Journey Back to the Classroom",
-      category: "No Invisible Child",
-      tag: "No Invisible Child Flagship",
-      community: "West Point",
-      county: "Montserrado",
-      storyDate: "2026-02-15",
-      imageUrl: "assets/uaf-logo.png",
-      amountRaised: 5250,
-      fundingGoal: 7000,
-      speaker: "Blessing K., Age 9 & Her Mother Ma Musu",
-      testimonial: "“I thought I would sell cold water forever. When Teacher Joseph from UAF came to our zinc house with books and uniform, I cried. Now I am 1st place in Grade 3!”",
-      activities: "Door-to-door community verification in West Point informal settlements, tuition waiver sponsorship, distribution of backpacks, geometry sets, shoes, and two full school uniforms, plus monthly academic check-ins.",
-      narrative: "Blessing was forced out of school when her mother contracted a chronic illness and could no longer afford school registration. For 18 months, Blessing spent 9 hours every day dodging commercial vehicles along the Waterside traffic corridor selling plastic water sachets to generate 250 LRD ($1.30) for daily food. During the UAF door-to-door enumeration, field officers identified Blessing and enrolled her in the No Invisible Child initiative. UAF cleared her outstanding fees at St. Mary Public School, provided study materials, and enrolled her mother into our women's micro-enterprise savings group. Today, Blessing has maintained an exceptional 92% cumulative average and dreams of becoming a pediatric physician in Liberia.",
-      summary: "From selling cold water in crowded Waterside traffic to topping her Grade 3 class in West Point after UAF paid her tuition and learning supplies.",
-      status: "PUBLISHED",
-      reactions: { like: 0, heart: 0, celebrate: 0 },
-      views: 0
-    },
-    {
-      id: "story_comfort",
-      shareCode: "w4m8q5",
-      title: "Mother Comfort's Soap-Making Cooperative",
-      category: "Women Livelihood Empowerment",
-      tag: "Women Livelihood Empowerment",
-      community: "Duport Road",
-      county: "Montserrado",
-      storyDate: "2026-03-01",
-      imageUrl: "assets/icon-partners.png",
-      amountRaised: 8800,
-      fundingGoal: 10000,
-      speaker: "Mother Comfort Toe, Cooperative Lead",
-      testimonial: "“Before UAF trained us, every school opening was agony. We could not pay tuition. Today, our cooperative produces 300 soap bars weekly. My children will never drop out again.”",
-      activities: "Intensive 6-week hands-on vocational training in cold-process laundry and medicated soap formulating, household financial bookkeeping, group rotating savings (Susu), and collective market distribution.",
-      narrative: "In Paynesville, single mothers often face severe income volatility that causes their children to be sent home for tuition arrears mid-semester. To break this recurrent cycle, Upskill Africa Foundation established the Duport Road Women's Empowerment Guild. 25 mothers completed practical skill development in industrial liquid soap, dishwashing solution, and laundry bar formulation. Equipped with starter chemical kits and bulk molds, the cooperative now supplies regional vendors and community schools. Profit distribution directly funds a dedicated children's education account, permanently securing the schooling of 68 children who were previously on the verge of school dropout.",
-      summary: "How practical soap formulating and savings cooperatives enabled 25 mothers in Duport Road to independently keep 68 children in school.",
-      status: "PUBLISHED",
-      reactions: { like: 0, heart: 0, celebrate: 0 },
-      views: 0
-    },
-    {
-      id: "story_emmanuel",
-      shareCode: "b2v6y8",
-      title: "Breaking the Digital Divide in Margibi",
-      category: "Alternative Learning (ALP)",
-      tag: "Alternative Learning Program (ALP)",
-      community: "Kakata",
-      county: "Margibi",
-      storyDate: "2026-03-10",
-      imageUrl: "assets/icon-impact.jpg",
-      amountRaised: 6800,
-      fundingGoal: 10000,
-      speaker: "Emmanuel Flomo, Age 17, ALP Graduate",
-      testimonial: "“I had never touched a computer keyboard in my life. UAF taught me how to type, format documents, and research on the internet. Now I work as a data clerk at Kakata Central Market.”",
-      activities: "12-week modular curriculum covering fundamental computer hardware, touch typing, document formatting in Word and Excel, digital safety, resume building, and career mentorship for out-of-school teenagers.",
-      narrative: "In post-secondary and informal employment across Liberia, basic digital literacy is a mandatory requirement. Adolescents who miss traditional secondary schooling are often locked out of clerical and logistics opportunities. Through the UAF Alternative Learning Program (ALP) Hub in Kakata, Emmanuel and 34 other out-of-school youth attended daily computer sessions powered by solar backup. Over 12 weeks, Emmanuel progressed from zero digital exposure to proficient spreadsheet data entry and typing 45 WPM. Upon graduation, he secured an apprentice recording role with a local produce cooperative, using his earned wage to self-fund his evening high school completion.",
-      summary: "Equipping out-of-school adolescent youth in Kakata with computer literacy, office software, and career counseling for workplace readiness.",
-      status: "PUBLISHED",
-      reactions: { like: 0, heart: 0, celebrate: 0 },
-      views: 0
-    }
-  ];
+  const DEFAULT_STORIES_DATASET = [];
 
   function getUafStories() {
     let deletedList = [];
@@ -130,11 +66,16 @@
       if (stored !== null) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          return parsed.filter((s) => !deletedList.includes(String(s.id || s.storyId).trim()));
+          return parsed.filter((s) => {
+            const sId = String(s.id || s.storyId || "").trim();
+            const sIdLower = sId.toLowerCase();
+            if (sIdLower === "story_blessing" || sIdLower === "story_comfort" || sIdLower === "story_emmanuel") return false;
+            return !deletedList.includes(sId);
+          });
         }
       }
     } catch (_) {}
-    return DEFAULT_STORIES_DATASET.filter((s) => !deletedList.includes(String(s.id || s.storyId).trim()));
+    return [];
   }
   window.__uafGetStories = getUafStories;
 
@@ -258,15 +199,7 @@
 
   window.__uafGetStoryComments = function (storyId, includePrivate = false) {
     const store = getCommentsStore();
-    const list = store[storyId] || [
-      {
-        id: "comm_seed_1",
-        author: "Rev. Thomas Benson",
-        text: "Thank God for UAF stepping into West Point to give these children hope! Praying for the mission.",
-        timestamp: "2026-03-05T10:14:00Z",
-        isPrivate: false
-      }
-    ];
+    const list = store[storyId] || [];
 
     if (includePrivate) return list;
     return list.filter((c) => !c.isPrivate);
@@ -276,15 +209,7 @@
     if (!storyId || !text) return null;
     const store = getCommentsStore();
     if (!store[storyId]) {
-      store[storyId] = [
-        {
-          id: "comm_seed_1",
-          author: "Rev. Thomas Benson",
-          text: "Thank God for UAF stepping into West Point to give these children hope! Praying for the mission.",
-          timestamp: "2026-03-05T10:14:00Z",
-          isPrivate: false
-        }
-      ];
+      store[storyId] = [];
     }
 
     const newComment = {
@@ -306,10 +231,35 @@
     if (!grid) return;
 
     const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").toUpperCase() !== "ARCHIVED");
+    const statusText = document.getElementById("carousel-status-text");
+    const pulseDot = document.getElementById("carousel-pulse-dot");
+    const prevBtn = document.getElementById("carousel-prev-btn");
+    const nextBtn = document.getElementById("carousel-next-btn");
+    const progressTrack = document.querySelector(".stories-carousel-progress-track");
+
     if (stories.length === 0) {
-      grid.innerHTML = '<p style="padding:24px;text-align:center;color:var(--ink-400);grid-column:1/-1;">No active community stories at this time.</p>';
+      if (statusText) statusText.textContent = "0 Active Campaigns";
+      if (pulseDot) pulseDot.style.display = "none";
+      if (prevBtn) prevBtn.style.display = "none";
+      if (nextBtn) nextBtn.style.display = "none";
+      if (progressTrack) progressTrack.style.display = "none";
+
+      grid.innerHTML = `
+        <div class="stories-empty-state" style="grid-column: 1 / -1; text-align: center; padding: 48px 20px; background: #ffffff; border-radius: 16px; border: 1px dashed #cbd5e1; margin: 16px 0;">
+          <div style="width: 52px; height: 52px; border-radius: 50%; background: #f0fdf4; color: #16a34a; display: flex; align-items: center; justify-content: center; margin: 0 auto 14px;">
+            <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+          </div>
+          <h3 style="margin: 0 0 8px; color: #0f172a; font-size: 18px; font-weight: 700;">No Active Campaigns at This Time</h3>
+          <p style="margin: 0 auto; max-width: 480px; color: #64748b; font-size: 13.5px; line-height: 1.5;">New community impact stories and child sponsorship cases will appear here immediately once published by the UAF administration.</p>
+        </div>
+      `;
       return;
     }
+
+    if (pulseDot) pulseDot.style.display = "";
+    if (prevBtn) prevBtn.style.display = "";
+    if (nextBtn) nextBtn.style.display = "";
+    if (progressTrack) progressTrack.style.display = "";
 
     let viewsMap = {};
     try {
@@ -534,254 +484,140 @@
   });
 
   /* ---------------------------------------------------------
-     DEFAULT FALLBACK DATA (Clean Baseline across 15 Counties)
-     Verified Field Ground Truth:
-     - 27 Liberian Women in Household Livelihood Empowerment
-     - 60 Identified Out-of-School Children (54 Paynesville, 6 Voinjama)
-     - Exactly 38 Re-enrolled (2 in 2023, 3 in 2024, 33 in 2025; 0 in Voinjama)
-     - 4 Verified School Partnerships in Paynesville
+     EMPTY BASELINES — ZERO DEFAULT DATA
+     Admin enters all stories and community records manually.
   --------------------------------------------------------- */
-  const DEFAULT_COMMUNITIES = [
-    {
-      community: "Wein Town",
-      county: "Montserrado",
-      year: "2025",
-      amountNeeded: 6500,
-      amountGenerated: 0
-    },
-    {
-      community: "Parker Paint",
-      county: "Montserrado",
-      year: "2025",
-      amountNeeded: 7500,
-      amountGenerated: 0
-    },
-    {
-      community: "Boakai Village",
-      county: "Montserrado",
-      year: "2025",
-      amountNeeded: 8000,
-      amountGenerated: 0
-    },
-    {
-      community: "Red Hill",
-      county: "Montserrado",
-      year: "2025",
-      amountNeeded: 7000,
-      amountGenerated: 0
-    },
-    {
-      community: "Voinjama",
-      county: "Lofa",
-      year: "2025",
-      amountNeeded: 5000,
-      amountGenerated: 0
-    }
-  ];
+  const DEFAULT_COMMUNITIES = [];
+  const DEFAULT_EMPOWERMENT_RECORDS = [];
+  const DEFAULT_SCHOOL_PARTNERSHIPS = [];
+  const DEFAULT_OSSC_REPORTS = [];
+  const DEFAULT_CHILD_ENROLLMENTS = [];
 
-  const DEFAULT_EMPOWERMENT_RECORDS = [
-    // Wein Town, Paynesville (5)
-    { id: "emp_1", name: "Comfort Flomo", gender: "Female", county: "Montserrado", community: "Wein Town", skill: "Soap Making", connectedChild: "Blessing Flomo", contact: "0886123451", createdAt: "2024-03-10T10:00:00Z" },
-    { id: "emp_2", name: "Musu Kamara", gender: "Female", county: "Montserrado", community: "Wein Town", skill: "Baking & Pastry", connectedChild: "Mohammed Kamara", contact: "0775234562", createdAt: "2024-04-12T11:00:00Z" },
-    { id: "emp_3", name: "Korto Kollie", gender: "Female", county: "Montserrado", community: "Wein Town", skill: "Tie-Dye / Batik", connectedChild: "Emmanuel Kollie", contact: "0880345673", createdAt: "2024-05-15T09:30:00Z" },
-    { id: "emp_4", name: "Fatu Johnson", gender: "Female", county: "Montserrado", community: "Wein Town", skill: "Tailoring & Sewing", connectedChild: "Joseph Johnson", contact: "0776456784", createdAt: "2024-06-20T14:15:00Z" },
-    { id: "emp_5", name: "Bendu Sirleaf", gender: "Female", county: "Montserrado", community: "Wein Town", skill: "Soap Making", connectedChild: "Sekou Sirleaf", contact: "0888567895", createdAt: "2024-07-25T13:00:00Z" },
-
-    // Parker Paint, Paynesville (6)
-    { id: "emp_6", name: "Kebbeh Mulbah", gender: "Female", county: "Montserrado", community: "Parker Paint", skill: "Soap Making", connectedChild: "David Mulbah", contact: "0770678906", createdAt: "2024-03-14T08:45:00Z" },
-    { id: "emp_7", name: "Hawa Kromah", gender: "Female", county: "Montserrado", community: "Parker Paint", skill: "Tailoring & Sewing", connectedChild: "Mariama Kromah", contact: "0881789017", createdAt: "2024-04-18T10:20:00Z" },
-    { id: "emp_8", name: "Jenneh Massaquoi", gender: "Female", county: "Montserrado", community: "Parker Paint", skill: "Baking & Pastry", connectedChild: "Samuel Massaquoi", contact: "0778890128", createdAt: "2024-05-22T12:00:00Z" },
-    { id: "emp_9", name: "Sando Cooper", gender: "Female", county: "Montserrado", community: "Parker Paint", skill: "Tie-Dye / Batik", connectedChild: "Moses Cooper", contact: "0886901239", createdAt: "2024-06-19T15:30:00Z" },
-    { id: "emp_10", name: "Lorpu Sumo", gender: "Female", county: "Montserrado", community: "Parker Paint", skill: "Small Business / Susu Management", connectedChild: "Peter Sumo", contact: "0775012340", createdAt: "2024-07-30T11:45:00Z" },
-    { id: "emp_11", name: "Zoe Gargar", gender: "Female", county: "Montserrado", community: "Parker Paint", skill: "Soap Making", connectedChild: "Princess Gargar", contact: "0880123451", createdAt: "2024-08-11T16:00:00Z" },
-
-    // Boakai Village, Paynesville (5)
-    { id: "emp_12", name: "Esther Voker", gender: "Female", county: "Montserrado", community: "Boakai Village", skill: "Tailoring & Sewing", connectedChild: "Faith Voker", contact: "0776234562", createdAt: "2024-04-05T09:00:00Z" },
-    { id: "emp_13", name: "Tenneh Sando", gender: "Female", county: "Montserrado", community: "Boakai Village", skill: "Baking & Pastry", connectedChild: "Junior Sando", contact: "0888345673", createdAt: "2024-05-10T10:15:00Z" },
-    { id: "emp_14", name: "Cecelia Dennis", gender: "Female", county: "Montserrado", community: "Boakai Village", skill: "Sustainable Agriculture", connectedChild: "Ruth Dennis", contact: "0770456784", createdAt: "2024-06-12T13:45:00Z" },
-    { id: "emp_15", name: "Mamie Sackie", gender: "Female", county: "Montserrado", community: "Boakai Village", skill: "Soap Making", connectedChild: "Solomon Sackie", contact: "0881567895", createdAt: "2024-07-16T14:30:00Z" },
-    { id: "emp_16", name: "Baindu Kanneh", gender: "Female", county: "Montserrado", community: "Boakai Village", skill: "Tie-Dye / Batik", connectedChild: "Alieu Kanneh", contact: "0778678906", createdAt: "2024-08-20T11:15:00Z" },
-
-    // Red Hill, Paynesville (6)
-    { id: "emp_17", name: "Watta Tarpeh", gender: "Female", county: "Montserrado", community: "Red Hill", skill: "Soap Making", connectedChild: "Grace Tarpeh", contact: "0886789017", createdAt: "2024-03-22T08:30:00Z" },
-    { id: "emp_18", name: "Miatta Sheriff", gender: "Female", county: "Montserrado", community: "Red Hill", skill: "Baking & Pastry", connectedChild: "Ibrahim Sheriff", contact: "0775890128", createdAt: "2024-04-26T10:45:00Z" },
-    { id: "emp_19", name: "Gmah Peabody", gender: "Female", county: "Montserrado", community: "Red Hill", skill: "Tailoring & Sewing", connectedChild: "Victor Peabody", contact: "0880901239", createdAt: "2024-05-30T13:10:00Z" },
-    { id: "emp_20", name: "Annie Wesseh", gender: "Female", county: "Montserrado", community: "Red Hill", skill: "Tie-Dye / Batik", connectedChild: "Joshua Wesseh", contact: "0776012340", createdAt: "2024-06-25T15:20:00Z" },
-    { id: "emp_21", name: "Finda Bondo", gender: "Female", county: "Montserrado", community: "Red Hill", skill: "Soap Making", connectedChild: "Saah Bondo", contact: "0888123451", createdAt: "2024-07-28T12:00:00Z" },
-    { id: "emp_22", name: "Nowai Kpoto", gender: "Female", county: "Montserrado", community: "Red Hill", skill: "Sustainable Agriculture", connectedChild: "Jerry Kpoto", contact: "0770234562", createdAt: "2024-08-15T14:40:00Z" },
-
-    // Voinjama, Lofa (5)
-    { id: "emp_23", name: "Yassah Zayzay", gender: "Female", county: "Lofa", community: "Voinjama", skill: "Soap Making", connectedChild: "Kollie Zayzay", contact: "0881345673", createdAt: "2025-01-10T09:00:00Z" },
-    { id: "emp_24", name: "Korpo Tokpah", gender: "Female", county: "Lofa", community: "Voinjama", skill: "Sustainable Agriculture", connectedChild: "Tokpah Tokpah", contact: "0778456784", createdAt: "2025-01-18T11:20:00Z" },
-    { id: "emp_25", name: "Siaffa Ballah", gender: "Female", county: "Lofa", community: "Voinjama", skill: "Sustainable Agriculture", connectedChild: "Ballah Ballah", contact: "0886567895", createdAt: "2025-02-05T13:40:00Z" },
-    { id: "emp_26", name: "Fatumata Dukuly", gender: "Female", county: "Lofa", community: "Voinjama", skill: "Tie-Dye / Batik", connectedChild: "Lassana Dukuly", contact: "0775678906", createdAt: "2025-02-14T15:00:00Z" },
-    { id: "emp_27", name: "Kpannah Jallah", gender: "Female", county: "Lofa", community: "Voinjama", skill: "Baking & Pastry", connectedChild: "Jallah Jallah", contact: "0880789017", createdAt: "2025-02-22T10:30:00Z" }
-  ];
-
-  const DEFAULT_SCHOOL_PARTNERSHIPS = [
-    {
-      id: "sp_wein_1",
-      schoolName: "Wein Town Community Academy",
-      location: "Montserrado",
-      county: "Montserrado",
-      community: "Wein Town",
-      repName: "Rev. Joseph Benson",
-      partnershipDate: "2023-02-10",
-      telephone: "0886411223"
-    },
-    {
-      id: "sp_parker_1",
-      schoolName: "Parker Paint Grace Foundation School",
-      location: "Montserrado",
-      county: "Montserrado",
-      community: "Parker Paint",
-      repName: "Madam Sarah Freeman",
-      partnershipDate: "2023-08-15",
-      telephone: "0775322114"
-    },
-    {
-      id: "sp_boakai_1",
-      schoolName: "Boakai Village Public School",
-      location: "Montserrado",
-      county: "Montserrado",
-      community: "Boakai Village",
-      repName: "Principal Emmanuel Doe",
-      partnershipDate: "2024-01-20",
-      telephone: "0880554433"
-    },
-    {
-      id: "sp_redhill_1",
-      schoolName: "Red Hill Community Christian School",
-      location: "Montserrado",
-      county: "Montserrado",
-      community: "Red Hill",
-      repName: "Elder Thomas Kanneh",
-      partnershipDate: "2024-09-05",
-      telephone: "0776887766"
-    }
-  ];
-
-  // Exactly 60 verified child records (54 in Paynesville, 6 in Voinjama; exactly 38 re-enrolled)
-  const DEFAULT_OSSC_REPORTS = [
-    // WEIN TOWN (14 total: 10 re-enrolled [1 in 2023, 1 in 2024, 8 in 2025], 4 awaiting)
-    { rowNumber: 101, id: "ossc_wt_1", timestamp: "2023-09-01T10:00:00Z", childName: "Blessing Flomo", gender: "Female", childAge: 9, residenceCounty: "Montserrado", county: "Montserrado", community: "Wein Town", status: "VERIFIED", enrolled: true, enrolledSchool: "Wein Town Community Academy", enrollmentDate: "2023-09-12", schoolYear: "2023", parentName: "Comfort Flomo", parentPhone: "0886123451", notes: "Identified in Wein Town, sponsored and re-enrolled." },
-    { rowNumber: 102, id: "ossc_wt_2", timestamp: "2024-09-01T10:00:00Z", childName: "Emmanuel Kollie", gender: "Male", childAge: 10, residenceCounty: "Montserrado", county: "Montserrado", community: "Wein Town", status: "VERIFIED", enrolled: true, enrolledSchool: "Wein Town Community Academy", enrollmentDate: "2024-09-08", schoolYear: "2024", parentName: "Korto Kollie", parentPhone: "0880345673", notes: "Supported with study materials and enrolled." },
-    { rowNumber: 103, id: "ossc_wt_3", timestamp: "2025-02-01T10:00:00Z", childName: "Mohammed Kamara", gender: "Male", childAge: 8, residenceCounty: "Montserrado", county: "Montserrado", community: "Wein Town", status: "VERIFIED", enrolled: true, enrolledSchool: "Wein Town Community Academy", enrollmentDate: "2025-02-14", schoolYear: "2025", parentName: "Musu Kamara", parentPhone: "0775234562", notes: "Full tuition waiver and uniforms provided." },
-    { rowNumber: 104, id: "ossc_wt_4", timestamp: "2025-02-02T10:00:00Z", childName: "Joseph Johnson", gender: "Male", childAge: 11, residenceCounty: "Montserrado", county: "Montserrado", community: "Wein Town", status: "VERIFIED", enrolled: true, enrolledSchool: "Wein Town Community Academy", enrollmentDate: "2025-02-15", schoolYear: "2025", parentName: "Fatu Johnson", parentPhone: "0776456784", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 105, id: "ossc_wt_5", timestamp: "2025-02-03T10:00:00Z", childName: "Sekou Sirleaf", gender: "Male", childAge: 7, residenceCounty: "Montserrado", county: "Montserrado", community: "Wein Town", status: "VERIFIED", enrolled: true, enrolledSchool: "Wein Town Community Academy", enrollmentDate: "2025-02-16", schoolYear: "2025", parentName: "Bendu Sirleaf", parentPhone: "0888567895", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 106, id: "ossc_wt_6", timestamp: "2025-02-04T10:00:00Z", childName: "Faith Kollie", gender: "Female", childAge: 9, residenceCounty: "Montserrado", county: "Montserrado", community: "Wein Town", status: "VERIFIED", enrolled: true, enrolledSchool: "Wein Town Community Academy", enrollmentDate: "2025-02-18", schoolYear: "2025", parentName: "Korto Kollie", parentPhone: "0880345673", notes: "Study pack delivered, re-enrolled." },
-    { rowNumber: 107, id: "ossc_wt_7", timestamp: "2025-02-05T10:00:00Z", childName: "Jeremiah Flomo", gender: "Male", childAge: 12, residenceCounty: "Montserrado", county: "Montserrado", community: "Wein Town", status: "VERIFIED", enrolled: true, enrolledSchool: "Wein Town Community Academy", enrollmentDate: "2025-02-20", schoolYear: "2025", parentName: "Comfort Flomo", parentPhone: "0886123451", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 108, id: "ossc_wt_8", timestamp: "2025-02-06T10:00:00Z", childName: "Mary Kamara", gender: "Female", childAge: 8, residenceCounty: "Montserrado", county: "Montserrado", community: "Wein Town", status: "VERIFIED", enrolled: true, enrolledSchool: "Wein Town Community Academy", enrollmentDate: "2025-02-22", schoolYear: "2025", parentName: "Musu Kamara", parentPhone: "0775234562", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 109, id: "ossc_wt_9", timestamp: "2025-02-07T10:00:00Z", childName: "David Johnson", gender: "Male", childAge: 10, residenceCounty: "Montserrado", county: "Montserrado", community: "Wein Town", status: "VERIFIED", enrolled: true, enrolledSchool: "Wein Town Community Academy", enrollmentDate: "2025-02-25", schoolYear: "2025", parentName: "Fatu Johnson", parentPhone: "0776456784", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 110, id: "ossc_wt_10", timestamp: "2025-02-08T10:00:00Z", childName: "Rebecca Sirleaf", gender: "Female", childAge: 11, residenceCounty: "Montserrado", county: "Montserrado", community: "Wein Town", status: "VERIFIED", enrolled: true, enrolledSchool: "Wein Town Community Academy", enrollmentDate: "2025-03-01", schoolYear: "2025", parentName: "Bendu Sirleaf", parentPhone: "0888567895", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 111, id: "ossc_wt_11", timestamp: "2025-02-09T10:00:00Z", childName: "Sarah Flomo", gender: "Female", childAge: 13, residenceCounty: "Montserrado", county: "Montserrado", community: "Wein Town", status: "DRAFT", enrolled: false, parentName: "Comfort Flomo", parentPhone: "0886123451", notes: "Awaiting sponsorship." },
-    { rowNumber: 112, id: "ossc_wt_12", timestamp: "2025-02-10T10:00:00Z", childName: "Samuel Kollie", gender: "Male", childAge: 14, residenceCounty: "Montserrado", county: "Montserrado", community: "Wein Town", status: "DRAFT", enrolled: false, parentName: "Korto Kollie", parentPhone: "0880345673", notes: "Awaiting sponsorship." },
-    { rowNumber: 113, id: "ossc_wt_13", timestamp: "2025-02-11T10:00:00Z", childName: "Grace Kamara", gender: "Female", childAge: 7, residenceCounty: "Montserrado", county: "Montserrado", community: "Wein Town", status: "DRAFT", enrolled: false, parentName: "Musu Kamara", parentPhone: "0775234562", notes: "Awaiting sponsorship." },
-    { rowNumber: 114, id: "ossc_wt_14", timestamp: "2025-02-12T10:00:00Z", childName: "Isaac Johnson", gender: "Male", childAge: 9, residenceCounty: "Montserrado", county: "Montserrado", community: "Wein Town", status: "DRAFT", enrolled: false, parentName: "Fatu Johnson", parentPhone: "0776456784", notes: "Awaiting sponsorship." },
-
-    // PARKER PAINT (14 total: 10 re-enrolled [1 in 2023, 1 in 2024, 8 in 2025], 4 awaiting)
-    { rowNumber: 201, id: "ossc_pp_1", timestamp: "2023-10-01T10:00:00Z", childName: "David Mulbah", gender: "Male", childAge: 10, residenceCounty: "Montserrado", county: "Montserrado", community: "Parker Paint", status: "VERIFIED", enrolled: true, enrolledSchool: "Parker Paint Grace Foundation School", enrollmentDate: "2023-10-05", schoolYear: "2023", parentName: "Kebbeh Mulbah", parentPhone: "0770678906", notes: "Re-enrolled in Grade 3." },
-    { rowNumber: 202, id: "ossc_pp_2", timestamp: "2024-09-10T10:00:00Z", childName: "Mariama Kromah", gender: "Female", childAge: 9, residenceCounty: "Montserrado", county: "Montserrado", community: "Parker Paint", status: "VERIFIED", enrolled: true, enrolledSchool: "Parker Paint Grace Foundation School", enrollmentDate: "2024-09-15", schoolYear: "2024", parentName: "Hawa Kromah", parentPhone: "0881789017", notes: "Re-enrolled in 2024." },
-    { rowNumber: 203, id: "ossc_pp_3", timestamp: "2025-02-01T10:00:00Z", childName: "Samuel Massaquoi", gender: "Male", childAge: 8, residenceCounty: "Montserrado", county: "Montserrado", community: "Parker Paint", status: "VERIFIED", enrolled: true, enrolledSchool: "Parker Paint Grace Foundation School", enrollmentDate: "2025-02-10", schoolYear: "2025", parentName: "Jenneh Massaquoi", parentPhone: "0778890128", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 204, id: "ossc_pp_4", timestamp: "2025-02-02T10:00:00Z", childName: "Moses Cooper", gender: "Male", childAge: 11, residenceCounty: "Montserrado", county: "Montserrado", community: "Parker Paint", status: "VERIFIED", enrolled: true, enrolledSchool: "Parker Paint Grace Foundation School", enrollmentDate: "2025-02-12", schoolYear: "2025", parentName: "Sando Cooper", parentPhone: "0886901239", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 205, id: "ossc_pp_5", timestamp: "2025-02-03T10:00:00Z", childName: "Peter Sumo", gender: "Male", childAge: 9, residenceCounty: "Montserrado", county: "Montserrado", community: "Parker Paint", status: "VERIFIED", enrolled: true, enrolledSchool: "Parker Paint Grace Foundation School", enrollmentDate: "2025-02-15", schoolYear: "2025", parentName: "Lorpu Sumo", parentPhone: "0775012340", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 206, id: "ossc_pp_6", timestamp: "2025-02-04T10:00:00Z", childName: "Princess Gargar", gender: "Female", childAge: 7, residenceCounty: "Montserrado", county: "Montserrado", community: "Parker Paint", status: "VERIFIED", enrolled: true, enrolledSchool: "Parker Paint Grace Foundation School", enrollmentDate: "2025-02-17", schoolYear: "2025", parentName: "Zoe Gargar", parentPhone: "0880123451", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 207, id: "ossc_pp_7", timestamp: "2025-02-05T10:00:00Z", childName: "Solomon Mulbah", gender: "Male", childAge: 12, residenceCounty: "Montserrado", county: "Montserrado", community: "Parker Paint", status: "VERIFIED", enrolled: true, enrolledSchool: "Parker Paint Grace Foundation School", enrollmentDate: "2025-02-19", schoolYear: "2025", parentName: "Kebbeh Mulbah", parentPhone: "0770678906", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 208, id: "ossc_pp_8", timestamp: "2025-02-06T10:00:00Z", childName: "Fatu Kromah", gender: "Female", childAge: 10, residenceCounty: "Montserrado", county: "Montserrado", community: "Parker Paint", status: "VERIFIED", enrolled: true, enrolledSchool: "Parker Paint Grace Foundation School", enrollmentDate: "2025-02-21", schoolYear: "2025", parentName: "Hawa Kromah", parentPhone: "0881789017", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 209, id: "ossc_pp_9", timestamp: "2025-02-07T10:00:00Z", childName: "Josephine Massaquoi", gender: "Female", childAge: 8, residenceCounty: "Montserrado", county: "Montserrado", community: "Parker Paint", status: "VERIFIED", enrolled: true, enrolledSchool: "Parker Paint Grace Foundation School", enrollmentDate: "2025-02-23", schoolYear: "2025", parentName: "Jenneh Massaquoi", parentPhone: "0778890128", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 210, id: "ossc_pp_10", timestamp: "2025-02-08T10:00:00Z", childName: "Aaron Cooper", gender: "Male", childAge: 11, residenceCounty: "Montserrado", county: "Montserrado", community: "Parker Paint", status: "VERIFIED", enrolled: true, enrolledSchool: "Parker Paint Grace Foundation School", enrollmentDate: "2025-02-26", schoolYear: "2025", parentName: "Sando Cooper", parentPhone: "0886901239", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 211, id: "ossc_pp_11", timestamp: "2025-02-09T10:00:00Z", childName: "Ruth Sumo", gender: "Female", childAge: 13, residenceCounty: "Montserrado", county: "Montserrado", community: "Parker Paint", status: "DRAFT", enrolled: false, parentName: "Lorpu Sumo", parentPhone: "0775012340", notes: "Awaiting sponsorship." },
-    { rowNumber: 212, id: "ossc_pp_12", timestamp: "2025-02-10T10:00:00Z", childName: "Elijah Gargar", gender: "Male", childAge: 14, residenceCounty: "Montserrado", county: "Montserrado", community: "Parker Paint", status: "DRAFT", enrolled: false, parentName: "Zoe Gargar", parentPhone: "0880123451", notes: "Awaiting sponsorship." },
-    { rowNumber: 213, id: "ossc_pp_13", timestamp: "2025-02-11T10:00:00Z", childName: "Comfort Mulbah", gender: "Female", childAge: 8, residenceCounty: "Montserrado", county: "Montserrado", community: "Parker Paint", status: "DRAFT", enrolled: false, parentName: "Kebbeh Mulbah", parentPhone: "0770678906", notes: "Awaiting sponsorship." },
-    { rowNumber: 214, id: "ossc_pp_14", timestamp: "2025-02-12T10:00:00Z", childName: "Daniel Kromah", gender: "Male", childAge: 9, residenceCounty: "Montserrado", county: "Montserrado", community: "Parker Paint", status: "DRAFT", enrolled: false, parentName: "Hawa Kromah", parentPhone: "0881789017", notes: "Awaiting sponsorship." },
-
-    // BOAKAI VILLAGE (13 total: 9 re-enrolled [0 in 2023, 1 in 2024, 8 in 2025], 4 awaiting)
-    { rowNumber: 301, id: "ossc_bv_1", timestamp: "2024-09-15T10:00:00Z", childName: "Faith Voker", gender: "Female", childAge: 9, residenceCounty: "Montserrado", county: "Montserrado", community: "Boakai Village", status: "VERIFIED", enrolled: true, enrolledSchool: "Boakai Village Public School", enrollmentDate: "2024-09-20", schoolYear: "2024", parentName: "Esther Voker", parentPhone: "0776234562", notes: "Re-enrolled in 2024." },
-    { rowNumber: 302, id: "ossc_bv_2", timestamp: "2025-02-01T10:00:00Z", childName: "Junior Sando", gender: "Male", childAge: 10, residenceCounty: "Montserrado", county: "Montserrado", community: "Boakai Village", status: "VERIFIED", enrolled: true, enrolledSchool: "Boakai Village Public School", enrollmentDate: "2025-02-11", schoolYear: "2025", parentName: "Tenneh Sando", parentPhone: "0888345673", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 303, id: "ossc_bv_3", timestamp: "2025-02-02T10:00:00Z", childName: "Ruth Dennis", gender: "Female", childAge: 8, residenceCounty: "Montserrado", county: "Montserrado", community: "Boakai Village", status: "VERIFIED", enrolled: true, enrolledSchool: "Boakai Village Public School", enrollmentDate: "2025-02-14", schoolYear: "2025", parentName: "Cecelia Dennis", parentPhone: "0770456784", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 304, id: "ossc_bv_4", timestamp: "2025-02-03T10:00:00Z", childName: "Solomon Sackie", gender: "Male", childAge: 11, residenceCounty: "Montserrado", county: "Montserrado", community: "Boakai Village", status: "VERIFIED", enrolled: true, enrolledSchool: "Boakai Village Public School", enrollmentDate: "2025-02-16", schoolYear: "2025", parentName: "Mamie Sackie", parentPhone: "0881567895", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 305, id: "ossc_bv_5", timestamp: "2025-02-04T10:00:00Z", childName: "Alieu Kanneh", gender: "Male", childAge: 9, residenceCounty: "Montserrado", county: "Montserrado", community: "Boakai Village", status: "VERIFIED", enrolled: true, enrolledSchool: "Boakai Village Public School", enrollmentDate: "2025-02-18", schoolYear: "2025", parentName: "Baindu Kanneh", parentPhone: "0778678906", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 306, id: "ossc_bv_6", timestamp: "2025-02-05T10:00:00Z", childName: "Theresa Voker", gender: "Female", childAge: 7, residenceCounty: "Montserrado", county: "Montserrado", community: "Boakai Village", status: "VERIFIED", enrolled: true, enrolledSchool: "Boakai Village Public School", enrollmentDate: "2025-02-20", schoolYear: "2025", parentName: "Esther Voker", parentPhone: "0776234562", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 307, id: "ossc_bv_7", timestamp: "2025-02-06T10:00:00Z", childName: "Matthew Sando", gender: "Male", childAge: 12, residenceCounty: "Montserrado", county: "Montserrado", community: "Boakai Village", status: "VERIFIED", enrolled: true, enrolledSchool: "Boakai Village Public School", enrollmentDate: "2025-02-22", schoolYear: "2025", parentName: "Tenneh Sando", parentPhone: "0888345673", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 308, id: "ossc_bv_8", timestamp: "2025-02-07T10:00:00Z", childName: "Hannah Dennis", gender: "Female", childAge: 10, residenceCounty: "Montserrado", county: "Montserrado", community: "Boakai Village", status: "VERIFIED", enrolled: true, enrolledSchool: "Boakai Village Public School", enrollmentDate: "2025-02-24", schoolYear: "2025", parentName: "Cecelia Dennis", parentPhone: "0770456784", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 309, id: "ossc_bv_9", timestamp: "2025-02-08T10:00:00Z", childName: "Paul Sackie", gender: "Male", childAge: 8, residenceCounty: "Montserrado", county: "Montserrado", community: "Boakai Village", status: "VERIFIED", enrolled: true, enrolledSchool: "Boakai Village Public School", enrollmentDate: "2025-02-27", schoolYear: "2025", parentName: "Mamie Sackie", parentPhone: "0881567895", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 310, id: "ossc_bv_10", timestamp: "2025-02-09T10:00:00Z", childName: "Naomi Kanneh", gender: "Female", childAge: 13, residenceCounty: "Montserrado", county: "Montserrado", community: "Boakai Village", status: "DRAFT", enrolled: false, parentName: "Baindu Kanneh", parentPhone: "0778678906", notes: "Awaiting sponsorship." },
-    { rowNumber: 311, id: "ossc_bv_11", timestamp: "2025-02-10T10:00:00Z", childName: "Gabriel Voker", gender: "Male", childAge: 14, residenceCounty: "Montserrado", county: "Montserrado", community: "Boakai Village", status: "DRAFT", enrolled: false, parentName: "Esther Voker", parentPhone: "0776234562", notes: "Awaiting sponsorship." },
-    { rowNumber: 312, id: "ossc_bv_12", timestamp: "2025-02-11T10:00:00Z", childName: "Esther Sando", gender: "Female", childAge: 8, residenceCounty: "Montserrado", county: "Montserrado", community: "Boakai Village", status: "DRAFT", enrolled: false, parentName: "Tenneh Sando", parentPhone: "0888345673", notes: "Awaiting sponsorship." },
-    { rowNumber: 313, id: "ossc_bv_13", timestamp: "2025-02-12T10:00:00Z", childName: "Simeon Dennis", gender: "Male", childAge: 9, residenceCounty: "Montserrado", county: "Montserrado", community: "Boakai Village", status: "DRAFT", enrolled: false, parentName: "Cecelia Dennis", parentPhone: "0770456784", notes: "Awaiting sponsorship." },
-
-    // RED HILL (13 total: 9 re-enrolled [0 in 2023, 0 in 2024, 9 in 2025], 4 awaiting)
-    { rowNumber: 401, id: "ossc_rh_1", timestamp: "2025-02-01T10:00:00Z", childName: "Grace Tarpeh", gender: "Female", childAge: 9, residenceCounty: "Montserrado", county: "Montserrado", community: "Red Hill", status: "VERIFIED", enrolled: true, enrolledSchool: "Red Hill Community Christian School", enrollmentDate: "2025-02-12", schoolYear: "2025", parentName: "Watta Tarpeh", parentPhone: "0886789017", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 402, id: "ossc_rh_2", timestamp: "2025-02-02T10:00:00Z", childName: "Ibrahim Sheriff", gender: "Male", childAge: 10, residenceCounty: "Montserrado", county: "Montserrado", community: "Red Hill", status: "VERIFIED", enrolled: true, enrolledSchool: "Red Hill Community Christian School", enrollmentDate: "2025-02-15", schoolYear: "2025", parentName: "Miatta Sheriff", parentPhone: "0775890128", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 403, id: "ossc_rh_3", timestamp: "2025-02-03T10:00:00Z", childName: "Victor Peabody", gender: "Male", childAge: 8, residenceCounty: "Montserrado", county: "Montserrado", community: "Red Hill", status: "VERIFIED", enrolled: true, enrolledSchool: "Red Hill Community Christian School", enrollmentDate: "2025-02-17", schoolYear: "2025", parentName: "Gmah Peabody", parentPhone: "0880901239", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 404, id: "ossc_rh_4", timestamp: "2025-02-04T10:00:00Z", childName: "Joshua Wesseh", gender: "Male", childAge: 11, residenceCounty: "Montserrado", county: "Montserrado", community: "Red Hill", status: "VERIFIED", enrolled: true, enrolledSchool: "Red Hill Community Christian School", enrollmentDate: "2025-02-19", schoolYear: "2025", parentName: "Annie Wesseh", parentPhone: "0776012340", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 405, id: "ossc_rh_5", timestamp: "2025-02-05T10:00:00Z", childName: "Saah Bondo", gender: "Male", childAge: 9, residenceCounty: "Montserrado", county: "Montserrado", community: "Red Hill", status: "VERIFIED", enrolled: true, enrolledSchool: "Red Hill Community Christian School", enrollmentDate: "2025-02-21", schoolYear: "2025", parentName: "Finda Bondo", parentPhone: "0888123451", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 406, id: "ossc_rh_6", timestamp: "2025-02-06T10:00:00Z", childName: "Jerry Kpoto", gender: "Male", childAge: 7, residenceCounty: "Montserrado", county: "Montserrado", community: "Red Hill", status: "VERIFIED", enrolled: true, enrolledSchool: "Red Hill Community Christian School", enrollmentDate: "2025-02-23", schoolYear: "2025", parentName: "Nowai Kpoto", parentPhone: "0770234562", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 407, id: "ossc_rh_7", timestamp: "2025-02-07T10:00:00Z", childName: "Victoria Tarpeh", gender: "Female", childAge: 12, residenceCounty: "Montserrado", county: "Montserrado", community: "Red Hill", status: "VERIFIED", enrolled: true, enrolledSchool: "Red Hill Community Christian School", enrollmentDate: "2025-02-25", schoolYear: "2025", parentName: "Watta Tarpeh", parentPhone: "0886789017", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 408, id: "ossc_rh_8", timestamp: "2025-02-08T10:00:00Z", childName: "Mariama Sheriff", gender: "Female", childAge: 10, residenceCounty: "Montserrado", county: "Montserrado", community: "Red Hill", status: "VERIFIED", enrolled: true, enrolledSchool: "Red Hill Community Christian School", enrollmentDate: "2025-02-27", schoolYear: "2025", parentName: "Miatta Sheriff", parentPhone: "0775890128", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 409, id: "ossc_rh_9", timestamp: "2025-02-09T10:00:00Z", childName: "Timothy Peabody", gender: "Male", childAge: 8, residenceCounty: "Montserrado", county: "Montserrado", community: "Red Hill", status: "VERIFIED", enrolled: true, enrolledSchool: "Red Hill Community Christian School", enrollmentDate: "2025-03-02", schoolYear: "2025", parentName: "Gmah Peabody", parentPhone: "0880901239", notes: "Re-enrolled for 2025 school year." },
-    { rowNumber: 410, id: "ossc_rh_10", timestamp: "2025-02-10T10:00:00Z", childName: "Martha Wesseh", gender: "Female", childAge: 13, residenceCounty: "Montserrado", county: "Montserrado", community: "Red Hill", status: "DRAFT", enrolled: false, parentName: "Annie Wesseh", parentPhone: "0776012340", notes: "Awaiting sponsorship." },
-    { rowNumber: 411, id: "ossc_rh_11", timestamp: "2025-02-11T10:00:00Z", childName: "Emmanuel Bondo", gender: "Male", childAge: 14, residenceCounty: "Montserrado", county: "Montserrado", community: "Red Hill", status: "DRAFT", enrolled: false, parentName: "Finda Bondo", parentPhone: "0888123451", notes: "Awaiting sponsorship." },
-    { rowNumber: 412, id: "ossc_rh_12", timestamp: "2025-02-12T10:00:00Z", childName: "Bernice Kpoto", gender: "Female", childAge: 8, residenceCounty: "Montserrado", county: "Montserrado", community: "Red Hill", status: "DRAFT", enrolled: false, parentName: "Nowai Kpoto", parentPhone: "0770234562", notes: "Awaiting sponsorship." },
-    { rowNumber: 413, id: "ossc_rh_13", timestamp: "2025-02-13T10:00:00Z", childName: "Prince Tarpeh", gender: "Male", childAge: 9, residenceCounty: "Montserrado", county: "Montserrado", community: "Red Hill", status: "DRAFT", enrolled: false, parentName: "Watta Tarpeh", parentPhone: "0886789017", notes: "Awaiting sponsorship." },
-
-    // VOINJAMA, LOFA (exactly 6 children identified in 2025, 0 re-enrolled)
-    { rowNumber: 501, id: "ossc_vj_1", timestamp: "2025-02-15T10:00:00Z", childName: "Kollie Zayzay", gender: "Male", childAge: 9, residenceCounty: "Lofa", county: "Lofa", community: "Voinjama", status: "DRAFT", enrolled: false, parentName: "Yassah Zayzay", parentPhone: "0881345673", notes: "Identified in Voinjama, awaiting sponsorship." },
-    { rowNumber: 502, id: "ossc_vj_2", timestamp: "2025-02-16T10:00:00Z", childName: "Tokpah Tokpah", gender: "Male", childAge: 10, residenceCounty: "Lofa", county: "Lofa", community: "Voinjama", status: "DRAFT", enrolled: false, parentName: "Korpo Tokpah", parentPhone: "0778456784", notes: "Identified in Voinjama, awaiting sponsorship." },
-    { rowNumber: 503, id: "ossc_vj_3", timestamp: "2025-02-17T10:00:00Z", childName: "Ballah Ballah", gender: "Male", childAge: 8, residenceCounty: "Lofa", county: "Lofa", community: "Voinjama", status: "DRAFT", enrolled: false, parentName: "Siaffa Ballah", parentPhone: "0886567895", notes: "Identified in Voinjama, awaiting sponsorship." },
-    { rowNumber: 504, id: "ossc_vj_4", timestamp: "2025-02-18T10:00:00Z", childName: "Lassana Dukuly", gender: "Male", childAge: 11, residenceCounty: "Lofa", county: "Lofa", community: "Voinjama", status: "DRAFT", enrolled: false, parentName: "Fatumata Dukuly", parentPhone: "0775678906", notes: "Identified in Voinjama, awaiting sponsorship." },
-    { rowNumber: 505, id: "ossc_vj_5", timestamp: "2025-02-19T10:00:00Z", childName: "Jallah Jallah", gender: "Male", childAge: 9, residenceCounty: "Lofa", county: "Lofa", community: "Voinjama", status: "DRAFT", enrolled: false, parentName: "Kpannah Jallah", parentPhone: "0880789017", notes: "Identified in Voinjama, awaiting sponsorship." },
-    { rowNumber: 506, id: "ossc_vj_6", timestamp: "2025-02-20T10:00:00Z", childName: "Korto Zayzay", gender: "Female", childAge: 7, residenceCounty: "Lofa", county: "Lofa", community: "Voinjama", status: "DRAFT", enrolled: false, parentName: "Yassah Zayzay", parentPhone: "0881345673", notes: "Identified in Voinjama, awaiting sponsorship." }
-  ];
-
-  // Exactly 38 verified enrollments strictly in Paynesville
-  const DEFAULT_CHILD_ENROLLMENTS = DEFAULT_OSSC_REPORTS
-    .filter((r) => r.enrolled === true)
-    .map((r, idx) => ({
-      id: "enr_" + (idx + 1),
-      childName: r.childName,
-      schoolName: r.enrolledSchool,
-      dateOfEnrollment: r.enrollmentDate,
-      schoolYear: r.schoolYear,
-      community: r.community,
-      county: r.residenceCounty || r.county
-    }));
-
-  function ensureDefaultDataSeeded() {
+  function purgeLegacyMockData() {
     try {
-      const isSeeded = localStorage.getItem("uaf_data_seeded_v26");
-      if (!isSeeded) {
-        if (!localStorage.getItem("uaf_admin_communities")) {
-          localStorage.setItem("uaf_admin_communities", JSON.stringify(DEFAULT_COMMUNITIES));
+      const isPurged = localStorage.getItem("uaf_mock_purged_v29");
+      if (!isPurged) {
+        // Clean legacy default stories
+        const storedStories = localStorage.getItem("uaf_stories");
+        if (storedStories) {
+          try {
+            const parsed = JSON.parse(storedStories);
+            if (Array.isArray(parsed)) {
+              const cleaned = parsed.filter(s => {
+                const sId = String(s.id || s.storyId || "").toLowerCase();
+                return sId !== "story_blessing" && sId !== "story_comfort" && sId !== "story_emmanuel";
+              });
+              localStorage.setItem("uaf_stories", JSON.stringify(cleaned));
+            }
+          } catch (_) {}
         }
-        if (!localStorage.getItem("uaf_empowerment_records")) {
-          localStorage.setItem("uaf_empowerment_records", JSON.stringify(DEFAULT_EMPOWERMENT_RECORDS));
+
+        // Clean legacy mock reports
+        const storedReports = localStorage.getItem("uaf_ossc_reports");
+        if (storedReports) {
+          try {
+            const parsed = JSON.parse(storedReports);
+            if (Array.isArray(parsed)) {
+              const cleaned = parsed.filter(r => {
+                const rId = String(r.id || "");
+                return !rId.startsWith("ossc_wt_") && !rId.startsWith("ossc_pp_") && !rId.startsWith("ossc_bv_") && !rId.startsWith("ossc_rh_") && !rId.startsWith("ossc_vj_");
+              });
+              localStorage.setItem("uaf_ossc_reports", JSON.stringify(cleaned));
+            }
+          } catch (_) {}
         }
-        if (!localStorage.getItem("uaf_school_partnerships")) {
-          localStorage.setItem("uaf_school_partnerships", JSON.stringify(DEFAULT_SCHOOL_PARTNERSHIPS));
+
+        // Clean legacy mock empowerment
+        const storedEmp = localStorage.getItem("uaf_empowerment_records");
+        if (storedEmp) {
+          try {
+            const parsed = JSON.parse(storedEmp);
+            if (Array.isArray(parsed)) {
+              const cleaned = parsed.filter(e => {
+                const eId = String(e.id || "");
+                return !eId.startsWith("emp_") || (e.id && Number(e.id.replace("emp_", "")) > 100);
+              });
+              localStorage.setItem("uaf_empowerment_records", JSON.stringify(cleaned));
+            }
+          } catch (_) {}
         }
-        if (!localStorage.getItem("uaf_ossc_reports")) {
-          localStorage.setItem("uaf_ossc_reports", JSON.stringify(DEFAULT_OSSC_REPORTS));
+
+        // Clean legacy mock partnerships
+        const storedPartnerships = localStorage.getItem("uaf_school_partnerships");
+        if (storedPartnerships) {
+          try {
+            const parsed = JSON.parse(storedPartnerships);
+            if (Array.isArray(parsed)) {
+              const cleaned = parsed.filter(p => {
+                const pId = String(p.id || "");
+                return !pId.startsWith("sp_wein_") && !pId.startsWith("sp_parker_") && !pId.startsWith("sp_boakai_") && !pId.startsWith("sp_redhill_") && pId !== "sp_1" && pId !== "sp_2";
+              });
+              localStorage.setItem("uaf_school_partnerships", JSON.stringify(cleaned));
+            }
+          } catch (_) {}
         }
-        if (!localStorage.getItem("uaf_child_enrollments")) {
-          localStorage.setItem("uaf_child_enrollments", JSON.stringify(DEFAULT_CHILD_ENROLLMENTS));
+
+        // Clean legacy mock enrollments
+        const storedEnrollments = localStorage.getItem("uaf_child_enrollments");
+        if (storedEnrollments) {
+          try {
+            const parsed = JSON.parse(storedEnrollments);
+            if (Array.isArray(parsed)) {
+              const cleaned = parsed.filter(e => {
+                const eId = String(e.id || "");
+                return !eId.startsWith("enr_");
+              });
+              localStorage.setItem("uaf_child_enrollments", JSON.stringify(cleaned));
+            }
+          } catch (_) {}
         }
-        localStorage.setItem("uaf_data_seeded_v26", "true");
+
+        // Clean mock comments
+        const storedComments = localStorage.getItem("uaf_story_comments");
+        if (storedComments) {
+          try {
+            const parsed = JSON.parse(storedComments);
+            let changed = false;
+            Object.keys(parsed).forEach(k => {
+              if (Array.isArray(parsed[k])) {
+                parsed[k] = parsed[k].filter(c => c.id !== "comm_seed_1");
+                changed = true;
+              }
+            });
+            if (changed) {
+              localStorage.setItem("uaf_story_comments", JSON.stringify(parsed));
+            }
+          } catch (_) {}
+        }
+
+        // Clean mock admin communities
+        const storedComms = localStorage.getItem("uaf_admin_communities");
+        if (storedComms) {
+          try {
+            const parsed = JSON.parse(storedComms);
+            if (Array.isArray(parsed) && parsed.some(c => c.community === "Wein Town" && c.amountNeeded === 6500)) {
+              localStorage.setItem("uaf_admin_communities", "[]");
+            }
+          } catch (_) {}
+        }
+
+        localStorage.removeItem("uaf_data_seeded_v26");
+        localStorage.removeItem("uaf_data_seeded");
+        localStorage.setItem("uaf_mock_purged_v29", "true");
       }
     } catch (_) {}
   }
-  ensureDefaultDataSeeded();
+  purgeLegacyMockData();
 
   /* ---------------------------------------------------------
      STORAGE HELPERS FOR ADMIN DATA
   --------------------------------------------------------- */
   function getAdminCommunities() {
-    ensureDefaultDataSeeded();
     try {
       const stored = localStorage.getItem("uaf_admin_communities");
-      return stored ? JSON.parse(stored) : DEFAULT_COMMUNITIES;
+      return stored ? JSON.parse(stored) : [];
     } catch (_) {
-      return DEFAULT_COMMUNITIES;
+      return [];
     }
   }
 
@@ -872,9 +708,9 @@
     try {
       const stored = localStorage.getItem("uaf_ossc_reports");
       if (stored) osscReports = JSON.parse(stored);
-      if (!Array.isArray(osscReports) || osscReports.length === 0) osscReports = DEFAULT_OSSC_REPORTS;
+      if (!Array.isArray(osscReports)) osscReports = [];
     } catch (_) {
-      osscReports = DEFAULT_OSSC_REPORTS;
+      osscReports = [];
     }
 
     let deletedSubs = [];
@@ -897,9 +733,9 @@
     try {
       const stored = localStorage.getItem("uaf_child_enrollments");
       if (stored) enrollments = JSON.parse(stored);
-      if (!Array.isArray(enrollments) || enrollments.length === 0) enrollments = DEFAULT_CHILD_ENROLLMENTS;
+      if (!Array.isArray(enrollments)) enrollments = [];
     } catch (_) {
-      enrollments = DEFAULT_CHILD_ENROLLMENTS;
+      enrollments = [];
     }
 
     // Load empowerment records
@@ -907,9 +743,9 @@
     try {
       const stored = localStorage.getItem("uaf_empowerment_records");
       if (stored) empowermentRecords = JSON.parse(stored);
-      if (!Array.isArray(empowermentRecords) || empowermentRecords.length === 0) empowermentRecords = DEFAULT_EMPOWERMENT_RECORDS;
+      if (!Array.isArray(empowermentRecords)) empowermentRecords = [];
     } catch (_) {
-      empowermentRecords = DEFAULT_EMPOWERMENT_RECORDS;
+      empowermentRecords = [];
     }
 
     // Load school partnerships
@@ -917,9 +753,9 @@
     try {
       const stored = localStorage.getItem("uaf_school_partnerships");
       if (stored) schoolPartnerships = JSON.parse(stored);
-      if (!Array.isArray(schoolPartnerships) || schoolPartnerships.length === 0) schoolPartnerships = DEFAULT_SCHOOL_PARTNERSHIPS;
+      if (!Array.isArray(schoolPartnerships)) schoolPartnerships = [];
     } catch (_) {
-      schoolPartnerships = DEFAULT_SCHOOL_PARTNERSHIPS;
+      schoolPartnerships = [];
     }
 
     // Load verified donations
@@ -1209,23 +1045,36 @@
     try {
       let remoteStories = null;
 
-      // 1. Try GET request with route=stories
+      // 1. Try GET request with route=publicStories
       try {
-        const res = await fetch(`${API_URL}?route=stories`);
+        const res = await fetch(`${API_URL}?route=publicStories`);
         const json = await res.json();
-        if (json && json.ok && Array.isArray(json.stories) && json.stories.length > 0) {
+        if (json && json.ok && Array.isArray(json.stories)) {
           remoteStories = json.stories;
-        } else if (Array.isArray(json) && json.length > 0) {
+        } else if (Array.isArray(json)) {
           remoteStories = json;
         }
       } catch (_) {}
 
-      // 2. Check if publicData already included stories
-      if (!remoteStories && publicData && Array.isArray(publicData.stories) && publicData.stories.length > 0) {
+      // 2. Fallback: try GET request with route=stories
+      if (!remoteStories) {
+        try {
+          const res = await fetch(`${API_URL}?route=stories`);
+          const json = await res.json();
+          if (json && json.ok && Array.isArray(json.stories)) {
+            remoteStories = json.stories;
+          } else if (Array.isArray(json)) {
+            remoteStories = json;
+          }
+        } catch (_) {}
+      }
+
+      // 3. Check if publicData already included stories
+      if (!remoteStories && publicData && Array.isArray(publicData.stories)) {
         remoteStories = publicData.stories;
       }
 
-      // 3. Fallback: try POST with action=listStories
+      // 4. Fallback: try POST with action=listStories
       if (!remoteStories) {
         try {
           const res = await fetch(API_URL, {
@@ -1234,25 +1083,28 @@
             body: JSON.stringify({ action: "listStories" })
           });
           const json = await res.json();
-          if (json && json.ok && Array.isArray(json.stories) && json.stories.length > 0) {
+          if (json && json.ok && Array.isArray(json.stories)) {
             remoteStories = json.stories;
           }
         } catch (_) {}
       }
 
-      if (Array.isArray(remoteStories) && remoteStories.length > 0) {
+      if (Array.isArray(remoteStories)) {
         let deletedList = [];
         try {
           deletedList = JSON.parse(localStorage.getItem("uaf_deleted_stories") || "[]");
         } catch (_) {}
-        const filtered = remoteStories.filter((s) => !deletedList.includes(String(s.id || s.storyId).trim()));
-        if (filtered.length > 0) {
-          try {
-            localStorage.setItem("uaf_stories", JSON.stringify(filtered));
-          } catch (_) {}
-          renderFundraisingStories();
-          window.dispatchEvent(new Event("uaf_stories_updated"));
-        }
+        const filtered = remoteStories.filter((s) => {
+          const sId = String(s.id || s.storyId || "").trim();
+          const sIdLower = sId.toLowerCase();
+          if (sIdLower === "story_blessing" || sIdLower === "story_comfort" || sIdLower === "story_emmanuel") return false;
+          return !deletedList.includes(sId);
+        });
+        try {
+          localStorage.setItem("uaf_stories", JSON.stringify(filtered));
+        } catch (_) {}
+        renderFundraisingStories();
+        window.dispatchEvent(new Event("uaf_stories_updated"));
       }
     } catch (err) {
       console.warn("UAF Impact: could not sync remote stories.", err);

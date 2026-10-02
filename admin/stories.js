@@ -29,74 +29,7 @@
     "Grand Kru", "Lofa", "Maryland", "River Cess", "River Gee", "Sinoe"
   ];
 
-  const DEFAULT_STORIES = [
-    {
-      id: "story_blessing",
-      shareCode: "x7k9p2",
-      title: "Blessing's Journey Back to the Classroom",
-      category: "No Invisible Child",
-      tag: "No Invisible Child Flagship",
-      community: "West Point",
-      county: "Montserrado",
-      storyDate: "2026-02-15",
-      imageUrl: "assets/uaf-logo.png",
-      amountRaised: 5250,
-      fundingGoal: 7000,
-      speaker: "Blessing K., Age 9 & Her Mother Ma Musu",
-      testimonial: "“I thought I would sell cold water forever. When Teacher Joseph from UAF came to our zinc house with books and uniform, I cried. Now I am 1st place in Grade 3!”",
-      activities: "Door-to-door community verification in West Point informal settlements, tuition waiver sponsorship, distribution of backpacks, geometry sets, shoes, and two full school uniforms, plus monthly academic check-ins.",
-      narrative: "Blessing was forced out of school when her mother contracted a chronic illness and could no longer afford school registration. For 18 months, Blessing spent 9 hours every day dodging commercial vehicles along the Waterside traffic corridor selling plastic water sachets to generate 250 LRD ($1.30) for daily food. During the UAF door-to-door enumeration, field officers identified Blessing and enrolled her in the No Invisible Child initiative. UAF cleared her outstanding fees at St. Mary Public School, provided study materials, and enrolled her mother into our women's micro-enterprise savings group. Today, Blessing has maintained an exceptional 92% cumulative average and dreams of becoming a pediatric physician in Liberia.",
-      summary: "From selling cold water in crowded Waterside traffic to topping her Grade 3 class in West Point after UAF paid her tuition and learning supplies.",
-      status: "PUBLISHED",
-      reactions: { like: 0, heart: 0, celebrate: 0 },
-      createdBy: "Field Team",
-      views: 0
-    },
-    {
-      id: "story_comfort",
-      shareCode: "w4m8q5",
-      title: "Mother Comfort's Soap-Making Cooperative",
-      category: "Women Livelihood Empowerment",
-      tag: "Women Livelihood Empowerment",
-      community: "Duport Road",
-      county: "Montserrado",
-      storyDate: "2026-03-01",
-      imageUrl: "assets/icon-partners.png",
-      amountRaised: 8800,
-      fundingGoal: 10000,
-      speaker: "Mother Comfort Toe, Cooperative Lead",
-      testimonial: "“Before UAF trained us, every school opening was agony. We could not pay tuition. Today, our cooperative produces 300 soap bars weekly. My children will never drop out again.”",
-      activities: "Intensive 6-week hands-on vocational training in cold-process laundry and medicated soap formulating, household financial bookkeeping, group rotating savings (Susu), and collective market distribution.",
-      narrative: "In Paynesville, single mothers often face severe income volatility that causes their children to be sent home for tuition arrears mid-semester. To break this recurrent cycle, Upskill Africa Foundation established the Duport Road Women's Empowerment Guild. 25 mothers completed practical skill development in industrial liquid soap, dishwashing solution, and laundry bar formulation. Equipped with starter chemical kits and bulk molds, the cooperative now supplies regional vendors and community schools. Profit distribution directly funds a dedicated children's education account, permanently securing the schooling of 68 children who were previously on the verge of school dropout.",
-      summary: "How practical soap formulating and savings cooperatives enabled 25 mothers in Duport Road to independently keep 68 children in school.",
-      status: "PUBLISHED",
-      reactions: { like: 0, heart: 0, celebrate: 0 },
-      createdBy: "Livelihoods Unit",
-      views: 0
-    },
-    {
-      id: "story_emmanuel",
-      shareCode: "b2v6y8",
-      title: "Breaking the Digital Divide in Margibi",
-      category: "Alternative Learning (ALP)",
-      tag: "Alternative Learning Program (ALP)",
-      community: "Kakata",
-      county: "Margibi",
-      storyDate: "2026-03-10",
-      imageUrl: "assets/icon-impact.jpg",
-      amountRaised: 6800,
-      fundingGoal: 10000,
-      speaker: "Emmanuel Flomo, Age 17, ALP Graduate",
-      testimonial: "“I had never touched a computer keyboard in my life. UAF taught me how to type, format documents, and research on the internet. Now I work as a data clerk at Kakata Central Market.”",
-      activities: "12-week modular curriculum covering fundamental computer hardware, touch typing, document formatting in Word and Excel, digital safety, resume building, and career mentorship for out-of-school teenagers.",
-      narrative: "In post-secondary and informal employment across Liberia, basic digital literacy is a mandatory requirement. Adolescents who miss traditional secondary schooling are often locked out of clerical and logistics opportunities. Through the UAF Alternative Learning Program (ALP) Hub in Kakata, Emmanuel and 34 other out-of-school youth attended daily computer sessions powered by solar backup. Over 12 weeks, Emmanuel progressed from zero digital exposure to proficient spreadsheet data entry and typing 45 WPM. Upon graduation, he secured an apprentice recording role with a local produce cooperative, using his earned wage to self-fund his evening high school completion.",
-      summary: "Equipping out-of-school adolescent youth in Kakata with computer literacy, office software, and career counseling for workplace readiness.",
-      status: "PUBLISHED",
-      reactions: { like: 0, heart: 0, celebrate: 0 },
-      createdBy: "ALP Coordinator",
-      views: 0
-    }
-  ];
+  const DEFAULT_STORIES = [];
 
   // Persistent Story Deletion Tombstones
   function getDeletedStories() {
@@ -133,16 +66,17 @@
       if (stored !== null) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed)) {
-          return parsed.filter((s) => !isStoryDeleted(s.id || s.storyId, deletedList));
+          return parsed.filter((s) => {
+            const sId = String(s.id || s.storyId || "").trim();
+            const sIdLower = sId.toLowerCase();
+            if (sIdLower === "story_blessing" || sIdLower === "story_comfort" || sIdLower === "story_emmanuel") return false;
+            return !isStoryDeleted(sId, deletedList);
+          });
         }
       }
     } catch (_) {}
 
-    const initial = DEFAULT_STORIES.filter((s) => !isStoryDeleted(s.id || s.storyId, deletedList));
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
-    } catch (_) {}
-    return initial;
+    return [];
   }
 
   function saveLocalStories(stories) {
@@ -524,11 +458,11 @@
 
     // Reset button
     document.getElementById("stories-reset-btn")?.addEventListener("click", () => {
-      if (confirm("Reset stories to default UAF field stories baseline?")) {
-        saveLocalStories(DEFAULT_STORIES);
-        cachedStories = getLocalStories();
+      if (confirm("Clear all field stories?")) {
+        saveLocalStories([]);
+        cachedStories = [];
         renderStoriesTable(session);
-        flash("Stories reset to default baseline.", "success");
+        flash("Stories cleared successfully.", "success");
       }
     });
 
@@ -665,7 +599,8 @@
         content: narrative,
         imageUrl: image,
         amountRaised: raised,
-        fundingGoal: goal
+        fundingGoal: goal,
+        status: status
       }).catch(() => {});
     }
 
@@ -678,31 +613,45 @@
     try {
       let remoteStories = null;
       try {
-        const res = await fetch(`${API_URL}?route=stories`);
+        const res = await fetch(`${API_URL}?route=publicStories`);
         const json = await res.json();
-        if (json && json.ok && Array.isArray(json.stories) && json.stories.length > 0) {
+        if (json && json.ok && Array.isArray(json.stories)) {
           remoteStories = json.stories;
-        } else if (Array.isArray(json) && json.length > 0) {
+        } else if (Array.isArray(json)) {
           remoteStories = json;
         }
       } catch (_) {}
 
       if (!remoteStories) {
         try {
+          const res = await fetch(`${API_URL}?route=stories`);
+          const json = await res.json();
+          if (json && json.ok && Array.isArray(json.stories)) {
+            remoteStories = json.stories;
+          } else if (Array.isArray(json)) {
+            remoteStories = json;
+          }
+        } catch (_) {}
+      }
+
+      if (!remoteStories) {
+        try {
           const res = await callApi("listStories", { token: session?.token });
-          if (res && res.ok && Array.isArray(res.stories) && res.stories.length > 0) {
+          if (res && res.ok && Array.isArray(res.stories)) {
             remoteStories = res.stories;
           }
         } catch (_) {}
       }
 
-      if (Array.isArray(remoteStories) && remoteStories.length > 0) {
+      if (Array.isArray(remoteStories)) {
         const deletedList = getDeletedStories();
         const current = getLocalStories();
         const mergedMap = new Map();
         current.forEach((s) => mergedMap.set(String(s.id || s.storyId), s));
         remoteStories.forEach((s) => {
           const key = String(s.id || s.storyId);
+          const keyLower = key.toLowerCase();
+          if (keyLower === "story_blessing" || keyLower === "story_comfort" || keyLower === "story_emmanuel") return;
           if (!isStoryDeleted(key, deletedList)) {
             if (!mergedMap.has(key)) {
               mergedMap.set(key, s);

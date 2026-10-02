@@ -9,7 +9,7 @@
      CACHE BUSTING & INSTANT UPDATE PURGE
      Purges old caches on installed devices to ensure immediate updates
   --------------------------------------------------------- */
-  const CURRENT_BUILD_VER = "2026-10-01-uaf-campaign-drive-v28";
+  const CURRENT_BUILD_VER = "2026-10-02-uaf-campaign-drive-v29";
   try {
     const savedBuild = localStorage.getItem("uaf_app_build_version");
     if (savedBuild !== CURRENT_BUILD_VER) {
@@ -106,9 +106,14 @@
     // Toggle non-scrollable home screen mode
     document.body.classList.toggle("is-home-screen", route === "menu");
 
-    // Dynamic story refresh on navigating to donate screen
-    if (route === "donate" && typeof window.__uafRenderFundraisingStories === "function") {
-      window.__uafRenderFundraisingStories();
+    // Dynamic story refresh and cloud sync on navigating to donate screen
+    if (route === "donate") {
+      if (typeof window.__uafRenderFundraisingStories === "function") {
+        window.__uafRenderFundraisingStories();
+      }
+      if (typeof window.__uafSyncRemoteStories === "function") {
+        window.__uafSyncRemoteStories();
+      }
     }
 
     // Scroll to top on route change

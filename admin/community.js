@@ -1540,28 +1540,7 @@
     if (!items.length) {
       try {
         const stored = localStorage.getItem("uaf_school_partnerships");
-        items = stored ? JSON.parse(stored) : [
-          {
-            id: "sp_1",
-            schoolName: "St. Mary Community Public School",
-            location: "Montserrado",
-            county: "Montserrado",
-            community: "West Point",
-            repName: "Principal Joseph Harmon",
-            partnershipDate: "2025-09-01",
-            telephone: "0770112233"
-          },
-          {
-            id: "sp_2",
-            schoolName: "Duport Road Alliance Academy",
-            location: "Montserrado",
-            county: "Montserrado",
-            community: "Duport Road",
-            repName: "Rev. Matthew Kpoto",
-            partnershipDate: "2025-10-15",
-            telephone: "0886445566"
-          }
-        ];
+        items = stored ? JSON.parse(stored) : [];
       } catch (_) {}
     }
 
@@ -1771,12 +1750,11 @@
       } catch (_) {}
     }
 
-    // Default to the 27 authentic Liberian Women across verified communities if empty or unseeded
-    if (!items.length || (items.length < 27 && !localStorage.getItem("uaf_empowerment_customized"))) {
-      if (window.DEFAULT_EMPOWERMENT_RECORDS && window.DEFAULT_EMPOWERMENT_RECORDS.length) {
-        items = JSON.parse(JSON.stringify(window.DEFAULT_EMPOWERMENT_RECORDS));
-      }
-    }
+    // Clean out any legacy mock empowerment records
+    items = items.filter(e => {
+      const eId = String(e.id || "");
+      return !eId.startsWith("emp_") || (e.id && Number(e.id.replace("emp_", "")) > 100);
+    });
 
     const delList = getDeletedEmpowerment();
     items = items.filter(e => !isEmpowermentDeleted(e, delList));
