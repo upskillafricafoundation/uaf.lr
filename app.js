@@ -9,7 +9,7 @@
      CACHE BUSTING & INSTANT UPDATE PURGE
      Purges old caches on installed devices to ensure immediate updates
   --------------------------------------------------------- */
-  const CURRENT_BUILD_VER = "2026-10-02-uaf-campaign-drive-v29";
+  const CURRENT_BUILD_VER = "2026-10-02-uaf-campaign-drive-v30";
   try {
     const savedBuild = localStorage.getItem("uaf_app_build_version");
     if (savedBuild !== CURRENT_BUILD_VER) {
@@ -648,7 +648,8 @@
 
       // Story image
       if (imgEl && imgWrap) {
-        if (story.imageUrl) {
+        if (story.imageUrl && String(story.imageUrl).trim()) {
+          imgEl.style.display = "block";
           imgEl.src = story.imageUrl;
           imgWrap.style.display = "block";
         } else {
@@ -673,10 +674,33 @@
         }
       }
 
-      if (quoteEl) quoteEl.textContent = story.testimonial || "";
-      if (authorEl) authorEl.textContent = `— ${story.speaker || "Beneficiary Story"}`;
-      if (actEl) actEl.textContent = story.activities || "Field verification, tuition sponsorship, and learning kits distribution.";
-      if (narEl) narEl.textContent = story.narrative || story.summary || "";
+      // Quote & Testimonial (conditionally rendered only if provided)
+      const quoteWrap = quoteEl ? quoteEl.closest(".story-modal-quote-wrap") : null;
+      if (quoteWrap) {
+        if (story.testimonial && story.testimonial.trim()) {
+          quoteWrap.style.display = "block";
+          if (quoteEl) quoteEl.textContent = story.testimonial;
+          if (authorEl) authorEl.textContent = `— ${story.speaker || "Beneficiary Story"}`;
+        } else {
+          quoteWrap.style.display = "none";
+        }
+      }
+
+      // Field activities & Intervention (conditionally rendered only if provided)
+      const actSection = actEl ? actEl.closest(".story-modal-section") : null;
+      if (actSection) {
+        if (story.activities && story.activities.trim()) {
+          actSection.style.display = "block";
+          if (actEl) actEl.textContent = story.activities;
+        } else {
+          actSection.style.display = "none";
+        }
+      }
+
+      // Full narrative: display complete unconstrained article
+      if (narEl) {
+        narEl.textContent = story.narrative || story.content || story.summary || "";
+      }
 
       // Render reactions bar (Like, Heart, Celebrate)
       const reactionsBar = document.getElementById("story-modal-reactions-bar");

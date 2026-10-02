@@ -1094,14 +1094,57 @@
         try {
           deletedList = JSON.parse(localStorage.getItem("uaf_deleted_stories") || "[]");
         } catch (_) {}
-        const filtered = remoteStories.filter((s) => {
-          const sId = String(s.id || s.storyId || "").trim();
-          const sIdLower = sId.toLowerCase();
-          if (sIdLower === "story_blessing" || sIdLower === "story_comfort" || sIdLower === "story_emmanuel") return false;
-          return !deletedList.includes(sId);
-        });
+
+        let localStories = [];
         try {
-          localStorage.setItem("uaf_stories", JSON.stringify(filtered));
+          localStories = JSON.parse(localStorage.getItem("uaf_stories") || "[]");
+        } catch (_) {}
+
+        const mergedMap = new Map();
+        localStories.forEach((s) => {
+          const key = String(s.id || s.storyId || "").trim();
+          if (key && !deletedList.includes(key)) mergedMap.set(key, s);
+        });
+
+        remoteStories.forEach((s) => {
+          const key = String(s.id || s.storyId || "").trim();
+          const keyLower = key.toLowerCase();
+          if (keyLower === "story_blessing" || keyLower === "story_comfort" || keyLower === "story_emmanuel") return;
+          if (!key || deletedList.includes(key)) return;
+
+          if (!mergedMap.has(key)) {
+            mergedMap.set(key, s);
+          } else {
+            const existing = mergedMap.get(key);
+            // Intelligently preserve image: If local has custom image and remote has logo fallback, keep local image!
+            const existingImg = existing.imageUrl || "";
+            const remoteImg = s.imageUrl || "";
+            let finalImg = existingImg;
+            if (remoteImg.includes("googleusercontent.com") || remoteImg.includes("drive.google.com") || (remoteImg && !remoteImg.includes("uaf-logo.png"))) {
+              finalImg = remoteImg;
+            } else if (!existingImg || existingImg.includes("uaf-logo.png")) {
+              finalImg = remoteImg || "assets/uaf-logo.png";
+            }
+
+            // Intelligently preserve narrative: keep whichever is longer so words are never truncated
+            const finalNar = (s.narrative && s.narrative.length > (existing.narrative || "").length) ? s.narrative : (existing.narrative || s.narrative || "");
+
+            mergedMap.set(key, {
+              ...existing,
+              ...s,
+              imageUrl: finalImg,
+              narrative: finalNar,
+              content: finalNar,
+              speaker: s.speaker || existing.speaker || "",
+              testimonial: s.testimonial || existing.testimonial || "",
+              activities: s.activities || existing.activities || ""
+            });
+          }
+        });
+
+        const merged = Array.from(mergedMap.values());
+        try {
+          localStorage.setItem("uaf_stories", JSON.stringify(merged));
         } catch (_) {}
         renderFundraisingStories();
         window.dispatchEvent(new Event("uaf_stories_updated"));

@@ -360,16 +360,44 @@
       });
     });
 
-    // File input -> base64
+    function compressImageFile(file, maxWidth, maxHeight, quality, callback) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          if (width > maxWidth || height > maxHeight) {
+            if (width / height > maxWidth / maxHeight) {
+              height = Math.round((height * maxWidth) / width);
+              width = maxWidth;
+            } else {
+              width = Math.round((width * maxHeight) / height);
+              height = maxHeight;
+            }
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          const compressedDataUrl = canvas.toDataURL("image/jpeg", quality || 0.85);
+          callback(compressedDataUrl);
+        };
+        img.onerror = () => callback(e.target.result);
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // File input -> compressed base64 JPEG
     imgFile?.addEventListener("change", () => {
       if (imgFile.files && imgFile.files[0]) {
         const file = imgFile.files[0];
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          updateStoryImage(e.target.result);
+        compressImageFile(file, 1200, 900, 0.85, (compressed) => {
+          updateStoryImage(compressed);
           if (imgUrl) imgUrl.value = "";
-        };
-        reader.readAsDataURL(file);
+        });
       }
     });
 
@@ -587,20 +615,41 @@
       closeModal();
       renderStoriesTable(session);
 
+      const targetStoryId = editingStoryId || newStory?.id;
+      const targetShareCode = (editingStoryId ? stories.find(s => (s.id || s.storyId) === editingStoryId)?.shareCode : newStory?.shareCode) || Math.random().toString(36).substring(2, 8);
+
       // Background API attempt
       callApi("createStory", {
         token: session?.token,
         title,
         category,
+        tag,
         county,
         community,
         storyDate,
         summary,
         content: narrative,
+        narrative: narrative,
+        speaker,
+        testimonial: quote,
+        quote,
+        activities,
         imageUrl: image,
         amountRaised: raised,
         fundingGoal: goal,
-        status: status
+        status: status,
+        shareCode: targetShareCode
+      }).then((res) => {
+        if (res && res.ok && res.imageUrl && res.imageUrl !== image) {
+          const list = getLocalStories();
+          const target = list.find((s) => (s.id || s.storyId) === targetStoryId);
+          if (target) {
+            target.imageUrl = res.imageUrl;
+            saveLocalStories(list);
+            cachedStories = list;
+            renderStoriesTable(session);
+          }
+        }
       }).catch(() => {});
     }
 
@@ -655,6 +704,31 @@
           if (!isStoryDeleted(key, deletedList)) {
             if (!mergedMap.has(key)) {
               mergedMap.set(key, s);
+            } else {
+              const existing = mergedMap.get(key);
+              // Intelligently preserve image: If local has custom image and remote has logo fallback, keep local image!
+              const existingImg = existing.imageUrl || "";
+              const remoteImg = s.imageUrl || "";
+              let finalImg = existingImg;
+              if (remoteImg.includes("googleusercontent.com") || remoteImg.includes("drive.google.com") || (remoteImg && !remoteImg.includes("uaf-logo.png"))) {
+                finalImg = remoteImg;
+              } else if (!existingImg || existingImg.includes("uaf-logo.png")) {
+                finalImg = remoteImg || "assets/uaf-logo.png";
+              }
+
+              // Intelligently preserve narrative: keep whichever is longer so words are never truncated
+              const finalNar = (s.narrative && s.narrative.length > (existing.narrative || "").length) ? s.narrative : (existing.narrative || s.narrative || "");
+
+              mergedMap.set(key, {
+                ...existing,
+                ...s,
+                imageUrl: finalImg,
+                narrative: finalNar,
+                content: finalNar,
+                speaker: s.speaker || existing.speaker || "",
+                testimonial: s.testimonial || existing.testimonial || "",
+                activities: s.activities || existing.activities || ""
+              });
             }
           }
         });
