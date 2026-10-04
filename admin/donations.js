@@ -1,622 +1,331 @@
 /* =========================================================
-   UAF IMPACT — ADMIN: DONATIONS & FUNDING MODULE (Phase 8)
-   ---------------------------------------------------------
-   Registers itself with admin.js's module registry and renders
-   into #admin-module-panel when "Donations" is clicked.
-   Reads window.__uafAdminSession to authenticate requests.
-
-   Enforces Phase 8 requirements:
-   - Verified total calculation
-   - Pending donations queue
-   - Action buttons for Verify / Reject with reviewer notes
-   - CSV Export for Accountant / Admin
-   - Role-based permissions mirror (server enforces authoritatively)
+   UAF CAMPAIGN DRIVE — ADMIN DONATIONS REVIEW (v31)
+   =========================================================
+   Covers:
+   - Filterable donations review table (Status, Story, Search)
+   - Detail view & receipt copy modal
+   - Actions: Verify / Approve and Reject (with reason)
+   - One-Click CSV Download & individual receipt exporter
    ========================================================= */
+
 (() => {
   "use strict";
 
-  const API_URL = (window.UAF_CONFIG && window.UAF_CONFIG.API_URL) || "";
-
-  // Mirrors Config.gs ROLE_PERMISSIONS - All admin roles have view and export
-  const ROLE_CAN = {
-    VIEW_DONATIONS: ["ADMIN", "ADMINISTRATOR", "COORDINATOR", "SUPER_ADMIN", "ACCOUNTANT", "PROGRAM_MANAGER", "EXECUTIVE_STAFF"],
-    VERIFY_DONATION: ["ADMIN", "ADMINISTRATOR", "COORDINATOR", "SUPER_ADMIN", "ACCOUNTANT", "EXECUTIVE_STAFF"],
-    EXPORT_DONATIONS: ["ADMIN", "ADMINISTRATOR", "COORDINATOR", "SUPER_ADMIN", "ACCOUNTANT", "PROGRAM_MANAGER", "EXECUTIVE_STAFF"]
-  };
-
-  function can(permission, role) {
-    if (!role) return true;
-    const r = String(role).toUpperCase().trim().replace(/[\s-]+/g, "_");
-    if (r === "SUPER_ADMIN" || r === "ADMIN" || r === "SUPERADMIN") return true;
-    return (ROLE_CAN[permission] || []).some((p) => p.toUpperCase().replace(/[\s-]+/g, "_") === r);
-  }
-
-  async function callApi(action, payload) {
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(Object.assign({ action }, payload))
-    });
-    return res.json();
-  }
-
-  function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str == null ? "" : String(str);
-    return div.innerHTML;
-  }
-
-  function formatCurrency(num) {
-    const val = Number(num) || 0;
-    return "$" + val.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
-  function formatDate(isoStr) {
-    if (!isoStr) return "—";
-    try {
-      const d = new Date(isoStr);
-      if (isNaN(d.getTime())) return isoStr;
-      return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
-    } catch (e) {
-      return isoStr;
-    }
-  }
-
-  // Persistent Donation Deletion Tombstones
-  function getDeletedDonations() {
-    try {
-      return JSON.parse(localStorage.getItem("uaf_deleted_donations") || "[]");
-    } catch (_) {
-      return [];
-    }
-  }
-
-  function addDeletedDonation(txId) {
-    if (!txId) return;
-    const list = getDeletedDonations();
-    const idStr = String(txId).trim();
-    if (!list.includes(idStr)) {
-      list.push(idStr);
-      try {
-        localStorage.setItem("uaf_deleted_donations", JSON.stringify(list));
-      } catch (_) {}
-    }
-  }
-
-  function isDonationDeleted(item, deletedList) {
-    if (!item) return true;
-    const list = deletedList || getDeletedDonations();
-    const tx = String(item.transactionId || item.id || "").trim();
-    const ref = String(item.reference || item.ref || "").trim();
-    return list.some((id) => id === tx || (ref && id === ref));
-  }
-
-  let cachedDonations = [];
-  let currentFilter = "ALL";
-  let searchQuery = "";
+  let donationsList = [];
 
   function renderDonationsModule(container, session) {
-    if (!can("VIEW_DONATIONS", session.role)) {
-      container.innerHTML = `
-        <div class="admin-card">
-          <h2>Access Restricted</h2>
-          <p class="admin-muted">Your role (${escapeHtml(session.role)}) does not have permission to view donation records.</p>
-        </div>
-      `;
-      return;
-    }
-
     container.innerHTML = `
-      <div class="admin-module-header">
-        <div>
-          <h2>Donations &amp; Funding Management</h2>
-          <p class="admin-muted" style="margin-top:4px;">Review incoming donations, verify transactions, and track campaign funding.</p>
+      <div class="admin-card">
+        <div class="dash-welcome-row" style="margin-bottom:18px;">
+          <div>
+            <h2>Donations Review &amp; Verification</h2>
+            <p class="admin-muted">Review incoming mobile money transfers and bank donations. Approving immediately updates that story's progress.</p>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button type="button" class="btn btn--outline" id="btn-download-donations-csv">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Download CSV (1-Click)</span>
+            </button>
+            <button type="button" class="btn btn--primary" id="btn-refresh-donations">
+              <span>Refresh List</span>
+            </button>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;">
-          <button id="donations-refresh-btn" class="btn btn--primary">Refresh</button>
+
+        <!-- Filter Bar -->
+        <div class="admin-filter-bar">
+          <input type="text" id="donations-search-input" class="admin-search-input" placeholder="Search by donor name, phone, or Transaction ID..." />
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+            <label style="font-size:12px;font-weight:700;color:var(--ink-600);">Status:</label>
+            <select id="donations-status-filter" class="input-select" style="min-width:130px;">
+              <option value="ALL">All Statuses</option>
+              <option value="PENDING" selected>Pending Review</option>
+              <option value="VERIFIED">Verified / Approved</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Donations Table -->
+        <div class="table-scroll-wrap" style="margin-top:14px;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Transaction ID</th>
+                <th>Donor Details</th>
+                <th>Amount</th>
+                <th>Dedicated Story</th>
+                <th>Payment Ref</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="donations-table-body">
+              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ink-400);">Loading donations...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <!-- Download / Export Filter Bar -->
-      <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;">
-        <div style="flex:1;min-width:130px;">
-          <label style="display:block;font-size:11.5px;font-weight:600;color:var(--ink-600);margin-bottom:4px;">Year</label>
-          <select id="export-don-year" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;">
-            <option value="ALL">All Years</option>
-            <option value="2023">2023</option>
-            <option value="2024">2024</option>
-            <option value="2025">2025</option>
-            <option value="2026">2026</option>
-            <option value="2027">2027</option>
-            <option value="2028">2028</option>
-          </select>
-        </div>
-        <div style="flex:1;min-width:130px;">
-          <label style="display:block;font-size:11.5px;font-weight:600;color:var(--ink-600);margin-bottom:4px;">Month</label>
-          <select id="export-don-month" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;">
-            <option value="ALL">All Months</option>
-            <option value="1">January</option>
-            <option value="2">February</option>
-            <option value="3">March</option>
-            <option value="4">April</option>
-            <option value="5">May</option>
-            <option value="6">June</option>
-            <option value="7">July</option>
-            <option value="8">August</option>
-            <option value="9">September</option>
-            <option value="10">October</option>
-            <option value="11">November</option>
-            <option value="12">December</option>
-          </select>
-        </div>
-        <div style="flex:1;min-width:150px;">
-          <label style="display:block;font-size:11.5px;font-weight:600;color:var(--ink-600);margin-bottom:4px;">Location</label>
-          <select id="export-don-location" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;">
-            <option value="ALL">All Locations</option>
-            <option value="Montserrado">Montserrado</option>
-            <option value="Margibi">Margibi</option>
-            <option value="Bong">Bong</option>
-            <option value="Nimba">Nimba</option>
-            <option value="Grand Bassa">Grand Bassa</option>
-            <option value="Liberia">Liberia (General)</option>
-          </select>
-        </div>
-        <div>
-          <button id="donations-export-btn" class="btn btn--outline" style="font-size:12px;padding:6px 12px;display:flex;align-items:center;gap:6px;background:#f8fafc;">
-            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            <span>Download CSV</span>
-          </button>
-        </div>
-      </div>
-
-      <div id="donations-flash"></div>
-
-      <!-- Stat Cards -->
-      <div class="admin-stats-grid">
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__label">Verified Total</div>
-          <div class="admin-stat-card__value" id="stat-verified-total">$0.00</div>
-        </div>
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__label">Pending Review</div>
-          <div class="admin-stat-card__value" id="stat-pending-count" style="color:var(--amber-600);">0</div>
-        </div>
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__label">Pending Amount</div>
-          <div class="admin-stat-card__value" id="stat-pending-amount" style="color:var(--amber-600);">$0.00</div>
-        </div>
-        <div class="admin-stat-card">
-          <div class="admin-stat-card__label">Total Transactions</div>
-          <div class="admin-stat-card__value" id="stat-total-count">0</div>
-        </div>
-      </div>
-
-      <!-- Controls: Filter & Search -->
-      <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-        <div class="admin-filter-bar" style="margin-bottom:0;">
-          <button class="admin-filter-btn is-active" data-filter="ALL">All (<span id="count-all">0</span>)</button>
-          <button class="admin-filter-btn" data-filter="PENDING">Pending (<span id="count-pending">0</span>)</button>
-          <button class="admin-filter-btn" data-filter="VERIFIED">Verified (<span id="count-verified">0</span>)</button>
-          <button class="admin-filter-btn" data-filter="REJECTED">Rejected (<span id="count-rejected">0</span>)</button>
-        </div>
-        <div style="min-width:240px;max-width:320px;flex:1;">
-          <input type="text" id="donations-search" placeholder="Search by name, phone, ref ID…" style="padding:7px 12px;font-size:13px;width:100%;border:1px solid var(--border);border-radius:var(--radius-sm);" />
-        </div>
-      </div>
-
-      <!-- Table Container -->
-      <div class="admin-table-wrap">
-        <div id="donations-table-container">
-          <p class="admin-muted" style="padding:24px;text-align:center;">Loading donations…</p>
+      <!-- Donation Detail / Review Modal -->
+      <div class="story-modal-backdrop is-hidden" id="donation-detail-modal" style="display:none;">
+        <div class="story-modal-card" style="max-width:540px;">
+          <div class="story-modal-header">
+            <h3 style="margin:0;font-size:17px;font-weight:800;">Review Donation Intent</h3>
+            <button type="button" class="story-modal-close" id="btn-close-don-modal">&times;</button>
+          </div>
+          <div class="story-modal-body" id="don-modal-content">
+            <!-- Populated dynamically -->
+          </div>
         </div>
       </div>
     `;
 
-    // Event listeners
-    document.getElementById("donations-refresh-btn").addEventListener("click", () => loadDonations(session));
+    loadDonationsData();
 
-    const exportBtn = document.getElementById("donations-export-btn");
-    if (exportBtn) {
-      exportBtn.addEventListener("click", exportCsv);
-    }
+    document.getElementById("btn-refresh-donations")?.addEventListener("click", loadDonationsData);
+    document.getElementById("donations-search-input")?.addEventListener("input", renderDonationsTable);
+    document.getElementById("donations-status-filter")?.addEventListener("change", renderDonationsTable);
+    document.getElementById("btn-close-don-modal")?.addEventListener("click", closeDonationModal);
 
-    const filterBtns = container.querySelectorAll(".admin-filter-btn");
-    filterBtns.forEach((btn) => {
-      btn.addEventListener("click", () => {
-        filterBtns.forEach((b) => b.classList.remove("is-active"));
-        btn.classList.add("is-active");
-        currentFilter = btn.dataset.filter;
-        renderFilteredTable(session);
-      });
+    // Download CSV
+    document.getElementById("btn-download-donations-csv")?.addEventListener("click", () => {
+      const filtered = getFilteredDonations();
+      window.__uafDownloadCsv(
+        `UAF_Donations_${new Date().toISOString().slice(0, 10)}.csv`,
+        ["transactionId", "storyId", "name", "phone", "email", "amount", "currency", "paymentReference", "verificationStatus", "message", "notes", "createdAt", "verifiedAt", "verifiedBy"],
+        filtered
+      );
     });
-
-    const searchInput = document.getElementById("donations-search");
-    searchInput.addEventListener("input", (e) => {
-      searchQuery = e.target.value.toLowerCase().trim();
-      renderFilteredTable(session);
-    });
-
-    loadDonations(session);
   }
 
-  function flash(message, kind) {
-    const el = document.getElementById("donations-flash");
-    if (!el) return;
-    el.innerHTML = `<div class="admin-error" style="${kind === "success" ? "background:var(--green-050);color:var(--green-700);" : ""}">${escapeHtml(message)}</div>`;
-    setTimeout(() => { if (el) el.innerHTML = ""; }, 5000);
-  }
+  async function loadDonationsData() {
+    const session = window.__uafAdminSession;
+    if (!session || !session.token) return;
 
-  async function loadDonations(session) {
-    const tableContainer = document.getElementById("donations-table-container");
-    if (!tableContainer) return;
-    tableContainer.innerHTML = '<p class="admin-muted" style="padding:24px;text-align:center;">Loading donations…</p>';
-
-    let items = [];
     try {
-      const result = await callApi("listDonations", { token: session.token });
-      if (result && result.ok) {
-        items = result.donations || result.items || [];
-      } else {
-        const stored = localStorage.getItem("uaf_admin_donations");
-        items = stored ? JSON.parse(stored) : [];
+      const res = await window.__uafAdminCallApi("listDonations", { token: session.token, status: "ALL" });
+      if (res.ok && Array.isArray(res.donations)) {
+        donationsList = res.donations;
+        renderDonationsTable();
       }
     } catch (err) {
-      const stored = localStorage.getItem("uaf_admin_donations");
-      items = stored ? JSON.parse(stored) : [];
+      console.warn("Notice loading donations:", err);
     }
-
-    const deletedList = getDeletedDonations();
-    items = items.filter((d) => !isDonationDeleted(d, deletedList));
-
-    cachedDonations = items;
-    try {
-      localStorage.setItem("uaf_admin_donations", JSON.stringify(cachedDonations));
-    } catch (_) {}
-    updateStats(cachedDonations);
-    renderFilteredTable(session);
   }
 
-  function updateStats(items) {
-    let verifiedTotal = 0;
-    let pendingCount = 0;
-    let pendingAmount = 0;
-    let verifiedCount = 0;
-    let rejectedCount = 0;
+  function getFilteredDonations() {
+    const search = (document.getElementById("donations-search-input")?.value || "").toLowerCase().trim();
+    const status = (document.getElementById("donations-status-filter")?.value || "ALL").toUpperCase();
 
-    items.forEach((item) => {
-      const amt = Number(item.amount) || 0;
-      const st = String(item.status || "").toUpperCase();
-      if (st === "VERIFIED") {
-        verifiedTotal += amt;
-        verifiedCount++;
-      } else if (st === "PENDING") {
-        pendingCount++;
-        pendingAmount += amt;
-      } else if (st === "REJECTED") {
-        rejectedCount++;
+    return donationsList.filter((d) => {
+      const vStatus = String(d.verificationStatus || d.status || "PENDING").toUpperCase();
+      if (status !== "ALL" && vStatus !== status) return false;
+      if (search) {
+        const text = `${d.transactionId} ${d.name} ${d.phone} ${d.email} ${d.storyId} ${d.paymentReference}`.toLowerCase();
+        if (!text.includes(search)) return false;
       }
+      return true;
     });
-
-    const statVerifiedTotal = document.getElementById("stat-verified-total");
-    const statPendingCount = document.getElementById("stat-pending-count");
-    const statPendingAmount = document.getElementById("stat-pending-amount");
-    const statTotalCount = document.getElementById("stat-total-count");
-
-    if (statVerifiedTotal) statVerifiedTotal.textContent = formatCurrency(verifiedTotal);
-    if (statPendingCount) statPendingCount.textContent = pendingCount;
-    if (statPendingAmount) statPendingAmount.textContent = formatCurrency(pendingAmount);
-    if (statTotalCount) statTotalCount.textContent = items.length;
-
-    const cAll = document.getElementById("count-all");
-    const cPending = document.getElementById("count-pending");
-    const cVerified = document.getElementById("count-verified");
-    const cRejected = document.getElementById("count-rejected");
-
-    if (cAll) cAll.textContent = items.length;
-    if (cPending) cPending.textContent = pendingCount;
-    if (cVerified) cVerified.textContent = verifiedCount;
-    if (cRejected) cRejected.textContent = rejectedCount;
   }
 
-  function renderFilteredTable(session) {
-    const tableContainer = document.getElementById("donations-table-container");
-    if (!tableContainer) return;
+  function renderDonationsTable() {
+    const tbody = document.getElementById("donations-table-body");
+    if (!tbody) return;
 
-    let filtered = cachedDonations.slice();
-
-    if (currentFilter !== "ALL") {
-      filtered = filtered.filter((d) => String(d.status || "").toUpperCase() === currentFilter);
-    }
-
-    if (searchQuery) {
-      filtered = filtered.filter((d) => {
-        const text = [
-          d.transactionId,
-          d.externalId,
-          d.name,
-          d.phone,
-          d.senderNumber,
-          d.email,
-          d.mtnReference,
-          d.paymentMethod,
-          d.notes
-        ].filter(Boolean).join(" ").toLowerCase();
-        return text.indexOf(searchQuery) !== -1;
-      });
-    }
-
+    const filtered = getFilteredDonations();
     if (filtered.length === 0) {
-      tableContainer.innerHTML = '<p class="admin-muted" style="padding:28px;text-align:center;">No matching donations found.</p>';
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ink-400);">No donations matching filters.</td></tr>`;
       return;
     }
 
-    const rowsHtml = filtered.map((item) => {
-      const st = String(item.status || "PENDING").toUpperCase();
-      let badgeClass = "admin-badge--pending";
-      if (st === "VERIFIED") badgeClass = "admin-badge--verified";
-      if (st === "REJECTED") badgeClass = "admin-badge--rejected";
-
-      const donorDisplay = item.anonymous ? `${escapeHtml(item.name || "Anonymous")} <span style="font-size:10.5px;color:var(--ink-400);">(Anon)</span>` : escapeHtml(item.name || "Anonymous");
-      const contactInfo = [item.phone, item.email].filter(Boolean).map(escapeHtml).join("<br/>") || "—";
-      const methodDisplay = formatMethod(item.paymentMethod, item.senderNumber || item.mtnReference);
-
-      let actionHtml = "";
-      if (st === "PENDING" && can("VERIFY_DONATION", session.role)) {
-        actionHtml = `
-          <div style="display:flex;gap:6px;">
-            <button class="btn--verify" data-action="verify" data-id="${escapeHtml(item.transactionId)}">Verify</button>
-            <button class="btn--reject" data-action="reject" data-id="${escapeHtml(item.transactionId)}">Reject</button>
-          </div>
-        `;
-      } else if (st === "VERIFIED") {
-        actionHtml = `<span class="admin-muted" style="font-size:11px;">By ${escapeHtml(item.verifiedBy || "Admin")}<br/>${formatDate(item.verifiedAt)}</span>`;
-      } else if (st === "REJECTED") {
-        actionHtml = `<span class="admin-muted" style="font-size:11px;color:var(--red-600);">${escapeHtml(item.notes || "Rejected")}</span>`;
-      } else {
-        actionHtml = `<span class="admin-muted">—</span>`;
-      }
-
-      actionHtml += `
-        <div style="margin-top:4px;">
-          <button class="btn btn--outline" style="font-size:11px;padding:2px 7px;color:var(--red-700);" data-action="delete" data-id="${escapeHtml(item.transactionId)}">Delete</button>
-        </div>
-      `;
+    tbody.innerHTML = filtered.map((d) => {
+      const vStatus = String(d.verificationStatus || d.status || "PENDING").toUpperCase();
+      const statusClass = vStatus === "VERIFIED" ? "published" : (vStatus === "REJECTED" ? "closed" : "draft");
 
       return `
         <tr>
           <td>
-            <div style="font-weight:600;">${formatDate(item.createdAt)}</div>
-            <div style="font-size:11px;color:var(--ink-400);">${escapeHtml(item.transactionId || "—")}</div>
+            <strong>${window.__uafEscapeHtml(d.transactionId)}</strong>
+            <div style="font-size:11px;color:var(--ink-400);">${window.__uafEscapeHtml(d.createdAt ? d.createdAt.slice(0, 10) : "")}</div>
           </td>
           <td>
-            <div>${donorDisplay}</div>
-            <div style="font-size:11.5px;color:var(--ink-500);">${contactInfo}</div>
+            <strong>${window.__uafEscapeHtml(d.name || "Anonymous")}</strong>
+            <div style="font-size:12px;color:var(--ink-500);">${window.__uafEscapeHtml(d.phone || "")}</div>
           </td>
           <td>
-            <strong style="color:var(--ink-900);font-size:14px;">${formatCurrency(item.amount)}</strong>
-            <div style="font-size:10.5px;color:var(--ink-400);">${escapeHtml(item.currency || "USD")}</div>
+            <strong style="color:#0284c7;font-size:14.5px;">${d.currency === 'LRD' ? 'L$' : '$'}${Number(d.amount).toLocaleString()}</strong>
+            <div style="font-size:11px;color:var(--ink-400);">${window.__uafEscapeHtml(d.currency)}</div>
           </td>
           <td>
-            <div>${methodDisplay}</div>
+            <span style="font-size:12.5px;font-weight:600;">${window.__uafEscapeHtml(d.storyId || "General Support")}</span>
           </td>
           <td>
-            <span class="admin-badge ${badgeClass}">${escapeHtml(st)}</span>
+            <code style="font-size:11.5px;background:var(--ink-100);padding:2px 6px;border-radius:4px;">${window.__uafEscapeHtml(d.paymentReference || "None")}</code>
           </td>
           <td>
-            ${actionHtml}
+            <span class="status-badge status-badge--${statusClass}">${vStatus}</span>
+          </td>
+          <td>
+            <div style="display:flex;gap:6px;">
+              <button type="button" class="btn btn--outline btn-sm btn-inspect-don" data-id="${d.transactionId}">Review</button>
+              <button type="button" class="btn btn--outline btn-sm btn-receipt-don" data-id="${d.transactionId}" title="Download receipt">Receipt</button>
+            </div>
           </td>
         </tr>
       `;
     }).join("");
 
-    tableContainer.innerHTML = `
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Date / ID</th>
-            <th>Donor / Contact</th>
-            <th>Amount</th>
-            <th>Method</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rowsHtml}
-        </tbody>
-      </table>
+    tbody.querySelectorAll(".btn-inspect-don").forEach((btn) => {
+      btn.addEventListener("click", () => openDonationDetail(btn.dataset.id));
+    });
+
+    tbody.querySelectorAll(".btn-receipt-don").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const item = donationsList.find((x) => x.transactionId === btn.dataset.id);
+        if (item) {
+          window.__uafDownloadRecordReceipt(`Donation_Receipt_${item.transactionId}.txt`, `Donation #${item.transactionId}`, item);
+        }
+      });
+    });
+  }
+
+  function openDonationDetail(transactionId) {
+    const item = donationsList.find((x) => x.transactionId === transactionId);
+    if (!item) return;
+
+    const modal = document.getElementById("donation-detail-modal");
+    const content = document.getElementById("don-modal-content");
+    if (!modal || !content) return;
+
+    const vStatus = String(item.verificationStatus || item.status || "PENDING").toUpperCase();
+
+    content.innerHTML = `
+      <div style="background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:16px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <span style="font-size:12px;font-weight:700;color:var(--ink-500);">REFERENCE ID</span>
+          <span class="status-badge status-badge--${vStatus === 'VERIFIED' ? 'published' : (vStatus === 'REJECTED' ? 'closed' : 'draft')}">${vStatus}</span>
+        </div>
+        <div style="font-family:monospace;font-size:18px;font-weight:800;color:var(--navy-900);">${window.__uafEscapeHtml(item.transactionId)}</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;font-size:13px;">
+        <div>
+          <span style="font-size:11px;color:var(--ink-500);display:block;">Donor Name</span>
+          <strong>${window.__uafEscapeHtml(item.name || "Anonymous")}</strong>
+        </div>
+        <div>
+          <span style="font-size:11px;color:var(--ink-500);display:block;">Phone Number</span>
+          <strong>${window.__uafEscapeHtml(item.phone || "Not specified")}</strong>
+        </div>
+        <div>
+          <span style="font-size:11px;color:var(--ink-500);display:block;">Donation Amount</span>
+          <strong style="color:#0284c7;font-size:16px;">${item.currency === 'LRD' ? 'L$' : '$'}${Number(item.amount).toLocaleString()}</strong>
+        </div>
+        <div>
+          <span style="font-size:11px;color:var(--ink-500);display:block;">Payment Reference</span>
+          <strong>${window.__uafEscapeHtml(item.paymentReference || "None")}</strong>
+        </div>
+      </div>
+
+      <div style="margin-bottom:14px;font-size:13px;">
+        <span style="font-size:11px;color:var(--ink-500);display:block;">Dedicated Campaign / Story</span>
+        <strong>${window.__uafEscapeHtml(item.storyId || "General Support")}</strong>
+      </div>
+
+      ${item.message ? `
+        <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:12.5px;color:#78350f;">
+          <strong>Donor Message:</strong> "${window.__uafEscapeHtml(item.message)}"
+        </div>
+      ` : ""}
+
+      ${item.notes ? `
+        <div style="font-size:12px;color:var(--ink-600);margin-bottom:14px;">
+          <strong>Reviewer Notes / History:</strong> ${window.__uafEscapeHtml(item.notes)}
+        </div>
+      ` : ""}
+
+      ${vStatus === "PENDING" ? `
+        <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:16px;">
+          <div class="form-field">
+            <label for="review-notes-input">Verification / Rejection Notes (Optional)</label>
+            <input type="text" id="review-notes-input" placeholder="e.g. Verified via MTN MoMo statement ref 92837..." />
+          </div>
+          <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button type="button" class="btn btn--outline" id="btn-reject-action" style="color:#b91c1c;border-color:#fca5a5;">
+              Reject Donation
+            </button>
+            <button type="button" class="btn btn--primary" id="btn-verify-action" style="background:#059669;">
+              ✓ Verify &amp; Approve
+            </button>
+          </div>
+        </div>
+      ` : `
+        <div style="border-top:1px solid var(--border);padding-top:12px;font-size:12px;color:var(--ink-500);text-align:right;">
+          Verified by: <strong>${window.__uafEscapeHtml(item.verifiedBy || "Staff")}</strong> on ${window.__uafEscapeHtml(item.verifiedAt || item.createdAt || "")}
+        </div>
+      `}
     `;
 
-    // Attach verify / reject / delete listeners
-    tableContainer.querySelectorAll("button[data-action='verify']").forEach((btn) => {
-      btn.addEventListener("click", () => handleVerify(btn.dataset.id, session));
-    });
+    document.getElementById("btn-verify-action")?.addEventListener("click", () => verifyDonation(item.transactionId));
+    document.getElementById("btn-reject-action")?.addEventListener("click", () => rejectDonation(item.transactionId));
 
-    tableContainer.querySelectorAll("button[data-action='reject']").forEach((btn) => {
-      btn.addEventListener("click", () => handleReject(btn.dataset.id, session));
-    });
-
-    tableContainer.querySelectorAll("button[data-action='delete']").forEach((btn) => {
-      btn.addEventListener("click", () => handleDeleteDonation(btn.dataset.id, session));
-    });
+    modal.classList.remove("is-hidden");
+    modal.style.display = "flex";
   }
 
-  function handleDeleteDonation(txId, session) {
-    if (!confirm("Are you sure you want to permanently delete this donation record? This action cannot be undone.")) return;
-    addDeletedDonation(txId);
-    const deletedList = getDeletedDonations();
-    cachedDonations = cachedDonations.filter((d) => !isDonationDeleted(d, deletedList) && String(d.transactionId).trim() !== String(txId).trim());
-    try {
-      localStorage.setItem("uaf_admin_donations", JSON.stringify(cachedDonations));
-    } catch (_) {}
-
-    // Background server deletion if API connected
-    try {
-      callApi("deleteDonation", { token: session?.token, transactionId: txId, id: txId }).catch(() => {});
-    } catch (_) {}
-
-    flash("Donation record permanently deleted.", "success");
-    updateStats(cachedDonations);
-    renderFilteredTable(session);
-  }
-
-  function formatMethod(method, ref) {
-    let name = method || "Unknown";
-    if (method === "MTN_MOMO" || method === "manual_momo") name = "MTN MoMo";
-    else if (method === "ORANGE_MONEY") name = "Orange Money";
-    else if (method === "BANK_TRANSFER") name = "Bank Transfer";
-    else if (method === "CASH") name = "Cash";
-
-    if (ref) {
-      return `${escapeHtml(name)}<br/><span style="font-size:11px;font-weight:600;color:var(--blue-700);">Sender: ${escapeHtml(ref)}</span>`;
+  function closeDonationModal() {
+    const modal = document.getElementById("donation-detail-modal");
+    if (modal) {
+      modal.classList.add("is-hidden");
+      modal.style.display = "none";
     }
-    return escapeHtml(name);
   }
 
-  async function handleVerify(transactionId, session) {
-    const don = cachedDonations.find((d) => d.transactionId === transactionId);
-    const donorName = don ? (don.name || "Donor") : "this donation";
-    const amountStr = don ? formatCurrency(don.amount) : "";
-
-    const confirmed = window.confirm(`Are you sure you want to verify donation ${transactionId} (${amountStr}) from ${donorName}? This will count towards official verified public funding metrics.`);
-    if (!confirmed) return;
+  async function verifyDonation(transactionId) {
+    const session = window.__uafAdminSession;
+    const btn = document.getElementById("btn-verify-action");
+    if (btn) btn.setAttribute("disabled", "true");
 
     try {
-      const result = await callApi("verifyDonation", {
+      const res = await window.__uafAdminCallApi("verifyDonation", {
         token: session.token,
         transactionId: transactionId
       });
-
-      if (result.ok) {
-        flash(result.message || `Donation ${transactionId} verified successfully.`, "success");
-        loadDonations(session);
+      if (res.ok) {
+        alert(res.message || "Donation verified and story progress updated!");
+        closeDonationModal();
+        loadDonationsData();
       } else {
-        flash(result.error || "Failed to verify donation.");
+        alert(res.error || "Verification failed.");
       }
-    } catch (err) {
-      flash("Network error while verifying donation.");
+    } catch (_) {
+      alert("Error verifying donation.");
     }
   }
 
-  async function handleReject(transactionId, session) {
-    const don = cachedDonations.find((d) => d.transactionId === transactionId);
-    const donorName = don ? (don.name || "Donor") : "this donation";
-
-    const reason = window.prompt(`Please enter the reason for rejecting donation ${transactionId} from ${donorName}:`, "Payment unverified / discrepancy");
-    if (reason === null) return; // Cancelled
+  async function rejectDonation(transactionId) {
+    const notesInput = document.getElementById("review-notes-input");
+    const notes = notesInput ? notesInput.value.trim() : "";
+    const session = window.__uafAdminSession;
 
     try {
-      const result = await callApi("rejectDonation", {
+      const res = await window.__uafAdminCallApi("rejectDonation", {
         token: session.token,
         transactionId: transactionId,
-        notes: reason.trim()
+        notes: notes || "Rejected during administrative review"
       });
-
-      if (result.ok) {
-        flash(result.message || `Donation ${transactionId} rejected.`, "success");
-        loadDonations(session);
+      if (res.ok) {
+        alert(res.message || "Donation rejected.");
+        closeDonationModal();
+        loadDonationsData();
       } else {
-        flash(result.error || "Failed to reject donation.");
+        alert(res.error || "Rejection failed.");
       }
-    } catch (err) {
-      flash("Network error while rejecting donation.");
+    } catch (_) {
+      alert("Error rejecting donation.");
     }
   }
 
-  function exportCsv() {
-    if (!cachedDonations.length) {
-      flash("No donations to export.");
-      return;
-    }
-
-    const yearFilter = document.getElementById("export-don-year")?.value || "ALL";
-    const monthFilter = document.getElementById("export-don-month")?.value || "ALL";
-    const locFilter = document.getElementById("export-don-location")?.value || "ALL";
-
-    let items = cachedDonations.slice();
-
-    if (yearFilter !== "ALL") {
-      items = items.filter((d) => {
-        if (!d.createdAt) return true;
-        const dt = new Date(d.createdAt);
-        return !isNaN(dt.getTime()) ? String(dt.getFullYear()) === yearFilter : true;
-      });
-    }
-
-    if (monthFilter !== "ALL") {
-      items = items.filter((d) => {
-        if (!d.createdAt) return true;
-        const dt = new Date(d.createdAt);
-        return !isNaN(dt.getTime()) ? (dt.getMonth() + 1) === Number(monthFilter) : true;
-      });
-    }
-
-    if (locFilter !== "ALL") {
-      items = items.filter((d) => {
-        const text = `${d.address || ""} ${d.country || ""} ${d.notes || ""}`.toLowerCase();
-        if (locFilter === "Other") return true;
-        return text.includes(locFilter.toLowerCase());
-      });
-    }
-
-    if (!items.length) {
-      flash("No donations match the selected year/month/location criteria.");
-      return;
-    }
-
-    const headers = [
-      "TransactionID",
-      "ExternalID",
-      "Date",
-      "Name",
-      "Phone",
-      "Email",
-      "Amount",
-      "Currency",
-      "PaymentMethod",
-      "MTNReference",
-      "Status",
-      "Anonymous",
-      "VerifiedBy",
-      "VerifiedAt",
-      "Notes"
-    ];
-
-    const csvRows = [headers.join(",")];
-
-    items.forEach((d) => {
-      const row = [
-        d.transactionId || "",
-        d.externalId || "",
-        d.createdAt || "",
-        d.name || "",
-        d.phone || "",
-        d.email || "",
-        d.amount || 0,
-        d.currency || "USD",
-        d.paymentMethod || "",
-        d.mtnReference || "",
-        d.status || "",
-        d.anonymous ? "YES" : "NO",
-        d.verifiedBy || "",
-        d.verifiedAt || "",
-        (d.notes || "").replace(/"/g, '""')
-      ];
-
-      const escaped = row.map((val) => `"${String(val).replace(/"/g, '""')}"`);
-      csvRows.push(escaped.join(","));
-    });
-
-    const blob = new Blob([csvRows.join("\r\n")], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `uaf-donations-export-${new Date().toISOString().slice(0, 10)}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }
-
-  window.__uafRegisterAdminModule && window.__uafRegisterAdminModule("donations", renderDonationsModule);
+  window.__uafRegisterAdminModule("donations", renderDonationsModule);
 })();

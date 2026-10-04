@@ -15,7 +15,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default" />
 <meta name="apple-mobile-web-app-title" content="UAF Campaign Drive" />
 
-<!-- OpenGraph / Facebook / WhatsApp / LinkedIn Preview Meta Tags -->
+<!-- OpenGraph / Social Preview Meta Tags -->
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="UAF Campaign Drive" />
 <meta property="og:title" id="og-title" content="UAF Campaign Drive — Protecting Children. Promoting Education." />
@@ -29,13 +29,8 @@
 
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="styles.css?v=30" />
-<style>
-  *, *::before, *::after, html, body, input, button, select, textarea, h1, h2, h3, h4, h5, h6, p, span, a, label {
-    font-family: 'Open Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-  }
-</style>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css?v=31" />
 </head>
 <body>
 
@@ -44,604 +39,142 @@
   <!-- ============ GLOBAL HERO BACKGROUND ============ -->
   <div class="global-hero-bg" aria-hidden="true"></div>
 
-  <!-- ============ APP HEADER ============ -->
+  <!-- ============ GLASS-STYLE APP HEADER ============ -->
   <header class="app-header">
-    <div class="app-header__brand" data-goto="menu" style="cursor:pointer;">
+    <div class="app-header__brand" data-goto="menu" role="button" tabindex="0" aria-label="Go to Home Menu">
       <img class="app-header__logo" src="assets/uaf-logo.png" alt="UAF Campaign Drive" />
-      <span class="app-header__org-name">UAF Campaign Drive</span>
+      <div class="app-header__titles">
+        <span class="app-header__org-name">UAF Campaign Drive</span>
+        <span class="app-header__tagline">Liberia Education &amp; Empowerment</span>
+      </div>
     </div>
     <div class="app-header__spacer"></div>
     <div class="app-header__actions">
-      <button type="button" class="btn-header-donate" data-goto="donate">Donate</button>
-      <button type="button" class="btn-header-search" id="header-search-btn" aria-label="Search">
-        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="7"/>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      <button type="button" class="btn-header-install" data-action="install" aria-label="Install App">
+        <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
         </svg>
+        <span>Install</span>
       </button>
+      <button type="button" class="btn-header-donate" data-goto="donate" data-scroll-to="donation-section">Donate</button>
     </div>
   </header>
 
-  <!-- ============ OFFLINE STATUS ============ -->
+  <!-- ============ OFFLINE STATUS BANNER ============ -->
   <div class="status-banner" id="status-banner">
     <span class="status-banner__dot"></span>
-    <span id="status-banner-text">Offline — showing previously cached information.</span>
-    <span class="offline-sync-badge is-hidden" id="offline-sync-badge">0 drafts queued</span>
+    <span id="status-banner-text">Offline — showing cached stories. Submissions will auto-sync on reconnect.</span>
+    <span class="offline-sync-badge is-hidden" id="offline-sync-badge">0 queued</span>
   </div>
 
-  <!-- ============ MAIN CONTENT AREA ============ -->
+  <!-- ============ MAIN CONTENT AREA (4 Core Screens) ============ -->
   <main class="app-main" id="app-main">
 
     <!-- =========================================================
-         SCREEN 1: MENU
+         SCREEN 1: MENU (4 Large Illustrated Cards)
          ========================================================= -->
     <section class="screen is-active" data-screen="menu">
       <div class="menu-container">
-        <h1 class="menu-title">UAF CAMPAIGN DRIVE MENU</h1>
-
-        <div class="menu-grid">
-          <!-- 1. Campaigns & Stories (First Tab) -->
-          <div class="menu-card" data-goto="donate">
-            <div class="menu-card__icon">
-              <img src="assets/icon-donate.webp" alt="Campaigns & Stories" class="menu-card__custom-icon" />
-            </div>
-            <div class="menu-card__label">Campaigns &amp; Stories</div>
-          </div>
-
-          <!-- 2. NIC Statistics -->
-          <div class="menu-card" data-goto="statistics">
-            <div class="menu-card__icon">
-              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M24 14h16V8a2 2 0 00-2-2H26a2 2 0 00-2 2v6z"/>
-                <rect x="15" y="14" width="34" height="42" rx="4"/>
-                <path d="M21 26l3 3 5-5"/>
-                <path d="M33 27h10"/>
-                <path d="M21 36l3 3 5-5"/>
-                <path d="M33 37h10"/>
-                <path d="M21 46l3 3 5-5"/>
-                <path d="M33 47h10"/>
-              </svg>
-            </div>
-            <div class="menu-card__label">NIC Statistics</div>
-          </div>
-
-          <!-- 3. UAF Programs and Impact -->
-          <div class="menu-card" data-goto="impact-drive">
-            <div class="menu-card__icon">
-              <img src="assets/icon-impact.png" alt="UAF Programs and Impact" class="menu-card__custom-icon" />
-            </div>
-            <div class="menu-card__label">UAF Programs and Impact</div>
-          </div>
-
-          <!-- 4. Request Data -->
-          <div class="menu-card" data-goto="request-data">
-            <div class="menu-card__icon">
-              <img src="assets/icon-request.png" alt="Request Data" class="menu-card__custom-icon" />
-            </div>
-            <div class="menu-card__label">Request Data</div>
-          </div>
-
-          <!-- 5. Identify OSSC -->
-          <div class="menu-card" data-goto="submit-ossc">
-            <div class="menu-card__icon">
-              <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="28" cy="28" r="14"/>
-                <path d="M38 38l12 12"/>
-                <circle cx="28" cy="24" r="4"/>
-                <path d="M21 33c0-3.5 3-6 7-6s7 2.5 7 6"/>
-              </svg>
-            </div>
-            <div class="menu-card__label">Identify OSSC</div>
-          </div>
-
-          <!-- 6. Partners -->
-          <div class="menu-card" data-goto="partners">
-            <div class="menu-card__icon">
-              <img src="assets/icon-partners.png" alt="Partners" class="menu-card__custom-icon" />
-            </div>
-            <div class="menu-card__label">Partners</div>
-          </div>
+        
+        <!-- Hero Decorative Banner -->
+        <div class="menu-hero-banner">
+          <div class="menu-hero-badge">No Invisible Child · Liberia</div>
+          <h1 class="menu-title">Protecting Children.<br />Promoting Education.</h1>
+          <p class="menu-subtitle">Every child in Liberia deserves a classroom desk, learning books, and a secure future. Join our door-to-door campaign drive to make every out-of-school child visible.</p>
         </div>
 
+        <!-- 4 Large Illustrated Cards Grid (2x2 on mobile & tablet) -->
+        <div class="menu-grid-4">
+          
+          <!-- Card 1: Campaign Stories -->
+          <div class="menu-feature-card menu-feature-card--stories" data-goto="donate">
+            <div class="menu-feature-card__badge">Live Appeals</div>
+            <div class="menu-feature-card__icon-wrap">
+              <img src="assets/icon-donate.webp" alt="Campaign Stories" class="menu-feature-card__img-icon" />
+            </div>
+            <h2 class="menu-feature-card__title">Campaign Stories</h2>
+            <p class="menu-feature-card__desc">Explore active community cases, verified field testimonials, and live funding progress for vulnerable children.</p>
+            <div class="menu-feature-card__footer">
+              <span>View Active Cases</span>
+              <span class="card-arrow">&rarr;</span>
+            </div>
+          </div>
+
+          <!-- Card 2: Donate -->
+          <div class="menu-feature-card menu-feature-card--donate" data-goto="donate" data-scroll-to="donation-section">
+            <div class="menu-feature-card__badge menu-feature-card__badge--highlight">Direct Impact</div>
+            <div class="menu-feature-card__icon-wrap">
+              <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+            </div>
+            <h2 class="menu-feature-card__title">Donate &amp; Support</h2>
+            <p class="menu-feature-card__desc">Sponsor school fee subsidization, back-to-school kits, and sustainable livelihood training for mothers.</p>
+            <div class="menu-feature-card__footer">
+              <span>Give with MTN MoMo / Cash</span>
+              <span class="card-arrow">&rarr;</span>
+            </div>
+          </div>
+
+          <!-- Card 3: Request Data -->
+          <div class="menu-feature-card menu-feature-card--request" data-goto="request-data">
+            <div class="menu-feature-card__badge">Institutional Desk</div>
+            <div class="menu-feature-card__icon-wrap">
+              <img src="assets/icon-request.png" alt="Request Data" class="menu-feature-card__img-icon" />
+            </div>
+            <h2 class="menu-feature-card__title">Request Data</h2>
+            <p class="menu-feature-card__desc">Request verified research datasets, community exclusion metrics, or case files under UAF safeguarding protocols.</p>
+            <div class="menu-feature-card__footer">
+              <span>Request Evidence</span>
+              <span class="card-arrow">&rarr;</span>
+            </div>
+          </div>
+
+          <!-- Card 4: Identify OSSC -->
+          <div class="menu-feature-card menu-feature-card--ossc" data-goto="submit-ossc">
+            <div class="menu-feature-card__badge">Community Action</div>
+            <div class="menu-feature-card__icon-wrap">
+              <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="7" r="4"/>
+                <path d="M5.5 21v-2a6.5 6.5 0 0113 0v2"/>
+                <circle cx="19" cy="11" r="2.5"/>
+                <path d="M19 17v-1a3.5 3.5 0 00-3.5-3.5"/>
+              </svg>
+            </div>
+            <h2 class="menu-feature-card__title">Identify OSSC</h2>
+            <p class="menu-feature-card__desc">Report an out-of-school child in your community to prompt a door-to-door verification and school re-enrollment visit.</p>
+            <div class="menu-feature-card__footer">
+              <span>Submit Child Report</span>
+              <span class="card-arrow">&rarr;</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Menu Bottom Info & Install Prompt -->
         <div class="menu-footer">
           <p>Protecting Children. Promoting Education Access. Empowering Communities.</p>
-          <span>UAF Campaign Drive · Montserrado County, Liberia</span>
-          <span>Powered by Innovation Enterprise (ie) @2026 All right reserved</span>
+          <span>UAF Campaign Drive · Montserrado County &amp; Across Liberia</span>
           <div class="home-install-wrapper">
-            <button type="button" class="btn-home-install" id="home-install-btn" data-action="install" aria-label="Install UAF Impact App">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <button type="button" class="btn-home-install" data-action="install" aria-label="Install UAF Campaign Drive App">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
                 <polyline points="7 10 12 15 17 10"/>
                 <line x1="12" y1="15" x2="12" y2="3"/>
               </svg>
-              <span>Install App</span>
+              <span>Install to Home Screen for Offline Access</span>
             </button>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- =========================================================
-         SCREEN 2: FUNDRAISING (Emotional Statement, Stories & Donate Form)
-         ========================================================= -->
-    <section class="screen" data-screen="donate">
-      <div class="tab-header-nav">
-        <button type="button" class="btn-back-menu" data-goto="menu">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          <span> Menu</span>
-        </button>
-      </div>
-
-      <div class="page-container" style="max-width: 1200px;">
-        
-
-
-        <!-- 2. Active Community Stories & Campaigns (Side-by-Side 30s Auto-Scroll Animation) -->
-        <div class="content-block" style="margin-top:34px;">
-          <!-- Active Campaigns Header Banner matching reference design -->
-          <div class="active-campaigns-header-banner">
-            <div class="active-campaigns-header-overlay"></div>
-            <div class="active-campaigns-header-content">
-              <div class="active-campaigns-kicker">Make A Difference</div>
-              <h1 class="active-campaigns-title">Active Campaigns</h1>
-            </div>
-          </div>
-
-          <!-- Carousel Controller Bar (30-second live status and arrows) -->
-          <div class="stories-carousel-header-bar">
-            <div class="stories-carousel-status">
-              <span class="carousel-pulse-dot" id="carousel-pulse-dot"></span>
-              <span id="carousel-status-text">Story 1 of 1</span>
-            </div>
-            <div class="stories-carousel-nav-btns">
-              <button type="button" class="btn-carousel-arrow" id="carousel-prev-btn" aria-label="Previous story" title="Previous story">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 19l-7-7 7-7"/></svg>
-              </button>
-              <button type="button" class="btn-carousel-arrow" id="carousel-next-btn" aria-label="Next story" title="Next story">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5l7 7-7 7"/></svg>
-              </button>
-            </div>
-          </div>
-
-          <!-- 30-Second Animated Progress Bar -->
-          <div class="stories-carousel-progress-track" title="Story stays on screen for 20 seconds. Hover, hold, or read full story to pause.">
-            <div class="stories-carousel-progress-fill" id="carousel-progress-fill"></div>
-          </div>
-
-          <!-- Carousel Viewport & Side-by-Side Story Cards (Dynamically populated from data.js) -->
-          <div class="stories-carousel-viewport" id="stories-carousel-viewport">
-            <div class="campaigns-grid-container stories-carousel-track" id="fundraising-stories-grid"></div>
-          </div>
-
-          <!-- Carousel Dots Navigation -->
-          <div class="stories-carousel-dots" id="carousel-dots-container"></div>
-        </div>
-
-          
-        <!-- 3. Donate Form Collapsible Button -->
-        <div class="donate-toggle-wrapper" style="margin-top:36px; margin-bottom:36px; text-align:center;">
-          <button type="button" class="btn-toggle-donate-form" id="btn-toggle-donate-form" aria-expanded="false">
-            <span id="btn-donate-toggle-text">Donate Now</span>
-            <svg class="toggle-arrow" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M6 9l6 6 6-6"/></svg>
-          </button>
-        </div>
-
-        <!-- 4. Donate Form Container (Collapsible - Hidden by default) -->
-        <div id="donation-form-wrapper" class="donation-card-view" style="display:none; margin-top:24px; max-width:560px; margin-left:auto; margin-right:auto;">
-          
-          <!-- Story Dedication Alert / Badge (When tied to a specific story) -->
-          <div id="don-story-tied-alert" class="don-story-tied-alert is-hidden">
-            <div class="don-story-tied-content">
-              <div class="don-story-tied-icon">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-              </div>
-              <div class="don-story-tied-text">
-                <span class="don-story-tied-label">Your gift is dedicated to supporting:</span>
-                <strong id="don-story-tied-title" class="don-story-tied-title">Story Title</strong>
-              </div>
-            </div>
-            <button type="button" class="btn-clear-story-tie" id="btn-clear-story-tie" title="Clear and give to General Need">
-              <span>Change to General Need</span> &times;
-            </button>
-          </div>
-          <input type="hidden" id="don-dedicated-story-id" value="" />
-          <input type="hidden" id="don-dedicated-story-title" value="" />
-
-          <div class="donation-card__brand">
-            <img src="assets/uaf-logo.png" alt="UAF" />
-            <span>Upskill Africa Foundation</span>
-          </div>
-
-          <h2 class="donation-card__title">Make a Contribution</h2>
-          <p class="donation-card__desc">100% of your gift supports verified out-of-school children, tuition re-enrollment, learning kits, and mother livelihood training in Liberia.</p>
-
-          <!-- Payment Method Tabs -->
-          <div class="donation-methods-tabs">
-            <button type="button" class="method-tab is-active" id="tab-manual-momo">
-              <span>Manual MTN Transfer</span>
-            </button>
-            <button type="button" class="method-tab is-disabled" id="tab-auto-momo">
-              <span>Automated Prompt</span>
-              <span class="badge-soon">Coming Soon</span>
-            </button>
-          </div>
-
-          <!-- Phone Auto-Dialer & Instructions Card -->
-          <div class="ussd-action-card">
-            <div class="ussd-action-header">
-              <div class="ussd-action-title">
-                <span class="ussd-pulse-dot"></span>
-                <span>Dial directly on your phone:</span>
-              </div>
-              <span class="ussd-badge">Active &amp; Recommended</span>
-            </div>
-
-            <!-- Tap on mobile automatically opens phone dial pad -->
-            <a href="tel:*156*3*0889541712%23" class="ussd-dial-button" id="ussd-dial-link" title="Tap to open phone dial pad">
-              <span class="ussd-code-text">*156*3*0889541712#</span>
-              <span class="ussd-call-badge">Tap to Dial</span>
-            </a>
-
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-              <span style="font-size:11.5px; color:var(--ink-500);">Desktop / Alternate:</span>
-              <button type="button" class="btn-copy-ussd" id="ussd-copy-btn" data-code="*156*3*0889541712#">Copy Code</button>
-            </div>
-
-            <ol class="ussd-steps-list">
-              <li>On your phone, dial <strong>*156*3*0889541712#</strong></li>
-              <li>Select Currency, Enter Amount</li>
-              <li>Verify transfer recipient: <strong>"Upskill Africa Foundation (UAF)"</strong></li>
-              <li>ENTER PIN and OK</li>
-              <li>Fill out your receipt details below so UAF staff can verify your transfer!</li>
-            </ol>
-          </div>
-
-          <!-- Donation Form starts here covering all controls from Currency & Amount down to details and submit -->
-          <form id="donation-form" style="margin-top:16px;">
-            <!-- Currency & Preset Amounts (Lowest amounts: USD $1, $5... / LRD L$100, L$500...) -->
-            <div class="form-row-space">
-              <label class="form-label-caps">Select Currency</label>
-              <div class="currency-toggle" id="currency-toggle">
-                <button type="button" class="currency-btn is-active" data-currency="USD">USD ($)</button>
-                <button type="button" class="currency-btn" data-currency="LRD">LRD (L$)</button>
-              </div>
-            </div>
-
-            <div class="amount-chips-grid" id="amount-grid">
-              <!-- Populated dynamically with USD: $1, $5, $10, $25, $50, $100 / LRD: L$100, L$500, L$1000, L$2500, L$5000 -->
-            </div>
-
-            <div class="form-field" style="margin-bottom:14px;">
-              <label for="custom-amount" style="font-size:12px;">Custom amount (<span id="currency-symbol-label">USD $</span>)</label>
-              <input type="number" id="custom-amount" min="1" disabled placeholder="Select \"Custom\" above or enter amount" />
-            </div>
-
-            <!-- Select Impact Area Dropdown -->
-            <div class="form-field" style="margin-bottom:14px;">
-              <label for="don-impact-area">Select Impact Area</label>
-              <select id="don-impact-area" class="input-select">
-                <option value="General Support">General Support — Area of Greatest Need</option>
-                <option value="No Invisible Child">No Invisible Child Initiative (NIC 2026/2027)</option>
-                <option value="Education Access">Education Access &amp; Child Re-enrollment</option>
-                <option value="Women & Youth Livelihoods">Women &amp; Youth Economic Self-Reliance</option>
-                <option value="Alternative Learning">Alternative Learning Program (ALP Computer Skills)</option>
-              </select>
-            </div>
-
-            <!-- Frequency Chips -->
-            <div class="form-field" style="margin-bottom:14px;">
-              <label style="font-size:12px;">Donation Frequency</label>
-              <div class="frequency-chips-row" id="frequency-grid">
-                <button type="button" class="freq-chip is-selected" data-frequency="Once">Once</button>
-                <button type="button" class="freq-chip" data-frequency="Weekly">Weekly</button>
-                <button type="button" class="freq-chip" data-frequency="Monthly">Monthly</button>
-                <button type="button" class="freq-chip" data-frequency="Yearly">Yearly</button>
-                <button type="button" class="freq-chip" data-frequency="Occasionally">Occasionally</button>
-              </div>
-            </div>
-
-            <!-- Add Note Toggle -->
-            <div class="form-toggle-row">
-              <input type="checkbox" id="don-add-note" />
-              <label for="don-add-note">Add a note or dedication to your donation?</label>
-            </div>
-            <div id="don-message-container" class="form-field is-hidden" style="margin-top:8px;">
-              <textarea id="don-message" placeholder="Write an optional dedication, message, or notes..."></textarea>
-            </div>
-
-            <!-- Donor Details Fields -->
-            <div style="margin-top:14px;">
-            <div class="form-row-2">
-              <div class="form-field">
-                <label for="don-name">Full name *</label>
-                <input type="text" id="don-name" placeholder="Your name" required />
-              </div>
-              <div class="form-field">
-                <label for="don-phone">Contact Phone number *</label>
-                <input type="tel" id="don-phone" placeholder="088... or 077..." required />
-              </div>
-            </div>
-
-            <div class="form-field">
-              <label for="don-sender-number">Sender Number (Mobile Money number used for transfer) *</label>
-              <input type="tel" id="don-sender-number" placeholder="e.g. 088... or 077... (Number that sent the money to UAF)" required />
-              <small style="display:block; margin-top:4px; font-size:11.5px; color:var(--ink-500);">Enter the exact phone number that transferred the funds so UAF verifiers can match your transaction.</small>
-            </div>
-
-            <div class="form-field">
-              <label for="don-email">Email (for official receipt)</label>
-              <input type="email" id="don-email" placeholder="name@example.com" />
-            </div>
-
-            <div class="form-field">
-              <label for="don-address">Home address (Street / Community) *</label>
-              <input type="text" id="don-address" placeholder="e.g. Duport Road, Paynesville" required />
-            </div>
-
-            <div class="form-field">
-              <label for="don-country">Country</label>
-              <input type="text" id="don-country" value="Liberia" />
-            </div>
-
-            <div class="form-check" style="margin-top:10px;">
-              <input type="checkbox" id="don-anon" />
-              <label for="don-anon">Make my donation anonymous on public impact reports</label>
-            </div>
-
-            <div class="form-check">
-              <input type="checkbox" id="don-consent" required checked />
-              <label for="don-consent">I consent to UAF contacting me regarding verification and project impact updates.</label>
-            </div>
-          </div>
-
-            <div style="margin-top:18px;">
-              <button type="submit" id="don-submit-btn" class="btn-donate-submit-gold">
-                <span>Donate $5 to UAF</span>
-              </button>
-            </div>
-          </form>
-
-        </div>
-
-                  <!-- 1. Emotional Funding Request Statement -->
-        <div class="emotional-appeal-card" style="margin-top:28px;">
-          <h2 class="appeal-title">Every Child Deserves a Chance to Learn and build a better future</h2>
-          <div class="appeal-body-text">
-            <p>Across Liberia, thousands of vulnerable children remain out of school because of poverty, family hardship, lack of basic school supplies, and unsafe living conditions, while many remain unseen and unrecognized for years. Through the No Invisible Child (NIC) Initiative, Upskill Africa Foundation and collaborative partners work with communities to identify these children, connect them to education and protection services, and support families to keep them in school.</p>
-            <p>At <strong>Upskill Africa Foundation</strong>, we refuse to accept that poverty should dictate a child’s destiny. Under the <em>No Invisible Child (NIC)</em> initiative, our field verifiers walk in communities from door-to-door to find forgotten learners. We invite government, NGOs, donors, businesses, and communities to join us in making every child visible. Together, we can find every child, open doors to education, and help every child thrive.</p>
-          </div>
-          <div class="appeal-quote-highlight">
-            <p class="appeal-quote-quote">“Your generous donation (even $100LRD) will help pays school tuition, purchases school materials, and trains struggling mothers with sustainable livelihood skills so their households can permanently support their children’s education.”</p>
-            <span class="appeal-quote-cite"> Upskill Africa Foundation NIC Team</span>
-          </div>
-        </div>
-          
-      </div>
-    </section>
-
-    <!-- =========================================================
-         SCREEN 3: STATISTICS (Combined Communities Statistics & Directory + UAF Programs)
-         ========================================================= -->
-    <section class="screen" data-screen="statistics">
-      <div class="tab-header-nav">
-        <button type="button" class="btn-back-menu" data-goto="menu">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          <span>Menu</span>
-        </button>
-      </div>
-
-      <div class="page-container">
-        
-        <!-- Combined Communities Statistics and Directory -->
-        <div class="content-block">
-          <div class="section-title-wrap">
-            <h2>Communities Statistics </h2>
-            <p>Verified data and statistics from UAF programs, community engagements, monitoring activities, child exclusion tracking, and identified funding gaps across communities reached in Liberia.</p>
-          </div>
-
-          <!-- Selector Filters: All 15 Counties + Dynamic Communities -->
-          <div class="selector-card">
-            <div class="selector-row">
-              <div class="selector-field">
-                <label for="stats-county">County </label>
-                <select id="stats-county" data-role="county-select">
-                  <option value="">All 15 Counties</option>
-                </select>
-              </div>
-              <div class="selector-field">
-                <label for="stats-community">Community / Town</label>
-                <select id="stats-community" data-role="community-select">
-                  <option value="">All communities</option>
-                </select>
-              </div>
-              <div class="selector-field">
-                <label for="stats-year">Year</label>
-                <select id="stats-year" data-role="year-select">
-                  <option value="">All years</option>
-                  <option value="2023">2023</option>
-                  <option value="2024">2024</option>
-                  <option value="2025">2025</option>
-                  <option value="2026">2026</option>
-                  <option value="2027">2027</option>
-                  <option value="2028">2028</option>
-                </select>
-              </div>
-            </div>
-
-            <!-- The 8 Required KPI Cards (4 in one row) -->
-            <div class="stats-8-grid" style="margin-top:20px;">
-              <div class="stat-kpi-card">
-                <div class="stat-kpi-card__value" id="stat-parents-empowered">0</div>
-                <div class="stat-kpi-card__label">Parents Empowered with Skills</div>
-              </div>
-              <div class="stat-kpi-card">
-                <div class="stat-kpi-card__value" id="stat-children-identified">0</div>
-                <div class="stat-kpi-card__label">Out-of-school Children Identified</div>
-              </div>
-              <div class="stat-kpi-card">
-                <div class="stat-kpi-card__value" id="stat-children-awaiting">0</div>
-                <div class="stat-kpi-card__label">Children Awaiting Support</div>
-              </div>
-              <div class="stat-kpi-card">
-                <div class="stat-kpi-card__value" id="stat-communities-reached">0</div>
-                <div class="stat-kpi-card__label">Communities Reached</div>
-              </div>
-              <div class="stat-kpi-card">
-                <div class="stat-kpi-card__value" id="stat-school-partners">0</div>
-                <div class="stat-kpi-card__label">School Partners</div>
-              </div>
-              <div class="stat-kpi-card">
-                <div class="stat-kpi-card__value" id="stat-amount-needed">$0.00</div>
-                <div class="stat-kpi-card__label">Amount Needed</div>
-              </div>
-              <div class="stat-kpi-card">
-                <div class="stat-kpi-card__value" id="stat-amount-raised">$0.00</div>
-                <div class="stat-kpi-card__label">Amount Raised</div>
-              </div>
-              <div class="stat-kpi-card stat-kpi-card--highlight">
-                <div class="stat-kpi-card__value" id="stat-balance-to-raise">$0.00</div>
-                <div class="stat-kpi-card__label">Balance to Raise</div>
-              </div>
-            </div>
-
-            <!-- Funding Progress Bar -->
-            <div class="funding-track-custom" style="margin-top:18px;">
-              <div class="funding-fill-custom" id="funding-bar-fill" style="width:0%;"></div>
-            </div>
-            <div class="funding-stat-row" style="margin-top:6px;">
-              <span style="font-size:12px;color:var(--ink-500);">Percentage of amount raised</span>
-              <span style="font-size:12px;font-weight:700;color:var(--blue-700);" id="funding-progress-pct">0%</span>
-            </div>
-
-            <div class="data-meta-row" style="margin-top:10px;">
-              <span id="stats-last-updated">Last updated: not yet published</span>
-               </div>
-          </div>
-
-          <!-- Combined Community Data Directory Table -->
-          <div class="table-scroll-wrapper" style="margin-top:24px;">
-            <table class="data-table-custom">
-              <thead>
-                <tr>
-                  <th>Community</th>
-                  <th>County</th>
-                  <th>OSSC Identified</th>
-                  <th>Supported / Re-enrolled</th>
-                  <th>Awaiting Support</th>
-                  <th>Parents Empowered</th>
-                  <th>School Partners</th>
-                  <th>Amount Needed</th>
-                  <th>Amount Raised</th>
-                  <th>Balance to Raise</th>
-                </tr>
-              </thead>
-              <tbody id="stats-combined-table-body">
-                <tr>
-                  <td colspan="10" style="text-align:center; padding:22px; color:var(--ink-400);">Loading verified community dataset...</td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- =========================================================
-         SCREEN 4: IMPACT DRIVE (General Impact Overview & UAF Objectivess)
-         ========================================================= -->
-    <section class="screen" data-screen="impact-drive">
-      <div class="tab-header-nav">
-        <button type="button" class="btn-back-menu" data-goto="menu">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          <span>Menu</span>
-        </button>
-      </div>
-
-      <div class="page-container">
-        
-        <!-- UAF Programs -->
-        <div class="content-block">
-          <div class="section-title-wrap">
-            <h2>UAF Programs</h2>
-            <p class="section-lead">Our core programs are designed to promote education access, monitor and advocate for education and child rights, and empower households with skills.</p>
-          </div>
-
-          <div class="programs-square-grid">
-            <!-- Program 1: No Invisible Child (Flagship - Ocean Blue/Teal) -->
-            <div class="program-item-card program-item-card--nic" data-goto="submit-ossc">
-              <div class="program-item__icon">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
-              </div>
-              <div class="program-item__title">No Invisible Child</div>
-              <p class="program-item__desc">Door-to-door child identification, enrollment subsidization, and uniform/kit distribution (NIC 2026/2027).</p>
-              <span class="program-item__tag">Flagship</span>
-              <div class="program-item__metrics">
-                <div class="prog-metric"><span class="prog-metric-lbl">Number of Beneficiaries:</span> <span class="prog-metric-val">350+ Children</span></div>
-                <div class="prog-metric"><span class="prog-metric-lbl"># of Communities:</span> <span class="prog-metric-val">12 Communities</span></div>
-              </div>
-            </div>
-
-            <!-- Program 2: Education Access (Emerald Green) -->
-            <div class="program-item-card program-item-card--access" data-goto="donate">
-              <div class="program-item__icon">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21h18M5 21V7l7-4 7 4v14M9 10h1M14 10h1M9 14h1M14 14h1M9 18h1M14 18h1"/></svg>
-              </div>
-              <div class="program-item__title">Education Access</div>
-              <p class="program-item__desc">Household-level enrollment, school fee subsidization, and retention support for vulnerable learners.</p>
-              <span class="program-item__tag">Access</span>
-              <div class="program-item__metrics">
-                <div class="prog-metric"><span class="prog-metric-lbl">Number of Beneficiaries:</span> <span class="prog-metric-val">500+ Students</span></div>
-                <div class="prog-metric"><span class="prog-metric-lbl"># of Communities:</span> <span class="prog-metric-val">15 Communities</span></div>
-              </div>
-            </div>
-
-            <!-- Program 3: Rights Advocacy (Royal Purple) -->
-            <div class="program-item-card program-item-card--advocacy">
-              <div class="program-item__icon">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18M3 9l9-6 9 6M3 9a4 4 0 008 0M13 9a4 4 0 008 0M7 18h10"/></svg>
-              </div>
-              <div class="program-item__title">Rights Advocacy</div>
-              <p class="program-item__desc">Community child policy dialogues, combating child labor, and defending the right to education.</p>
-              <span class="program-item__tag">Advocacy</span>
-              <div class="program-item__metrics">
-                <div class="prog-metric"><span class="prog-metric-lbl">Number of Beneficiaries:</span> <span class="prog-metric-val">1,200+ Individuals</span></div>
-                <div class="prog-metric"><span class="prog-metric-lbl"># of Communities:</span> <span class="prog-metric-val">18 Communities</span></div>
-              </div>
-            </div>
-
-            <!-- Program 4: Child Protection (Crimson Rose) -->
-            <div class="program-item-card program-item-card--protection">
-              <div class="program-item__icon">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              </div>
-              <div class="program-item__title">Child Protection</div>
-              <p class="program-item__desc">Safeguarding, mandatory reporting protocols, and creating secure learning spaces in partner schools.</p>
-              <span class="program-item__tag">Protection</span>
-              <div class="program-item__metrics">
-                <div class="prog-metric"><span class="prog-metric-lbl">Number of Beneficiaries:</span> <span class="prog-metric-val">850+ Learners &amp; Staff</span></div>
-                <div class="prog-metric"><span class="prog-metric-lbl"># of Communities:</span> <span class="prog-metric-val">14 Communities</span></div>
-              </div>
-            </div>
-
-            <!-- Program 5: Household & Women Empowerment (Amber Gold) -->
-            <div class="program-item-card program-item-card--empowerment" data-goto="donate">
-              <div class="program-item__icon">
-                <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-              </div>
-              <div class="program-item__title">Household Empowerment</div>
-              <p class="program-item__desc">Vocational training (soap formulating, pastry, tailoring), financial literacy, and startup micro-kits for vulnerable mothers.</p>
-              <span class="program-item__tag">Livelihood</span>
-              <div class="program-item__metrics">
-                <div class="prog-metric"><span class="prog-metric-lbl">Number of Beneficiaries:</span> <span class="prog-metric-val">27 Liberian Mothers</span></div>
-                <div class="prog-metric"><span class="prog-metric-lbl"># of Communities:</span> <span class="prog-metric-val">5 Communities</span></div>
-              </div>
-            </div>
+          <div class="admin-portal-link-wrap">
+            <a href="admin/index.html" class="admin-portal-link">Staff &amp; Admin Portal &rarr;</a>
           </div>
         </div>
 
       </div>
 
-      <!-- UAF Wave Footer (Matching Mockup Design) -->
+      <!-- Wave Footer Branding -->
       <footer class="uaf-wave-footer">
         <div class="uaf-wave-svg-wrap">
           <svg class="uaf-wave-svg" viewBox="0 0 1440 120" preserveAspectRatio="none">
@@ -652,39 +185,237 @@
         <div class="uaf-wave-footer__inner">
           <div class="uaf-footer-socials">
             <a href="https://web.facebook.com/profile.php?id=100094538285249" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="Facebook" aria-label="Facebook">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/></svg>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/></svg>
             </a>
             <a href="https://www.linkedin.com/company/upskill-africa-foundation" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="LinkedIn" aria-label="LinkedIn">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
             </a>
             <a href="mailto:upskillafrica.lr@gmail.com" class="uaf-social-icon-btn" title="Email UAF" aria-label="Email">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
             </a>
-            <a href="https://uafalp.blogspot.com/" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="UAF ALP Blog" aria-label="Blog">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+            <a href="tel:+231889541712" class="uaf-social-icon-btn" title="Call UAF (+231 889 541 712)" aria-label="Phone">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
             </a>
-            <a href="tel:+231770044011" class="uaf-social-icon-btn" title="Call UAF (+231770044011)" aria-label="Phone">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            </a>
-            <a href="https://wa.me/231889541712" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="WhatsApp Chat (+231 889 541 712)" aria-label="WhatsApp">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.35C9.36 7.35 9.09 7.41 8.86 7.66C8.63 7.91 7.99 8.51 7.99 9.73C7.99 10.95 8.88 12.13 9 12.3C9.13 12.47 10.73 14.95 13.2 16C13.78 16.26 14.24 16.41 14.59 16.53C15.19 16.71 15.73 16.69 16.16 16.63C16.64 16.55 17.65 16.01 17.86 15.42C18.07 14.83 18.07 14.32 18.01 14.22C17.95 14.12 17.78 14.06 17.52 13.93C17.26 13.81 15.99 13.18 15.75 13.1C15.52 13.01 15.35 12.97 15.18 13.22C15.01 13.48 14.53 14.06 14.38 14.22C14.23 14.4 14.09 14.42 13.83 14.29C13.57 14.16 12.74 13.89 11.75 13C10.98 12.32 10.46 11.47 10.31 11.22C10.16 10.97 10.29 10.83 10.42 10.7C10.54 10.58 10.68 10.4 10.82 10.24C10.95 10.07 11 9.95 11.09 9.78C11.17 9.61 11.13 9.46 11.07 9.33C11.01 9.21 10.53 8.03 10.33 7.55C10.14 7.08 9.94 7.15 9.78 7.14C9.64 7.14 9.48 7.35 9.53 7.35Z"/></svg>
-            </a>
-            <a href="https://maps.google.com/?q=Duport+Road,+Paynesville,+Liberia" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="Physical Location: Duport Road, Paynesville, Liberia" aria-label="Physical Location">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <a href="https://wa.me/231889541712" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="WhatsApp Chat" aria-label="WhatsApp">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.35C9.36 7.35 9.09 7.41 8.86 7.66C8.63 7.91 7.99 8.51 7.99 9.73C7.99 10.95 8.88 12.13 9 12.3C9.13 12.47 10.73 14.95 13.2 16C13.78 16.26 14.24 16.41 14.59 16.53C15.19 16.71 15.73 16.69 16.16 16.63C16.64 16.55 17.65 16.01 17.86 15.42C18.07 14.83 18.07 14.32 18.01 14.22C17.95 14.12 17.78 14.06 17.52 13.93C17.26 13.81 15.99 13.18 15.75 13.1C15.52 13.01 15.35 12.97 15.18 13.22C15.01 13.48 14.53 14.06 14.38 14.22C14.23 14.4 14.09 14.42 13.83 14.29C13.57 14.16 12.74 13.89 11.75 13C10.98 12.32 10.46 11.47 10.31 11.22C10.16 10.97 10.29 10.83 10.42 10.7C10.54 10.58 10.68 10.4 10.82 10.24C10.95 10.07 11 9.95 11.09 9.78C11.17 9.61 11.13 9.46 11.07 9.33C11.01 9.21 10.53 8.03 10.33 7.55C10.14 7.08 9.94 7.15 9.78 7.14C9.64 7.14 9.48 7.35 9.53 7.35Z"/></svg>
             </a>
           </div>
           <div class="uaf-footer-address">
-            <span>Booker's Town, Pipeline Road, Paynesville, Montserrado County, Liberia</span>
+            <span>Pipeline Road, Booker's Town, Paynesville, Montserrado County, Liberia</span>
           </div>
           <div class="uaf-footer-copyright">
-            <span>© 2026 Upskill Africa Foundation (UAF). All Rights Reserved.</span>
+            <span>&copy; 2026 Upskill Africa Foundation (UAF). All Rights Reserved.</span>
           </div>
         </div>
       </footer>
     </section>
 
     <!-- =========================================================
-         SCREEN 5: REQUEST DATA (Request Data & Evidence Form)
+         SCREEN 2: CAMPAIGN STORIES & DONATE
+         ========================================================= -->
+    <section class="screen" data-screen="donate">
+      <div class="tab-header-nav">
+        <button type="button" class="btn-back-menu" data-goto="menu">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+          <span>Menu</span>
+        </button>
+      </div>
+
+      <div class="page-container" style="max-width: 1200px;">
+
+        <!-- Active Campaigns Header Banner -->
+        <div class="active-campaigns-header-banner">
+          <div class="active-campaigns-header-overlay"></div>
+          <div class="active-campaigns-header-content">
+            <div class="active-campaigns-kicker">Make A Tangible Difference</div>
+            <h1 class="active-campaigns-title">Active Campaigns &amp; Stories</h1>
+            <p class="active-campaigns-sub">Verified community cases. Select any story to inspect full case details or dedicate your donation directly.</p>
+          </div>
+        </div>
+
+        <!-- Carousel Controller Bar -->
+        <div class="stories-carousel-header-bar">
+          <div class="stories-carousel-status">
+            <span class="carousel-pulse-dot" id="carousel-pulse-dot"></span>
+            <span id="carousel-status-text">Loading campaigns...</span>
+          </div>
+          <div class="stories-carousel-nav-btns">
+            <button type="button" class="btn-carousel-arrow" id="carousel-prev-btn" aria-label="Previous story" title="Previous story">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 19l-7-7 7-7"/></svg>
+            </button>
+            <button type="button" class="btn-carousel-arrow" id="carousel-next-btn" aria-label="Next story" title="Next story">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 5l7 7-7 7"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Carousel 15s Timer Progress Bar -->
+        <div class="stories-carousel-progress-track">
+          <div class="stories-carousel-progress-fill" id="carousel-progress-fill"></div>
+        </div>
+
+        <!-- Stories Grid / Carousel Viewport -->
+        <div class="stories-carousel-viewport" id="stories-carousel-viewport">
+          <div class="campaign-cards-grid" id="fundraising-stories-grid">
+            <!-- Dynamic Campaign Cards populated by data.js -->
+            <div class="stories-loading-placeholder">
+              <div class="spinner"></div>
+              <span>Fetching live campaign stories...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Carousel Dots Indicator -->
+        <div class="stories-carousel-dots" id="carousel-dots-container"></div>
+
+        <!-- =====================================================
+             DONATE FORM SECTION
+             ===================================================== -->
+        <div class="donation-section-anchor" id="donation-section" style="margin-top: 48px;">
+          
+          <div class="donation-card-container">
+            <div class="donation-card-header">
+              <div class="donation-card-badge">Direct Community Support</div>
+              <h2 class="donation-card-title">Support a Child or Campaign</h2>
+              <p class="donation-card-subtitle">Your contribution directly pays tuition, buys uniforms &amp; books, and funds livelihood vocational kits for struggling mothers.</p>
+            </div>
+
+            <!-- Dedicated Story Notification Badge (shows when a story is preselected) -->
+            <div class="story-tied-alert is-hidden" id="don-story-tied-alert">
+              <div class="story-tied-alert__icon">
+                <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+              </div>
+              <div class="story-tied-alert__content">
+                <span>Dedicated gift supporting:</span>
+                <strong id="don-tied-story-title">Specific Campaign Story</strong>
+              </div>
+              <button type="button" class="btn-clear-tied-story" id="btn-clear-tied-story" title="Clear story selection">&times;</button>
+            </div>
+
+            <!-- USSD One-Tap Mobile Money Dialing Guide -->
+            <div class="ussd-action-card">
+              <div class="ussd-action-header">
+                <div class="ussd-action-title">
+                  <span class="ussd-pulse-dot"></span>
+                  <span>MTN Mobile Money Direct Transfer:</span>
+                </div>
+                <span class="ussd-badge">Verified Account</span>
+              </div>
+
+              <a href="tel:*156*3*0889541712%23" class="ussd-dial-button" id="ussd-dial-link" title="Tap to dial on your phone">
+                <span class="ussd-code-text">*156*3*0889541712#</span>
+                <span class="ussd-call-badge">Tap to Dial</span>
+              </a>
+
+              <ol class="ussd-steps-list">
+                <li>Dial <strong>*156*3*0889541712#</strong> on your phone</li>
+                <li>Enter your donation amount (USD or LRD)</li>
+                <li>Verify recipient name: <strong>Upskill Africa Foundation (UAF)</strong></li>
+                <li>Enter your PIN and complete transfer</li>
+                <li>Fill out your receipt info below so UAF staff can verify your donation!</li>
+              </ol>
+            </div>
+
+            <!-- DONATION FORM -->
+            <form id="donation-form" class="donation-form-body">
+              <input type="hidden" id="don-dedicated-story-id" value="" />
+
+              <!-- Currency & Amount Chips -->
+              <div class="form-row-space">
+                <label class="form-label-caps">Select Currency</label>
+                <div class="currency-toggle" id="currency-toggle">
+                  <button type="button" class="currency-btn is-active" data-currency="USD">USD ($)</button>
+                  <button type="button" class="currency-btn" data-currency="LRD">LRD (L$)</button>
+                </div>
+              </div>
+
+              <div class="amount-chips-grid" id="amount-grid">
+                <!-- Dynamically populated with preset amounts -->
+              </div>
+
+              <div class="form-field" style="margin-bottom:16px;">
+                <label for="custom-amount">Custom Amount (<span id="currency-symbol-label">USD $</span>)</label>
+                <input type="number" id="custom-amount" min="1" disabled placeholder="Select 'Custom' above or type amount" />
+              </div>
+
+              <!-- Campaign / Story Selector Dropdown -->
+              <div class="form-field" style="margin-bottom:16px;">
+                <label for="don-story-select">Dedicate to Specific Campaign / Story</label>
+                <select id="don-story-select" class="input-select">
+                  <option value="General Support">General Support — Area of Greatest Need</option>
+                  <!-- Dynamically populated with published stories -->
+                </select>
+              </div>
+
+              <!-- Donor Information -->
+              <div class="form-row-2">
+                <div class="form-field">
+                  <label for="don-name">Your Full Name *</label>
+                  <input type="text" id="don-name" placeholder="First and last name" required />
+                </div>
+                <div class="form-field">
+                  <label for="don-phone">Contact Phone Number *</label>
+                  <input type="tel" id="don-phone" placeholder="088... or 077..." required />
+                </div>
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-field">
+                  <label for="don-email">Email Address (Optional)</label>
+                  <input type="email" id="don-email" placeholder="For official email receipt" />
+                </div>
+                <div class="form-field">
+                  <label for="don-payment-ref">MTN Sender Number / Transfer Reference *</label>
+                  <input type="text" id="don-payment-ref" placeholder="Sender phone or Txn ID" required />
+                </div>
+              </div>
+
+              <!-- Optional Dedication Message -->
+              <div class="form-field" style="margin-bottom:14px;">
+                <label for="don-message">Message or Dedication Note (Optional)</label>
+                <textarea id="don-message" rows="2" placeholder="Write an optional prayer, word of encouragement, or dedication..."></textarea>
+              </div>
+
+              <!-- Anonymous Toggle -->
+              <div class="form-check" style="margin-bottom:18px;">
+                <input type="checkbox" id="don-anon" />
+                <label for="don-anon">Make my donation anonymous on public impact reports</label>
+              </div>
+
+              <div class="form-submit-row">
+                <button type="submit" id="don-submit-btn" class="btn-donate-submit-gold">
+                  <span id="don-submit-label">Donate $5 USD to UAF</span>
+                </button>
+              </div>
+            </form>
+
+            <!-- Donation Success Card (Hidden until successful submission) -->
+            <div class="submission-success-card is-hidden" id="donation-success-view">
+              <div class="success-icon-wrap">
+                <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              </div>
+              <h3>Thank You For Your Support!</h3>
+              <p>Your donation has been recorded directly in the UAF database with initial status <strong>PENDING</strong>.</p>
+              <div class="reference-badge-box">
+                <span class="ref-label">Transaction Reference:</span>
+                <span class="ref-code" id="don-success-ref">UAF-DON-2026-000001</span>
+              </div>
+              <p class="success-explain">A UAF administrator will review your mobile money transfer and verify your contribution. The story's progress bar will update immediately once verified.</p>
+              <div class="success-action-btns">
+                <button type="button" class="btn btn--primary" id="btn-donate-another">Make Another Donation</button>
+                <button type="button" class="btn btn--outline" data-goto="menu">Return to Menu</button>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+    </section>
+
+    <!-- =========================================================
+         SCREEN 3: REQUEST DATA & EVIDENCE
          ========================================================= -->
     <section class="screen" data-screen="request-data">
       <div class="tab-header-nav">
@@ -694,141 +425,79 @@
         </button>
       </div>
 
-      <div class="page-container" style="max-width: 580px;">
+      <div class="page-container" style="max-width: 620px;">
         <div class="form-container-card">
           <div class="section-title-wrap">
-          <h2>Request Data &amp; Evidence</h2>
-            <p class="section-lead">Transparency without compromising child privacy. Request verified research datasets, specif case, or field evidence.</p>
+            <div class="form-header-badge">Institutional Data Desk</div>
+            <h2>Request Data &amp; Evidence</h2>
+            <p class="section-lead">Transparency without compromising child privacy. Request verified research datasets, community exclusion rates, or field case evidence.</p>
           </div>
 
-          <!-- UAF Institutional Brochure Download Card -->
-          <div class="uaf-brochure-card">
-            <div class="uaf-brochure-card__info">
-              <div class="uaf-brochure-card__icon">
-                <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
-              </div>
-              <div>
-                <div class="uaf-brochure-card__title">UAF Brochure</div>
-                </div>
-            </div>
-            <button type="button" id="btn-download-uaf-brochure" class="btn-download-brochure">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              <span>Download Brochure (PDF)</span>
-            </button>
-          </div>
-
-          <form id="evidence-form" style="margin-top:16px;">
+          <form id="evidence-form">
             <div class="form-field">
-              <label for="ev-name">Your full name *</label>
+              <label for="ev-name">Your Full Name *</label>
               <input type="text" id="ev-name" placeholder="First and last name" required />
             </div>
 
             <div class="form-row-2">
               <div class="form-field">
-                <label for="ev-email">Email address *</label>
+                <label for="ev-email">Email Address *</label>
                 <input type="email" id="ev-email" placeholder="name@organization.org" required />
               </div>
               <div class="form-field">
-                <label for="ev-org">Organization / Agency</label>
-                <input type="text" id="ev-org" placeholder="NGO, Donor, University" />
+                <label for="ev-org">Organization / Agency *</label>
+                <input type="text" id="ev-org" placeholder="NGO, Donor, University, Gov" required />
               </div>
             </div>
 
             <div class="form-field">
-              <label for="ev-reason">Reason for Request *</label>
-              <select id="ev-reason" required>
-                <option value="">Select primary reason</option>
+              <label for="ev-reason">Reason for Request</label>
+              <select id="ev-reason" class="input-select">
                 <option value="Academic Research & Policy Study">Academic Research &amp; Policy Study</option>
                 <option value="NGO / Program Partnership">NGO / Program Partnership</option>
                 <option value="Donor Due Diligence & Grant Evaluation">Donor Due Diligence &amp; Grant Evaluation</option>
-                <option value="Investigative Journalism / Media">Investigative Journalism / Media</option>
-                <option value="Community Assessment & Field Intervention">Community Assessment &amp; Field Intervention</option>
-                <option value="Other Institutional Purpose">Other Institutional Purpose</option>
+                <option value="Community Assessment">Community Assessment</option>
+                <option value="Other">Other Institutional Purpose</option>
               </select>
             </div>
 
             <div class="form-field">
-              <label for="ev-source">How did you hear about UAF? *</label>
-              <select id="ev-source" required>
-                <option value="">Select referral source</option>
-                <option value="Social Media (Facebook / LinkedIn)">Social Media (Facebook / LinkedIn)</option>
-                <option value="Search Engine (Google / Bing)">Search Engine (Google / Bing)</option>
-                <option value="Colleague / Partner Recommendation">Colleague / Partner Recommendation</option>
-                <option value="Community Outreach / Field Visit">Community Outreach / Field Visit</option>
-                <option value="News Media / Radio / Press">News Media / Radio / Press</option>
-                <option value="UAF ALP Blog / Website">UAF ALP Blog / Website</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
-
-            <div class="form-field">
-              <label for="ev-request">What data or evidence are you requesting? *</label>
-              <textarea id="ev-request" placeholder="Specify counties/communities, indicators (e.g. OSSC count, retention rates), time period, and intended use..." rows="4" required></textarea>
+              <label for="ev-request">What specific data or evidence are you requesting? *</label>
+              <textarea id="ev-request" rows="4" placeholder="Specify counties/communities, indicators (e.g. OSSC count, retention rates), time period, and intended use..." required></textarea>
             </div>
 
             <div class="form-notice-box">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;margin-top:1px;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
-              <span>UAF enforces strict child safeguarding and confidentiality measures. Individual child-identifying information is never disclosed publicly and is shared only with trusted, verified, and legitimate partners or relevant government authorities when necessary, subject to legally binding confidentiality, data protection, and safeguarding agreements. </span>
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+              <span>UAF enforces strict child safeguarding. Individual child-identifying records are never disclosed publicly and require verified institutional agreements.</span>
             </div>
 
-            <button type="submit" class="btn-submit-primary">Submit Evidence Request</button>
+            <button type="submit" class="btn-submit-primary" id="ev-submit-btn">Submit Evidence Request</button>
           </form>
+
+          <!-- Success Card for Evidence Request -->
+          <div class="submission-success-card is-hidden" id="evidence-success-view">
+            <div class="success-icon-wrap">
+              <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h3>Request Submitted Successfully</h3>
+            <p>Your institutional request has been saved directly to the database with status <strong>NEW</strong>.</p>
+            <div class="reference-badge-box">
+              <span class="ref-label">Reference ID:</span>
+              <span class="ref-code" id="ev-success-ref">UAF-DATA-REQ-2026-000001</span>
+            </div>
+            <p class="success-explain">A UAF research verifier will review your request within 2-3 business days and respond via email.</p>
+            <div class="success-action-btns">
+              <button type="button" class="btn btn--primary" id="btn-ev-another">Submit Another Request</button>
+              <button type="button" class="btn btn--outline" data-goto="menu">Return to Menu</button>
+            </div>
+          </div>
+
         </div>
       </div>
-
-      <!-- UAF Wave Footer (Matching Mockup Design) -->
-      <footer class="uaf-wave-footer">
-        <div class="uaf-wave-svg-wrap">
-          <svg class="uaf-wave-svg" viewBox="0 0 1440 120" preserveAspectRatio="none">
-            <path class="uaf-wave-back" d="M0,32L60,42.7C120,53,240,75,360,69.3C480,64,600,32,720,26.7C840,21,960,43,1080,53.3C1200,64,1320,64,1380,64L1440,64L1440,120L1380,120C1320,120,1200,120,1080,120C960,120,840,120,720,120C600,120,480,120,360,120C240,120,120,120,60,120L0,120Z"></path>
-            <path class="uaf-wave-front" d="M0,64L48,58.7C96,53,192,43,288,48C384,53,480,75,576,80C672,85,768,75,864,64C960,53,1056,43,1152,48C1248,53,1344,75,1392,85.3L1440,96L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
-          </svg>
-        </div>
-        <div class="uaf-wave-footer__inner">
-          <div class="uaf-footer-socials">
-            <a href="https://www.facebook.com/upskillafricafoundation" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="Facebook" aria-label="Facebook">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/></svg>
-            </a>
-            <a href="https://www.linkedin.com/company/upskill-africa-foundation" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="LinkedIn" aria-label="LinkedIn">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
-            </a>
-            <a href="mailto:upskillafrica.lr@gmail.com" class="uaf-social-icon-btn" title="Email UAF" aria-label="Email">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            </a>
-            <a href="https://uafalp.blogspot.com/" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="UAF ALP Blog" aria-label="Blog">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            </a>
-            <a href="tel:+231889541712" class="uaf-social-icon-btn" title="Call UAF (+231 889 541 712)" aria-label="Phone">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            </a>
-            <a href="https://wa.me/231889541712" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="WhatsApp Chat (+231 889 541 712)" aria-label="WhatsApp">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.35C9.36 7.35 9.09 7.41 8.86 7.66C8.63 7.91 7.99 8.51 7.99 9.73C7.99 10.95 8.88 12.13 9 12.3C9.13 12.47 10.73 14.95 13.2 16C13.78 16.26 14.24 16.41 14.59 16.53C15.19 16.71 15.73 16.69 16.16 16.63C16.64 16.55 17.65 16.01 17.86 15.42C18.07 14.83 18.07 14.32 18.01 14.22C17.95 14.12 17.78 14.06 17.52 13.93C17.26 13.81 15.99 13.18 15.75 13.1C15.52 13.01 15.35 12.97 15.18 13.22C15.01 13.48 14.53 14.06 14.38 14.22C14.23 14.4 14.09 14.42 13.83 14.29C13.57 14.16 12.74 13.89 11.75 13C10.98 12.32 10.46 11.47 10.31 11.22C10.16 10.97 10.29 10.83 10.42 10.7C10.54 10.58 10.68 10.4 10.82 10.24C10.95 10.07 11 9.95 11.09 9.78C11.17 9.61 11.13 9.46 11.07 9.33C11.01 9.21 10.53 8.03 10.33 7.55C10.14 7.08 9.94 7.15 9.78 7.14C9.64 7.14 9.48 7.35 9.53 7.35Z"/></svg>
-            </a>
-            <a href="https://maps.google.com/?q=Duport+Road,+Paynesville,+Liberia" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="Physical Location: Duport Road, Paynesville, Liberia" aria-label="Physical Location">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            </a>
-          </div>
-          <nav class="uaf-footer-nav-links">
-            <a href="https://www.facebook.com/upskillafricafoundation" target="_blank" rel="noopener noreferrer">Facebook</a>
-            <a href="https://www.linkedin.com/company/upskill-africa-foundation" target="_blank" rel="noopener noreferrer">LinkedIn</a>
-            <a href="mailto:upskillafrica.lr@gmail.com">Email</a>
-            <a href="https://uafalp.blogspot.com/" target="_blank" rel="noopener noreferrer">Blog</a>
-            <a href="tel:+231889541712">Tells / Calls</a>
-            <a href="https://wa.me/231889541712" target="_blank" rel="noopener noreferrer">WhatsApp</a>
-            <a href="https://maps.google.com/?q=Duport+Road,+Paynesville,+Liberia" target="_blank" rel="noopener noreferrer">Physical Location</a>
-          </nav>
-          <div class="uaf-footer-address">
-            <span>Duport Road, Paynesville, Montserrado County, Liberia</span>
-          </div>
-          <div class="uaf-footer-copyright">
-            <span>© 2026 Upskill Africa Foundation (UAF). All Rights Reserved.</span>
-          </div>
-        </div>
-      </footer>
     </section>
 
     <!-- =========================================================
-         SCREEN 6: SUBMIT OSSC (Out-of-School Intake Form)
+         SCREEN 4: IDENTIFY OSSC (Out-of-School Child Report)
          ========================================================= -->
     <section class="screen" data-screen="submit-ossc">
       <div class="tab-header-nav">
@@ -838,345 +507,208 @@
         </button>
       </div>
 
-      <div class="page-container" style="max-width: 580px;">
+      <div class="page-container" style="max-width: 640px;">
         <div class="form-container-card">
           <div class="section-title-wrap">
-            <h2>Community Out-of-School Intake Form</h2>
-            <p class="section-lead">Know a child or group of children who are out of school? Share the information with UAF. Every case is reviewed and verified by a UAF field verifier before any information is accepted or used for reporting.</p>
+            <div class="form-header-badge">Community Reporting Desk</div>
+            <h2>Identify Out-of-School Children</h2>
+            <p class="section-lead">Know a child or group of children out of school in your neighborhood? Share the information with UAF. Field verifiers inspect every case door-to-door before re-enrollment support is issued.</p>
           </div>
 
-          <form id="report-form" style="margin-top:16px;">
-            <!-- 1. Reporter / Verifier Information -->
+          <form id="report-form">
+            <!-- 1. Reporter Information -->
             <div class="form-section-title">1. Reporter Information</div>
             <div class="form-row-2">
               <div class="form-field">
-                <label for="rep-name">Your name *</label>
-                <input type="text" id="rep-name" name="reporterName" placeholder="Your full name" required />
+                <label for="rep-name">Your Full Name *</label>
+                <input type="text" id="rep-name" placeholder="First and last name" required />
               </div>
               <div class="form-field">
-                <label for="rep-phone">Phone number *</label>
-                <input type="tel" id="rep-phone" name="reporterPhone" placeholder="088... or 077..." required />
+                <label for="rep-phone">Phone Number *</label>
+                <input type="tel" id="rep-phone" placeholder="088... or 077..." required />
               </div>
-            </div>
-
-            <div class="form-field">
-              <label for="rep-org">Organization / Institution (Optional)</label>
-              <input type="text" id="rep-org" name="reporterOrg" placeholder="e.g. Community School, CBO, Faith Group, Local Leader" />
             </div>
 
             <div class="form-row-2">
               <div class="form-field">
-                <label for="rep-community">Community / Town *</label>
-                <input type="text" id="rep-community" name="community" placeholder="e.g. Duport Road, Red Light" required />
+                <label for="rep-county">County *</label>
+                <select id="rep-county" required class="input-select">
+                  <option value="">Select County</option>
+                  <option value="Montserrado">Montserrado</option>
+                  <option value="Margibi">Margibi</option>
+                  <option value="Bong">Bong</option>
+                  <option value="Nimba">Nimba</option>
+                  <option value="Grand Bassa">Grand Bassa</option>
+                  <option value="Lofa">Lofa</option>
+                  <option value="Maryland">Maryland</option>
+                  <option value="Sinoe">Sinoe</option>
+                  <option value="Grand Cape Mount">Grand Cape Mount</option>
+                  <option value="Grand Gedeh">Grand Gedeh</option>
+                  <option value="Rivercess">Rivercess</option>
+                  <option value="Grand Kru">Grand Kru</option>
+                  <option value="Bomi">Bomi</option>
+                  <option value="River Gee">River Gee</option>
+                  <option value="Gbarpolu">Gbarpolu</option>
+                </select>
               </div>
               <div class="form-field">
-                <label for="rep-county">County *</label>
-                <select id="rep-county" name="county" data-role="county-select" required></select>
+                <label for="rep-community">Community / Town *</label>
+                <input type="text" id="rep-community" placeholder="e.g. Duport Road, Red Light, West Point" required />
               </div>
             </div>
 
+            <!-- 2. Children Details -->
+            <div class="form-section-title" style="margin-top:20px;">2. Children Details</div>
             <div class="form-field">
-              <label for="rep-count">Approximate number of Children out of school *</label>
-              <input type="number" id="rep-count" name="childCount" min="1" max="20" value="1" placeholder="e.g. 1, 2, 5" required />
-              <span style="font-size:11.5px; color:var(--ink-500); margin-top:3px; display:block;">Entering a number automatically creates individual profile and safeguarding sections for each child.</span>
+              <label for="rep-count">Approximate Number of Children Out of School *</label>
+              <input type="number" id="rep-count" min="1" max="20" value="1" required />
+              <small style="color:var(--ink-500);font-size:11.5px;margin-top:3px;display:block;">Adjusting the count dynamically adds child profile cards below.</small>
             </div>
 
-            <!-- Dynamic Children Profiles Container -->
-            <div id="children-profiles-container">
-              <!-- Dynamically populated and managed by app.js -->
+            <!-- Dynamic Child Profiles Repeater Container -->
+            <div id="children-profiles-container" style="margin-top:14px;"></div>
+
+            <!-- 3. Observations and Notes -->
+            <div class="form-field" style="margin-top:14px;">
+              <label for="rep-notes">Additional Observations &amp; Family Situation</label>
+              <textarea id="rep-notes" rows="3" placeholder="Describe the barriers preventing the child from attending school (poverty, single parent, lack of uniform/fees, disability)..."></textarea>
             </div>
 
-            <button type="submit" class="btn-submit-primary" style="margin-top:16px;">Submit Child Case for Verification</button>
+            <div class="form-check" style="margin-top:12px;margin-bottom:18px;">
+              <input type="checkbox" id="rep-consent" required checked />
+              <label for="rep-consent">I confirm this information is submitted in good faith to assist child protection and education verification in Liberia.</label>
+            </div>
+
+            <button type="submit" class="btn-submit-primary" id="rep-submit-btn">Submit Child Case for Verification</button>
           </form>
+
+          <!-- Success Card for OSSC Submission -->
+          <div class="submission-success-card is-hidden" id="ossc-success-view">
+            <div class="success-icon-wrap">
+              <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            </div>
+            <h3>Child Case Registered</h3>
+            <p>Your community report has been saved directly to the database with status <strong>NEW</strong>.</p>
+            <div class="reference-badge-box">
+              <span class="ref-label">Report Reference:</span>
+              <span class="ref-code" id="ossc-success-ref">UAF-OSSC-2026-000001</span>
+            </div>
+            <p class="success-explain">A UAF field verifier will conduct a localized community verification and follow up with local school alliances.</p>
+            <div class="success-action-btns">
+              <button type="button" class="btn btn--primary" id="btn-ossc-another">Report Another Child Case</button>
+              <button type="button" class="btn btn--outline" data-goto="menu">Return to Menu</button>
+            </div>
+          </div>
+
         </div>
       </div>
-    </section>
-
-    <!-- =========================================================
-         SCREEN 7: PARTNERS (UAF Partners & Collaborators)
-         ========================================================= -->
-    <section class="screen" data-screen="partners">
-      <div class="tab-header-nav">
-        <button type="button" class="btn-back-menu" data-goto="menu">
-          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-          <span>Menu</span>
-        </button>
-      </div>
-
-      <div class="page-container">
-        <div class="section-title-wrap" style="text-align:center; max-width:640px; margin:0 auto 28px;">
-          <h2>UAF Partners &amp; Collaborators</h2>
-          <p class="section-lead">UAF partnership with community leaders, civil society organizations, schools, and institutional supporters to advance child rights, households resilience and education access.</p>
-        </div>
-
-        <div class="partners-grid-display" id="partners-grid-display">
-          <!-- Card 1 -->
-          <div class="partner-card">
-            <div class="partner-card__logo-wrap">
-              <img src="assets/uaf-logo.png" alt="Community School Alliances" class="partner-card__logo" />
-            </div>
-            <div class="partner-card__title">Community School Alliances</div>
-            <div class="partner-card__type">Education Access Partner</div>
-            <p class="partner-card__desc">Partnering with verified community primary and junior high schools across Montserrado County to admit out-of-school learners with waived or subsidized fees.</p>
-          </div>
-
-          <!-- Card 2 -->
-          <div class="partner-card">
-            <div class="partner-card__logo-wrap">
-              <img src="assets/nic-logo.png" alt="Liberia Child Protection Network" class="partner-card__logo" />
-            </div>
-            <div class="partner-card__title">Liberia Child Protection Network</div>
-            <div class="partner-card__type">Safeguarding Alliance</div>
-            <p class="partner-card__desc">Collaborating on child protection referrals, household counseling, and community awareness against child labor and early school drop-outs.</p>
-          </div>
-
-          <!-- Card 3 -->
-          <div class="partner-card">
-            <div class="partner-card__logo-wrap">
-              <img src="assets/icon-partners.png" alt="Learning Alternative Program" class="partner-card__logo" />
-            </div>
-            <div class="partner-card__title">Learning Alternative Program (ALP)</div>
-            <div class="partner-card__type">Digital Literacy &amp; Skills</div>
-            <p class="partner-card__desc">Empowering youth and young mothers with computer literacy, job readiness, and technology training to fund household educational needs.</p>
-          </div>
-
-          <!-- Card 4 -->
-          <div class="partner-card">
-            <div class="partner-card__logo-wrap">
-              <img src="assets/icon-impact.png" alt="Community Leadership Councils" class="partner-card__logo" />
-            </div>
-            <div class="partner-card__title">Community Leadership Councils</div>
-            <div class="partner-card__type">Local Governance</div>
-            <p class="partner-card__desc">Zone leaders, block chairs, and community elders who guide UAF field verifiers through neighborhoods to identify every out-of-school child.</p>
-          </div>
-        </div>
-
-        <div class="partner-join-callout">
-          <h3>Interested in partnering with UAF?</h3>
-          <p>We welcome donor agencies, educational institutions, education stakeholders, community foundations and individuals to support education access in Liberia.</p>
-          <a href="mailto:upskillafrica.lr@gmail.com?subject=Partnership%20Request%20-%20Upskill%20Africa%20Foundation&body=Dear%20UAF%20Partnership%20Team%2C%0A%0AWe%20are%20reaching%20out%20to%20express%20our%20interest%20in%20partnering%20with%20Upskill%20Africa%20Foundation%20on%20education%20access%20and%20child%20re-enrollment%20initiatives.%0A%0AOrganization%3A%20%0AContact%20Person%3A%20%0APhone%3A%20%0AMessage%3A%20" class="btn-partner-contact" target="_blank" rel="noopener noreferrer">
-            Contact UAF Partnership Desk 
-          </a>
-        </div>
-      </div>
-
-      <!-- UAF Wave Footer (Matching Mockup Design) -->
-      <footer class="uaf-wave-footer">
-        <div class="uaf-wave-svg-wrap">
-          <svg class="uaf-wave-svg" viewBox="0 0 1440 120" preserveAspectRatio="none">
-            <path class="uaf-wave-back" d="M0,32L60,42.7C120,53,240,75,360,69.3C480,64,600,32,720,26.7C840,21,960,43,1080,53.3C1200,64,1320,64,1380,64L1440,64L1440,120L1380,120C1320,120,1200,120,1080,120C960,120,840,120,720,120C600,120,480,120,360,120C240,120,120,120,60,120L0,120Z"></path>
-            <path class="uaf-wave-front" d="M0,64L48,58.7C96,53,192,43,288,48C384,53,480,75,576,80C672,85,768,75,864,64C960,53,1056,43,1152,48C1248,53,1344,75,1392,85.3L1440,96L1440,120L1392,120C1344,120,1248,120,1152,120C1056,120,960,120,864,120C768,120,672,120,576,120C480,120,384,120,288,120C192,120,96,120,48,120L0,120Z"></path>
-          </svg>
-        </div>
-        <div class="uaf-wave-footer__inner">
-          <div class="uaf-footer-socials">
-            <a href="https://web.facebook.com/profile.php?id=100094538285249" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="Facebook" aria-label="Facebook">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M22 12c0-5.52-4.48-10-10-10S2 6.48 2 12c0 4.84 3.44 8.87 8 9.8V15H8v-3h2V9.5C10 7.57 11.57 6 13.5 6H16v3h-2c-.55 0-1 .45-1 1v2h3v3h-3v6.95c5.05-.5 9-4.76 9-9.95z"/></svg>
-            </a>
-            <a href="https://www.linkedin.com/company/upskill-africa-foundation" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="LinkedIn" aria-label="LinkedIn">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.88 8.56a1.68 1.68 0 0 0 1.68-1.68c0-.93-.75-1.69-1.68-1.69a1.69 1.69 0 0 0-1.69 1.69c0 .93.76 1.68 1.69 1.68m1.39 9.94v-8.37H5.5v8.37h2.77z"/></svg>
-            </a>
-            <a href="mailto:upskillafrica.lr@gmail.com" class="uaf-social-icon-btn" title="Email UAF" aria-label="Email">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-            </a>
-            <a href="https://uafalp.blogspot.com/" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="UAF ALP Blog" aria-label="Blog">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-            </a>
-            <a href="tel:+231889541712" class="uaf-social-icon-btn" title="Call UAF (+231 889 541 712)" aria-label="Phone">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-            </a>
-            <a href="https://wa.me/231889541712" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="WhatsApp Chat (+231 889 541 712)" aria-label="WhatsApp">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 9.27 20.92 6.78 19.05 4.91C17.18 3.03 14.69 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.92C20.28 16.46 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19L7.55 18.83L4.43 19.65L5.26 16.61L5.06 16.29C4.24 15 3.8 13.47 3.8 11.91C3.81 7.37 7.5 3.67 12.05 3.67M9.53 7.35C9.36 7.35 9.09 7.41 8.86 7.66C8.63 7.91 7.99 8.51 7.99 9.73C7.99 10.95 8.88 12.13 9 12.3C9.13 12.47 10.73 14.95 13.2 16C13.78 16.26 14.24 16.41 14.59 16.53C15.19 16.71 15.73 16.69 16.16 16.63C16.64 16.55 17.65 16.01 17.86 15.42C18.07 14.83 18.07 14.32 18.01 14.22C17.95 14.12 17.78 14.06 17.52 13.93C17.26 13.81 15.99 13.18 15.75 13.1C15.52 13.01 15.35 12.97 15.18 13.22C15.01 13.48 14.53 14.06 14.38 14.22C14.23 14.4 14.09 14.42 13.83 14.29C13.57 14.16 12.74 13.89 11.75 13C10.98 12.32 10.46 11.47 10.31 11.22C10.16 10.97 10.29 10.83 10.42 10.7C10.54 10.58 10.68 10.4 10.82 10.24C10.95 10.07 11 9.95 11.09 9.78C11.17 9.61 11.13 9.46 11.07 9.33C11.01 9.21 10.53 8.03 10.33 7.55C10.14 7.08 9.94 7.15 9.78 7.14C9.64 7.14 9.48 7.35 9.53 7.35Z"/></svg>
-            </a>
-            <a href="https://maps.google.com/?q=Duport+Road,+Paynesville,+Liberia" target="_blank" rel="noopener noreferrer" class="uaf-social-icon-btn" title="Physical Location: Duport Road, Paynesville, Liberia" aria-label="Physical Location">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-            </a>
-          </div>
-            <div class="uaf-footer-address">
-            <span>Booker's Town, Pipeline Road, Paynesville, Montserrado County, Liberia</span>
-          </div>
-          <div class="uaf-footer-copyright">
-            <span>© 2026 Upskill Africa Foundation (UAF). All Rights Reserved.</span>
-          </div>
-        </div>
-      </footer>
     </section>
 
   </main>
 
 </div>
 
-<!-- Install Guide Dialog Modal -->
-<div class="dialog-backdrop is-hidden" id="install-guide-backdrop">
-  <div class="dialog-window" style="max-width: 440px; text-align: center;">
-    <div class="dialog-header">
-      <h3>Install UAF Impact App</h3>
-      <button type="button" class="dialog-close" id="install-guide-close">×</button>
-    </div>
-    <div class="dialog-body" style="padding: 20px;">
-      <img src="assets/nic-logo.png" alt="UAF NIC Logo" style="width: 80px; height: 80px; object-fit: contain; margin-bottom: 12px; border-radius: 18px; box-shadow: 0 4px 14px rgba(0,0,0,0.12);" />
-      <h4 style="font-size: 16px; font-weight: 700; margin: 0 0 6px;">UAF Impact &amp; NIC</h4>
-      <p style="font-size: 13px; color: var(--ink-500); margin: 0 0 16px; line-height: 1.45;">Install the app icon directly to your desktop or phone home screen for instant offline access and real-time community updates.</p>
-      
-      <button type="button" class="btn-install-prompt-action" id="install-prompt-trigger">Install to Home Screen</button>
-
-      <div style="text-align: left; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-top: 16px; font-size: 12px; color: var(--ink-700);">
-        <strong>How to install:</strong>
-        <ul style="margin: 6px 0 0 16px; padding: 0; line-height: 1.55;">
-          <li><strong>Android (Chrome):</strong> Tap <em>"Install to Home Screen"</em> above or tap the 3 dots (⋮) menu and select <strong>"Install app"</strong>.</li>
-          <li><strong>iPhone / iPad (Safari):</strong> Tap the <strong>Share</strong> button (box with up arrow) at the bottom, then tap <strong>"Add to Home Screen"</strong>.</li>
-          <li><strong>Computer (Chrome / Edge):</strong> Click the install icon (computer with down arrow) in the address bar.</li>
-        </ul>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Search Dialog Modal -->
-<div class="dialog-backdrop is-hidden" id="search-dialog-backdrop">
-  <div class="dialog-window">
-    <div class="dialog-header">
-      <h3>Search UAF Impact</h3>
-      <button type="button" class="dialog-close" id="search-dialog-close">×</button>
-    </div>
-    <div class="dialog-body">
-      <input type="text" id="global-search-input" class="search-input-field" placeholder="Search communities, counties, programs..." />
-      <div class="search-results-list" id="search-results-container">
-        <p style="font-size:12.5px; color:var(--ink-400); margin-top:10px;">Type a county (e.g. Montserrado) or community name to jump directly.</p>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Story Detail Modal (Opens when user clicks any story to read details & testimonial) -->
+<!-- =========================================================
+     MODAL 1: STORY DETAIL MODAL (Full Unconstrained Reader)
+     ========================================================= -->
 <div class="story-modal-backdrop is-hidden" id="story-modal-backdrop" style="display:none;" role="dialog" aria-modal="true">
   <div class="story-modal-card">
     <div class="story-modal-header">
-      <span class="story-modal-tag" id="story-modal-tag">Community Story</span>
+      <span class="story-modal-tag" id="story-modal-tag">Field Story</span>
       <button type="button" class="story-modal-close" id="story-modal-close" aria-label="Close story">&times;</button>
     </div>
     <div class="story-modal-body">
       <!-- Story Image Banner -->
-      <div id="story-modal-img-wrap" style="margin-bottom:14px;border-radius:10px;overflow:hidden;max-height:220px;border:1px solid var(--border);">
-        <img id="story-modal-img" src="assets/uaf-logo.png" alt="Story banner" style="width:100%;height:100%;max-height:220px;object-fit:cover;display:block;" onerror="this.style.display='none';" />
+      <div id="story-modal-img-wrap" style="margin-bottom:14px;border-radius:12px;overflow:hidden;max-height:260px;border:1px solid var(--border);">
+        <img id="story-modal-img" src="assets/uaf-logo.png" alt="Story banner" style="width:100%;height:100%;max-height:260px;object-fit:cover;display:block;" onerror="this.src='assets/uaf-logo.png';" />
       </div>
 
-      <div class="story-modal-location" id="story-modal-location">West Point · Montserrado County</div>
+      <div class="story-modal-location" id="story-modal-location">Montserrado County, Liberia</div>
       <h2 class="story-modal-title" id="story-modal-title">Story Title</h2>
 
       <!-- Story Funding Raised & Target -->
-      <div id="story-modal-funding-wrap" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:8px;padding:12px 14px;margin:12px 0 16px;">
+      <div id="story-modal-funding-wrap" style="background:#f0f9ff;border:1px solid #bae6fd;border-radius:10px;padding:12px 16px;margin:14px 0 18px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-          <span id="story-modal-raised-val" style="font-weight:700;color:#0369a1;font-size:14px;">$0.00 raised</span>
-          <span id="story-modal-goal-val" style="font-size:12.5px;color:#0284c7;">of $0.00 target</span>
+          <span id="story-modal-raised-val" style="font-weight:700;color:#0369a1;font-size:14.5px;">$0.00 raised</span>
+          <span id="story-modal-goal-val" style="font-size:13px;color:#0284c7;font-weight:600;">of $0.00 target</span>
         </div>
         <div style="background:#e0f2fe;height:8px;border-radius:999px;overflow:hidden;">
-          <div id="story-modal-funding-fill" style="background:var(--blue-600,#0284c7);height:100%;width:0%;transition:width 0.4s ease;"></div>
+          <div id="story-modal-funding-fill" style="background:linear-gradient(90deg, #007A99, #0284c7);height:100%;width:0%;transition:width 0.4s ease;"></div>
         </div>
       </div>
 
+      <!-- Testimonial Quote Wrap (Conditionally rendered) -->
       <div class="story-modal-quote-wrap">
         <div class="story-modal-quote-mark">“</div>
-        <p class="story-modal-quote-text" id="story-modal-quote">Testimonial quote goes here...</p>
-        <div class="story-modal-quote-author" id="story-modal-author">— Child / Parent</div>
+        <p class="story-modal-quote-text" id="story-modal-quote"></p>
+        <div class="story-modal-quote-author" id="story-modal-author"></div>
       </div>
+
+      <!-- Field Activities Section (Conditionally rendered) -->
       <div class="story-modal-section">
         <h3>Field Activities &amp; Intervention</h3>
-        <p id="story-modal-activities">Field activities details...</p>
-      </div>
-      <div class="story-modal-section">
-        <h3>Community Narrative &amp; Background</h3>
-        <p id="story-modal-narrative">Full narrative...</p>
+        <p id="story-modal-activities"></p>
       </div>
 
-      <!-- Reactions & Social Media Share Bar -->
+      <!-- Full Unconstrained Story Narrative -->
+      <div class="story-modal-section">
+        <h3>Full Story &amp; Community Narrative</h3>
+        <p id="story-modal-narrative"></p>
+      </div>
+
+      <!-- Reactions & Social Share Bar -->
       <div class="story-modal-interactive-bar" style="margin-top:20px;padding:14px;background:#f8fafc;border-radius:10px;border:1px solid #e2e8f0;">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
-          <!-- Reaction Buttons (Like, Heart, Celebrate) -->
-          <div class="story-modal-reactions" id="story-modal-reactions-bar">
-            <!-- Rendered via JS -->
-          </div>
-          <!-- Social Media Share Buttons -->
-          <div class="story-modal-share" id="story-modal-share-bar">
-            <!-- Rendered via JS -->
-          </div>
+          <div class="story-modal-reactions" id="story-modal-reactions-bar"></div>
+          <div class="story-modal-share" id="story-modal-share-bar"></div>
         </div>
-      </div>
-
-      <!-- Community Comments Section with Private to Admin Toggle -->
-      <div class="story-comments-section" id="story-comments-section" style="margin-top:22px;padding-top:18px;border-top:1px solid #e2e8f0;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-          <div style="display:flex;align-items:center;gap:8px;">
-            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-            <h3 style="margin:0;font-size:15px;color:var(--ink-900);">Community Messages &amp; Comments</h3>
-          </div>
-          <span class="story-comments-count-badge" id="story-modal-comments-count" style="font-size:12px;background:#e0f2fe;color:#0369a1;padding:2px 8px;border-radius:999px;font-weight:600;">0 comments</span>
-        </div>
-
-        <!-- Comments List -->
-        <div class="story-comments-list" id="story-modal-comments-list" style="margin-bottom:16px;max-height:220px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
-          <!-- Comments populated dynamically -->
-        </div>
-
-        <!-- Add Comment Form -->
-        <form id="story-modal-comment-form" style="background:#fff;padding:12px;border:1px solid #e2e8f0;border-radius:10px;">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:8px;">
-            <div>
-              <label for="story-comment-author" style="font-size:11.5px;font-weight:600;color:var(--ink-700);display:block;margin-bottom:3px;">Your Name (Optional)</label>
-              <input type="text" id="story-comment-author" placeholder="Supporter Name or Anonymous" style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12px;" />
-            </div>
-            <div style="display:flex;align-items:center;padding-top:14px;">
-              <label style="display:flex;align-items:center;gap:6px;font-size:11.5px;color:#b91c1c;font-weight:600;cursor:pointer;">
-                <input type="checkbox" id="story-comment-private" />
-                <span>🔒 Hide from other users (Admin only)</span>
-              </label>
-            </div>
-          </div>
-          <div style="margin-bottom:8px;">
-            <textarea id="story-comment-text" rows="2" required placeholder="Leave a message of support, prayer, or inquiry for this story..." style="width:100%;padding:7px 10px;border:1px solid var(--border);border-radius:6px;font-size:12.5px;resize:vertical;"></textarea>
-          </div>
-          <div style="display:flex;justify-content:flex-end;">
-            <button type="submit" class="btn btn--primary" style="padding:6px 14px;font-size:12px;font-weight:700;">Post Comment</button>
-          </div>
-        </form>
       </div>
     </div>
+
     <div class="story-modal-footer">
       <button type="button" class="btn-story-modal-support" id="story-modal-support-btn">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-        <span>Support this Story</span>
+        <span>Donate to this Story</span>
       </button>
       <button type="button" class="btn-story-modal-done" id="story-modal-done-btn">Done Reading</button>
     </div>
   </div>
 </div>
 
-<!-- Timed Donation Engagement Popup Modal -->
-<div class="donation-engagement-backdrop is-hidden" id="donation-engagement-modal" role="dialog" aria-modal="true" style="display:none;">
-  <div class="donation-engagement-card">
-    <button type="button" class="donation-engagement-close" id="donation-engagement-close" aria-label="Close dialog">&times;</button>
-    <div class="donation-engagement-icon-wrap">
-      <svg viewBox="0 0 24 24" width="30" height="30" fill="#e11d48"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+<!-- =========================================================
+     MODAL 2: PWA INSTALL GUIDE MODAL
+     ========================================================= -->
+<div class="dialog-backdrop is-hidden" id="install-guide-backdrop">
+  <div class="dialog-window" style="max-width: 440px; text-align: center;">
+    <div class="dialog-header">
+      <h3>Install UAF Campaign Drive</h3>
+      <button type="button" class="dialog-close" id="install-guide-close">&times;</button>
     </div>
-    <div class="donation-engagement-badge">Upskill Africa Foundation</div>
-    <h3 class="donation-engagement-title">Please Donate, Educate a Kid or Empower a household</h3>
-    <p class="donation-engagement-desc">
-      Your support directly funds back-to-school kits, classroom re-enrollment fees, and sustainable vocational livelihood training for struggling mothers and vulnerable out-of-school children across Liberia.
-    </p>
-    <div class="donation-engagement-actions">
-      <button type="button" class="btn-engagement-donate" id="donation-engagement-donate-btn">
-        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
-        <span>Donate Form</span>
-      </button>
-      <button type="button" class="btn-engagement-dismiss" id="donation-engagement-dismiss-btn">Maybe Later</button>
+    <div class="dialog-body" style="padding: 20px;">
+      <img src="assets/uaf-logo.png" alt="UAF Logo" style="width: 76px; height: 76px; object-fit: contain; margin-bottom: 12px; border-radius: 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.12);" />
+      <h4 style="font-size: 16px; font-weight: 700; margin: 0 0 6px;">UAF Campaign Drive</h4>
+      <p style="font-size: 13px; color: var(--ink-500); margin: 0 0 16px; line-height: 1.45;">Install the app icon directly to your phone home screen or desktop for fast offline access and direct community updates.</p>
+      
+      <button type="button" class="btn-install-prompt-action" id="install-prompt-trigger">Install App Now</button>
+
+      <div style="text-align: left; background: var(--surface-alt); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; margin-top: 16px; font-size: 12px; color: var(--ink-700);">
+        <strong>How to install manually:</strong>
+        <ul style="margin: 6px 0 0 16px; padding: 0; line-height: 1.6;">
+          <li><strong>Android (Chrome):</strong> Tap <em>"Install App Now"</em> above or tap Chrome menu (⋮) and tap <strong>"Install app"</strong>.</li>
+          <li><strong>iPhone / iPad (Safari):</strong> Tap the <strong>Share</strong> button (box with up arrow), then tap <strong>"Add to Home Screen"</strong>.</li>
+          <li><strong>Computer (Chrome / Edge):</strong> Click the install icon in your browser address bar.</li>
+        </ul>
+      </div>
     </div>
   </div>
 </div>
 
+<!-- Toast Container -->
 <div class="toast" id="toast"></div>
 
-<script src="config.js?v=30"></script>
-<script src="data.js?v=30"></script>
-<script src="app.js?v=30"></script>
+<!-- Scripts -->
+<script src="config.js?v=31"></script>
+<script src="data.js?v=31"></script>
+<script src="app.js?v=31"></script>
 </body>
 </html>

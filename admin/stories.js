@@ -1,1088 +1,478 @@
 /* =========================================================
-   UAF IMPACT — ADMIN: STORIES & EVIDENCE REQUESTS
-   ---------------------------------------------------------
-   Administrative portal for creating, publishing, and managing
-   unlimited field impact stories with image upload (base64 & URL),
-   amount raised, funding goals, and reviewing evidence requests.
+   UAF CAMPAIGN DRIVE — ADMIN STORIES & CAMPAIGNS (v31)
+   =========================================================
+   Covers:
+   - Create, edit, publish, unpublish, and delete stories
+   - Required funding goal (USD) for live progress calculation
+   - One-Click CSV Download button
+   - Direct-to-database writes to News sheet
    ========================================================= */
+
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "uaf_stories";
-  const API_URL = (window.UAF_CONFIG && window.UAF_CONFIG.API_URL) || "";
-
-  const CATEGORIES = [
-    "No Invisible Child",
-    "Education Access",
-    "Women Livelihood Empowerment",
-    "Alternative Learning (ALP)",
-    "Child Protection",
-    "Rights Advocacy",
-    "Community Outreach",
-    "Policy & Research",
-    "General Update"
-  ];
-
-  const COUNTIES = [
-    "Montserrado", "Margibi", "Bong", "Nimba", "Grand Bassa",
-    "Bomi", "Gbarpolu", "Grand Cape Mount", "Grand Gedeh",
-    "Grand Kru", "Lofa", "Maryland", "River Cess", "River Gee", "Sinoe"
-  ];
-
-  const DEFAULT_STORIES = [];
-
-  // Persistent Story Deletion Tombstones
-  function getDeletedStories() {
-    try {
-      return JSON.parse(localStorage.getItem("uaf_deleted_stories") || "[]");
-    } catch (_) {
-      return [];
-    }
-  }
-
-  function addDeletedStory(id) {
-    if (!id) return;
-    const list = getDeletedStories();
-    const str = String(id).trim();
-    if (!list.includes(str)) {
-      list.push(str);
-      try {
-        localStorage.setItem("uaf_deleted_stories", JSON.stringify(list));
-      } catch (_) {}
-    }
-  }
-
-  function isStoryDeleted(id, deletedList) {
-    if (!id) return false;
-    const list = deletedList || getDeletedStories();
-    const str = String(id).trim();
-    return list.includes(str);
-  }
-
-  function getLocalStories() {
-    const deletedList = getDeletedStories();
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored !== null) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          return parsed.filter((s) => {
-            const sId = String(s.id || s.storyId || "").trim();
-            const sIdLower = sId.toLowerCase();
-            if (sIdLower === "story_blessing" || sIdLower === "story_comfort" || sIdLower === "story_emmanuel") return false;
-            return !isStoryDeleted(sId, deletedList);
-          });
-        }
-      }
-    } catch (_) {}
-
-    return [];
-  }
-
-  function saveLocalStories(stories) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(stories));
-      window.dispatchEvent(new Event("uaf_stories_updated"));
-    } catch (e) {
-      console.error("Failed to save stories to localStorage:", e);
-    }
-  }
-
-  async function callApi(action, payload) {
-    if (!API_URL || API_URL.includes("PASTE_YOUR")) {
-      return { ok: false, error: "API not configured" };
-    }
-    const res = await fetch(API_URL, {
-      method: "POST",
-      headers: { "Content-Type": "text/plain;charset=utf-8" },
-      body: JSON.stringify(Object.assign({ action }, payload))
-    });
-    return res.json();
-  }
-
-  function escapeHtml(str) {
-    const div = document.createElement("div");
-    div.textContent = str == null ? "" : String(str);
-    return div.innerHTML;
-  }
-
-  function formatMoney(num) {
-    const n = Number(num) || 0;
-    return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-
-  function formatDate(isoStr) {
-    if (!isoStr) return "—";
-    try {
-      const d = new Date(isoStr);
-      if (isNaN(d.getTime())) return isoStr;
-      return d.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
-    } catch (e) {
-      return isoStr;
-    }
-  }
-
-  let cachedStories = [];
-  let cachedEvidence = [];
-  let currentTab = "stories";
-  let storyFilter = "ALL";
+  let storiesList = [];
   let editingStoryId = null;
-  let currentStoryImageDataUrl = "assets/uaf-logo.png";
 
   function renderStoriesModule(container, session) {
-    cachedStories = getLocalStories();
-
     container.innerHTML = `
-      <div class="admin-module-header">
-        <div>
-          <h2 style="font-family:'Lorem ipsum dolor sit amet' !important;">Field Stories &amp; Evidence Management</h2>
-          <p class="admin-muted" style="margin-top:4px;font-family:'Lorem ipsum dolor sit amet' !important;">Create and publish unlimited field impact stories with photos, track amounts raised, and process evidence requests.</p>
+      <div class="admin-card">
+        <div class="dash-welcome-row" style="margin-bottom:18px;">
+          <div>
+            <h2>Campaign Stories &amp; Appeals</h2>
+            <p class="admin-muted">Manage community stories, set funding goals, and update campaign statuses. Saving writes directly to the News sheet.</p>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button type="button" class="btn btn--outline" id="btn-download-stories-csv">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              <span>Download CSV (1-Click)</span>
+            </button>
+            <button type="button" class="btn btn--primary" id="btn-open-create-story">
+              <span>+ Create Story</span>
+            </button>
+          </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap;">
-          <button id="stories-sync-btn" class="btn btn--outline" style="font-size:12px;" title="Sync stories with cloud backend">☁ Sync Cloud</button>
-          <button id="stories-export-btn" class="btn btn--outline" style="font-size:12px;" title="Export all stories as JSON file">Export JSON</button>
-          <button id="stories-import-btn" class="btn btn--outline" style="font-size:12px;" title="Import stories from JSON file">Import JSON</button>
-          <input type="file" id="stories-import-file" accept="application/json" style="display:none;" />
-          <button id="stories-reset-btn" class="btn btn--outline" style="font-size:12px;">Reset Defaults</button>
-          <button id="stories-refresh-btn" class="btn btn--outline" style="font-size:12px;">Refresh</button>
-          <button id="create-story-btn" class="btn btn--primary" style="font-size:12px;">+ Post Field Story</button>
+
+        <!-- Filter & Search Bar -->
+        <div class="admin-filter-bar">
+          <input type="text" id="stories-search-input" class="admin-search-input" placeholder="Search by story title, community, or Story ID..." />
+          <div style="display:flex;align-items:center;gap:8px;">
+            <label style="font-size:12px;font-weight:700;color:var(--ink-600);">Status:</label>
+            <select id="stories-status-filter" class="input-select" style="min-width:130px;">
+              <option value="ALL">All Statuses</option>
+              <option value="PUBLISHED">Published</option>
+              <option value="DRAFT">Draft</option>
+              <option value="CLOSED">Closed</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Stories Table -->
+        <div class="table-scroll-wrap" style="margin-top:14px;">
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Story Details</th>
+                <th>Location</th>
+                <th>Funding Goal</th>
+                <th>Raised</th>
+                <th>Progress</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="stories-table-body">
+              <tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ink-400);">Loading stories...</td></tr>
+            </tbody>
+          </table>
         </div>
       </div>
 
-      <div id="stories-flash" style="margin-bottom:14px;"></div>
-
-      <!-- View Switcher Tabs -->
-      <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;">
-        <button id="tab-stories-btn" class="admin-filter-btn is-active">Field Stories &amp; News (<span id="count-stories-total">${cachedStories.length}</span>)</button>
-        <button id="tab-evidence-btn" class="admin-filter-btn">Evidence Requests (<span id="count-evidence-total">0</span>)</button>
-      </div>
-
-      <!-- Stories View -->
-      <div id="view-stories">
-        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px;">
-          <div class="admin-filter-bar" style="margin-bottom:0;">
-            <button class="admin-filter-btn is-active" data-story-filter="ALL">All Stories (${cachedStories.length})</button>
-            <button class="admin-filter-btn" data-story-filter="PUBLISHED">Published</button>
-            <button class="admin-filter-btn" data-story-filter="DRAFT">Draft</button>
-            <button class="admin-filter-btn" data-story-filter="ARCHIVED">Archived</button>
+      <!-- Story Modal Editor Form -->
+      <div class="story-modal-backdrop is-hidden" id="story-editor-modal" style="display:none;">
+        <div class="story-modal-card" style="max-width:680px;">
+          <div class="story-modal-header">
+            <h3 id="story-editor-title" style="margin:0;font-size:17px;font-weight:800;">Create Campaign Story</h3>
+            <button type="button" class="story-modal-close" id="btn-close-story-editor">&times;</button>
           </div>
-          <span style="font-size:12px;color:var(--ink-500);">Stories are dynamically rendered on the public Fundraising screen</span>
-        </div>
-
-        <div class="admin-table-wrap">
-          <div id="stories-table-container"></div>
-        </div>
-      </div>
-
-      <!-- Evidence View -->
-      <div id="view-evidence" class="is-hidden">
-        <div class="admin-table-wrap">
-          <div id="evidence-table-container">
-            <p class="admin-muted" style="padding:24px;text-align:center;">Loading evidence requests…</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Story Comments Modal for Admin Review -->
-      <div id="story-comments-modal" class="admin-modal-overlay is-hidden">
-        <div class="admin-modal" style="max-width:580px;max-height:85vh;overflow-y:auto;border-radius:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--ink-100);padding-bottom:12px;margin-bottom:16px;">
-            <h3 id="story-comments-modal-title" style="margin:0;color:var(--blue-900);font-size:16px;">Review Story Comments</h3>
-            <button type="button" id="story-comments-modal-close" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink-500);line-height:1;">&times;</button>
-          </div>
-          <div id="story-comments-modal-content">
-            <!-- Populated via JS -->
-          </div>
-        </div>
-      </div>
-
-      <!-- Create / Edit Story Modal -->
-      <div id="story-modal" class="admin-modal-overlay is-hidden">
-        <div class="admin-modal" style="max-width:680px;max-height:90vh;overflow-y:auto;border-radius:12px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--ink-100);padding-bottom:12px;margin-bottom:16px;">
-            <h3 id="story-modal-title" style="margin:0;color:var(--blue-900);font-size:18px;">Post Field Story &amp; News</h3>
-            <button type="button" id="story-modal-close-x" style="background:none;border:none;font-size:22px;cursor:pointer;color:var(--ink-500);line-height:1;">&times;</button>
-          </div>
-
-          <form id="story-form">
-            <!-- 1. Title -->
-            <div class="form-field">
-              <label for="story-title" style="font-weight:600;">Story Title *</label>
-              <input type="text" id="story-title" required maxlength="160" placeholder="e.g. 24 Children Re-enrolled in West Point Classrooms" />
-            </div>
-
-            <!-- 2. Category, County, Community, Date -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-              <div class="form-field">
-                <label for="story-category" style="font-weight:600;">Category / Program *</label>
-                <select id="story-category" required>
-                  ${CATEGORIES.map((c) => `<option value="${c}">${c}</option>`).join("")}
-                </select>
-              </div>
+          <div class="story-modal-body">
+            <form id="story-editor-form">
+              <input type="hidden" id="se-story-id" value="" />
 
               <div class="form-field">
-                <label for="story-county" style="font-weight:600;">County *</label>
-                <select id="story-county" required>
-                  ${COUNTIES.map((c) => `<option value="${c}">${c}</option>`).join("")}
-                </select>
+                <label for="se-title">Story Title *</label>
+                <input type="text" id="se-title" required placeholder="e.g. Help Blessing Return to Primary School" />
               </div>
 
-              <div class="form-field">
-                <label for="story-community" style="font-weight:600;">Community / Town *</label>
-                <input type="text" id="story-community" required placeholder="e.g. West Point, Duport Road, Kakata" />
-              </div>
-
-              <div class="form-field">
-                <label for="story-date" style="font-weight:600;">Story Date *</label>
-                <input type="date" id="story-date" value="${new Date().toISOString().slice(0, 10)}" required />
-              </div>
-            </div>
-
-            <!-- 3. IMAGE UPLOAD & SELECTION SECTION -->
-            <div class="form-field" style="margin-top:8px;background:var(--surface-alt,#f8fafc);padding:14px;border-radius:10px;border:1px solid var(--border,#e2e8f0);">
-              <label style="font-weight:700;display:block;margin-bottom:8px;color:var(--ink-800);">Story Image / Photo (Upload from Device or enter URL) *</label>
-              
-              <div style="display:flex;gap:16px;align-items:flex-start;flex-wrap:wrap;">
-                <!-- Thumbnail Preview -->
-                <div style="width:100px;height:75px;background:#fff;border:2px solid var(--ink-200);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;box-shadow:0 2px 6px rgba(0,0,0,0.08);">
-                  <img id="story-img-preview" src="assets/uaf-logo.png" alt="Preview" style="width:100%;height:100%;object-fit:cover;" />
+              <div class="form-row-2">
+                <div class="form-field">
+                  <label for="se-goal">Funding Goal (USD $) * <small style="color:var(--teal-600);">(Required)</small></label>
+                  <input type="number" id="se-goal" required min="1" step="any" placeholder="e.g. 500.00" />
                 </div>
-
-                <!-- Controls -->
-                <div style="flex:1;min-width:240px;">
-                  <div style="margin-bottom:8px;">
-                    <label for="story-img-file" style="font-size:12px;color:var(--ink-600);display:block;margin-bottom:3px;">
-                      <strong>Option A:</strong> Upload photo file from computer/phone
-                    </label>
-                    <input type="file" id="story-img-file" accept="image/*" style="font-size:12px;width:100%;" />
-                  </div>
-
-                  <div style="margin-bottom:8px;">
-                    <label for="story-img-url" style="font-size:12px;color:var(--ink-600);display:block;margin-bottom:3px;">
-                      <strong>Option B:</strong> Or enter image path / online URL
-                    </label>
-                    <input type="text" id="story-img-url" placeholder="assets/uaf-logo.png or https://..." style="font-size:12.5px;" />
-                  </div>
-
-                  <!-- Quick Presets -->
-                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                    <span style="font-size:11.5px;color:var(--ink-500);font-weight:600;">Presets:</span>
-                    <button type="button" class="btn btn--outline btn-story-preset" data-src="assets/uaf-logo.png" style="padding:2px 7px;font-size:11px;">UAF Logo</button>
-                    <button type="button" class="btn btn--outline btn-story-preset" data-src="assets/nic-logo.png" style="padding:2px 7px;font-size:11px;">NIC Logo</button>
-                    <button type="button" class="btn btn--outline btn-story-preset" data-src="assets/icon-partners.png" style="padding:2px 7px;font-size:11px;">Partners</button>
-                    <button type="button" class="btn btn--outline btn-story-preset" data-src="assets/icon-impact.jpg" style="padding:2px 7px;font-size:11px;">Impact</button>
-                  </div>
+                <div class="form-field">
+                  <label for="se-status">Story Status *</label>
+                  <select id="se-status" class="input-select" required>
+                    <option value="PUBLISHED">PUBLISHED (Visible to public)</option>
+                    <option value="DRAFT">DRAFT (Saved in admin only)</option>
+                    <option value="CLOSED">CLOSED (Campaign completed)</option>
+                  </select>
                 </div>
               </div>
-            </div>
 
-            <!-- 4. AMOUNT RAISED & FUNDING GOAL -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px;background:#f0f9ff;padding:12px 14px;border-radius:8px;border:1px solid #bae6fd;">
-              <div class="form-field">
-                <label for="story-raised" style="font-weight:700;color:#0369a1;">Amount Raised ($ USD) *</label>
-                <input type="number" id="story-raised" min="0" step="any" required placeholder="e.g. 5250" />
-                <span style="font-size:11px;color:#0284c7;">Direct funding collected for this campaign</span>
+              <div class="form-row-2">
+                <div class="form-field">
+                  <label for="se-county">County</label>
+                  <input type="text" id="se-county" placeholder="e.g. Montserrado" />
+                </div>
+                <div class="form-field">
+                  <label for="se-community">Community / Town</label>
+                  <input type="text" id="se-community" placeholder="e.g. West Point, Duport Road" />
+                </div>
               </div>
 
               <div class="form-field">
-                <label for="story-goal" style="font-weight:700;color:#0369a1;">Target / Funding Goal ($ USD)</label>
-                <input type="number" id="story-goal" min="0" step="any" placeholder="e.g. 7000" />
-                <span style="font-size:11px;color:#0284c7;">Overall funding goal needed</span>
+                <label for="se-summary">Brief Lead / Summary (Shown on Card Teaser) *</label>
+                <textarea id="se-summary" rows="2" required placeholder="Short 1-2 sentence overview of the case..."></textarea>
               </div>
-            </div>
 
-            <!-- 5. Summary -->
-            <div class="form-field" style="margin-top:12px;">
-              <label for="story-summary" style="font-weight:600;">Summary / Excerpt (Short description for card) *</label>
-              <textarea id="story-summary" rows="2" maxlength="280" required placeholder="Brief 1-2 sentence overview shown directly on the story card..."></textarea>
-            </div>
-
-            <!-- 6. Speaker & Testimonial Quote -->
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
               <div class="form-field">
-                <label for="story-speaker" style="font-weight:600;">Speaker / Testimonial Author</label>
-                <input type="text" id="story-speaker" placeholder="e.g. Blessing K., Age 9 &amp; Her Mother Ma Musu" />
+                <label for="se-content">Full Story Content &amp; Case Narrative *</label>
+                <textarea id="se-content" rows="6" required placeholder="Complete multi-paragraph narrative, background history, family situation, and educational roadmap..."></textarea>
               </div>
+
+              <!-- Story Image (File Upload or URL) -->
+              <div class="form-field" style="background:var(--surface-alt);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
+                <label style="font-weight:700;">Story Image Attachment</label>
+                <div style="display:flex;gap:12px;align-items:center;margin-top:6px;flex-wrap:wrap;">
+                  <input type="file" id="se-img-file" accept="image/*" style="font-size:12px;" />
+                  <span style="font-size:12px;color:var(--ink-400);">or Image URL:</span>
+                  <input type="url" id="se-img-url" placeholder="https://..." style="flex:1;min-width:180px;" />
+                </div>
+                <div id="se-img-preview-wrap" style="margin-top:10px;display:none;">
+                  <img id="se-img-preview" src="" alt="Thumbnail preview" style="max-height:120px;border-radius:8px;border:1px solid var(--border);" />
+                </div>
+              </div>
+
+              <div class="form-row-2">
+                <div class="form-field">
+                  <label for="se-speaker">Testimonial Speaker (Optional)</label>
+                  <input type="text" id="se-speaker" placeholder="e.g. Marie (Mother)" />
+                </div>
+                <div class="form-field">
+                  <label for="se-testimonial">Testimonial Quote (Optional)</label>
+                  <input type="text" id="se-testimonial" placeholder="e.g. Without this scholarship, my child would remain at home..." />
+                </div>
+              </div>
+
               <div class="form-field">
-                <label for="story-tag" style="font-weight:600;">Campaign Tag / Badge</label>
-                <input type="text" id="story-tag" placeholder="e.g. No Invisible Child Flagship" />
+                <label for="se-activities">Field Activities &amp; Interventions (Optional)</label>
+                <input type="text" id="se-activities" placeholder="e.g. Tuition subsidization, uniform distribution, mother pastry training" />
               </div>
-            </div>
 
-            <div class="form-field">
-              <label for="story-quote" style="font-weight:600;">Direct Testimonial Quote</label>
-              <textarea id="story-quote" rows="2" placeholder="“Enter the direct words spoken by the beneficiary, student, or community member...”"></textarea>
-            </div>
-
-            <!-- 7. Field Activities -->
-            <div class="form-field">
-              <label for="story-activities" style="font-weight:600;">Field Activities &amp; UAF Interventions</label>
-              <textarea id="story-activities" rows="2" placeholder="Door-to-door verification, tuition sponsorship, backpack distribution, mother livelihood training..."></textarea>
-            </div>
-
-            <!-- 8. Full Narrative -->
-            <div class="form-field">
-              <label for="story-content" style="font-weight:600;">Full Story Narrative &amp; Background *</label>
-              <textarea id="story-content" rows="6" required placeholder="Write the complete narrative detailing the background, challenge, intervention, and long-term community impact..."></textarea>
-            </div>
-
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;border-top:1px solid var(--ink-100);padding-top:14px;">
-              <button type="button" id="story-modal-cancel" class="btn btn--outline">Cancel</button>
-              <div style="display:flex;gap:8px;">
-                <button type="button" id="story-save-draft-btn" class="btn btn--outline">Save as Draft</button>
-                <button type="submit" id="story-save-publish-btn" class="btn btn--primary" style="min-width:140px;">Publish Story</button>
+              <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+                <button type="button" class="btn btn--outline" id="btn-cancel-story-editor">Cancel</button>
+                <button type="submit" class="btn btn--primary" id="btn-save-story">Save Story to Database</button>
               </div>
-            </div>
-          </form>
+            </form>
+          </div>
         </div>
       </div>
     `;
 
-    // References
-    const modal = document.getElementById("story-modal");
-    const storyForm = document.getElementById("story-form");
-    const modalTitle = document.getElementById("story-modal-title");
-    const imgFile = document.getElementById("story-img-file");
-    const imgUrl = document.getElementById("story-img-url");
-    const imgPreview = document.getElementById("story-img-preview");
+    // Load stories from backend
+    loadStoriesData();
 
-    function updateStoryImage(src) {
-      currentStoryImageDataUrl = src || "assets/uaf-logo.png";
-      if (imgPreview) imgPreview.src = currentStoryImageDataUrl;
-    }
+    // Event Listeners
+    document.getElementById("btn-open-create-story")?.addEventListener("click", () => openStoryEditor(null));
+    document.getElementById("btn-close-story-editor")?.addEventListener("click", closeStoryEditor);
+    document.getElementById("btn-cancel-story-editor")?.addEventListener("click", closeStoryEditor);
+    document.getElementById("stories-search-input")?.addEventListener("input", renderStoriesTable);
+    document.getElementById("stories-status-filter")?.addEventListener("change", renderStoriesTable);
 
-    // Presets
-    container.querySelectorAll(".btn-story-preset").forEach((b) => {
-      b.addEventListener("click", () => {
-        const src = b.dataset.src;
-        if (imgUrl) imgUrl.value = src;
-        updateStoryImage(src);
-      });
-    });
-
-    function compressImageFile(file, maxWidth, maxHeight, quality, callback) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const img = new Image();
-        img.onload = () => {
-          let width = img.width;
-          let height = img.height;
-          if (width > maxWidth || height > maxHeight) {
-            if (width / height > maxWidth / maxHeight) {
-              height = Math.round((height * maxWidth) / width);
-              width = maxWidth;
-            } else {
-              width = Math.round((width * maxHeight) / height);
-              height = maxHeight;
-            }
-          }
-          const canvas = document.createElement("canvas");
-          canvas.width = width;
-          canvas.height = height;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, width, height);
-          const compressedDataUrl = canvas.toDataURL("image/jpeg", quality || 0.85);
-          callback(compressedDataUrl);
-        };
-        img.onerror = () => callback(e.target.result);
-        img.src = e.target.result;
-      };
-      reader.readAsDataURL(file);
-    }
-
-    // File input -> compressed base64 JPEG
-    imgFile?.addEventListener("change", () => {
-      if (imgFile.files && imgFile.files[0]) {
-        const file = imgFile.files[0];
-        compressImageFile(file, 1200, 900, 0.85, (compressed) => {
-          updateStoryImage(compressed);
-          if (imgUrl) imgUrl.value = "";
-        });
-      }
-    });
-
-    imgUrl?.addEventListener("input", () => {
-      const val = imgUrl.value.trim();
-      if (val) updateStoryImage(val);
-    });
-
-    // Switch Tabs
-    const tabStoriesBtn = document.getElementById("tab-stories-btn");
-    const tabEvidenceBtn = document.getElementById("tab-evidence-btn");
-    const viewStories = document.getElementById("view-stories");
-    const viewEvidence = document.getElementById("view-evidence");
-
-    tabStoriesBtn?.addEventListener("click", () => {
-      tabStoriesBtn.classList.add("is-active");
-      tabEvidenceBtn.classList.remove("is-active");
-      viewStories.classList.remove("is-hidden");
-      viewEvidence.classList.add("is-hidden");
-      currentTab = "stories";
-    });
-
-    tabEvidenceBtn?.addEventListener("click", () => {
-      tabEvidenceBtn.classList.add("is-active");
-      tabStoriesBtn.classList.remove("is-active");
-      viewEvidence.classList.remove("is-hidden");
-      viewStories.classList.add("is-hidden");
-      currentTab = "evidence";
-      if (!cachedEvidence.length) loadEvidence(session);
-    });
-
-    // Story filter buttons
-    container.querySelectorAll("button[data-story-filter]").forEach((b) => {
-      b.addEventListener("click", () => {
-        container.querySelectorAll("button[data-story-filter]").forEach((x) => x.classList.remove("is-active"));
-        b.classList.add("is-active");
-        storyFilter = b.dataset.storyFilter;
-        renderStoriesTable(session);
-      });
-    });
-
-    // Cloud Sync button
-    document.getElementById("stories-sync-btn")?.addEventListener("click", () => {
-      syncCloudStories(session, true);
-    });
-
-    // Export JSON button
-    document.getElementById("stories-export-btn")?.addEventListener("click", () => {
-      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(getLocalStories(), null, 2));
-      const dlAnchor = document.createElement("a");
-      dlAnchor.setAttribute("href", dataStr);
-      dlAnchor.setAttribute("download", `uaf_field_stories_${new Date().toISOString().slice(0, 10)}.json`);
-      document.body.appendChild(dlAnchor);
-      dlAnchor.click();
-      dlAnchor.remove();
-      flash("Exported field stories JSON backup.", "success");
-    });
-
-    // Import JSON button & file input
-    const fileInput = document.getElementById("stories-import-file");
-    document.getElementById("stories-import-btn")?.addEventListener("click", () => {
-      fileInput?.click();
-    });
+    // Image compression on file select
+    const fileInput = document.getElementById("se-img-file");
     fileInput?.addEventListener("change", (e) => {
       const file = e.target.files && e.target.files[0];
       if (!file) return;
-      const reader = new FileReader();
-      reader.onload = (evt) => {
-        try {
-          const imported = JSON.parse(evt.target.result);
-          if (Array.isArray(imported) && imported.length > 0) {
-            saveLocalStories(imported);
-            cachedStories = imported;
-            renderStoriesTable(session);
-            flash(`Imported ${imported.length} field stories successfully!`, "success");
-          } else {
-            flash("Invalid JSON format. Expected an array of stories.");
-          }
-        } catch (err) {
-          flash("Could not parse JSON file: " + err.message);
+      compressImage(file, 1200, 900, 0.85, (dataUrl) => {
+        document.getElementById("se-img-url").value = dataUrl;
+        const preview = document.getElementById("se-img-preview");
+        const previewWrap = document.getElementById("se-img-preview-wrap");
+        if (preview && previewWrap) {
+          preview.src = dataUrl;
+          previewWrap.style.display = "block";
         }
-      };
-      reader.readAsText(file);
-      fileInput.value = "";
+      });
     });
 
-    // Reset button
-    document.getElementById("stories-reset-btn")?.addEventListener("click", () => {
-      if (confirm("Clear all field stories?")) {
-        saveLocalStories([]);
-        cachedStories = [];
-        renderStoriesTable(session);
-        flash("Stories cleared successfully.", "success");
+    document.getElementById("se-img-url")?.addEventListener("input", (e) => {
+      const url = e.target.value.trim();
+      const preview = document.getElementById("se-img-preview");
+      const previewWrap = document.getElementById("se-img-preview-wrap");
+      if (preview && previewWrap) {
+        if (url) {
+          preview.src = url;
+          previewWrap.style.display = "block";
+        } else {
+          previewWrap.style.display = "none";
+        }
       }
     });
 
-    // Refresh button
-    document.getElementById("stories-refresh-btn")?.addEventListener("click", () => {
-      cachedStories = getLocalStories();
-      renderStoriesTable(session);
-      if (currentTab === "evidence") loadEvidence(session);
-      syncCloudStories(session, false);
-      flash("Refreshed stories list.", "success");
+    // Form submit
+    document.getElementById("story-editor-form")?.addEventListener("submit", handleSaveStory);
+
+    // Download CSV button
+    document.getElementById("btn-download-stories-csv")?.addEventListener("click", () => {
+      const filtered = getFilteredStories();
+      window.__uafDownloadCsv(
+        `UAF_Stories_Export_${new Date().toISOString().slice(0, 10)}.csv`,
+        ["storyId", "title", "goal", "raised", "percent", "status", "county", "community", "summary", "createdAt"],
+        filtered
+      );
     });
-
-    // Create Story button
-    document.getElementById("create-story-btn")?.addEventListener("click", () => {
-      editingStoryId = null;
-      storyForm.reset();
-      document.getElementById("story-date").value = new Date().toISOString().slice(0, 10);
-      document.getElementById("story-raised").value = "0";
-      document.getElementById("story-goal").value = "5000";
-      currentStoryImageDataUrl = "assets/uaf-logo.png";
-      updateStoryImage("assets/uaf-logo.png");
-      modalTitle.textContent = "Post Field Story & News";
-      modal.classList.remove("is-hidden");
-    });
-
-    // Close modal
-    function closeModal() {
-      modal?.classList.add("is-hidden");
-      editingStoryId = null;
-    }
-    document.getElementById("story-modal-cancel")?.addEventListener("click", closeModal);
-    document.getElementById("story-modal-close-x")?.addEventListener("click", closeModal);
-
-    // Save as draft
-    document.getElementById("story-save-draft-btn")?.addEventListener("click", (e) => {
-      e.preventDefault();
-      saveStoryRecord("DRAFT", session);
-    });
-
-    // Form submit -> Publish
-    storyForm?.addEventListener("submit", (e) => {
-      e.preventDefault();
-      saveStoryRecord("PUBLISHED", session);
-    });
-
-    function saveStoryRecord(status, session) {
-      const title = document.getElementById("story-title").value.trim();
-      const category = document.getElementById("story-category").value;
-      const county = document.getElementById("story-county").value;
-      const community = document.getElementById("story-community").value.trim();
-      const storyDate = document.getElementById("story-date").value;
-      const raised = Number(document.getElementById("story-raised").value) || 0;
-      const goal = Number(document.getElementById("story-goal").value) || 0;
-      const summary = document.getElementById("story-summary").value.trim();
-      const speaker = document.getElementById("story-speaker").value.trim();
-      const tag = document.getElementById("story-tag").value.trim() || category;
-      const quote = document.getElementById("story-quote").value.trim();
-      const activities = document.getElementById("story-activities").value.trim();
-      const narrative = document.getElementById("story-content").value.trim();
-      const image = imgUrl.value.trim() || currentStoryImageDataUrl || "assets/uaf-logo.png";
-
-      if (!title || !narrative || !summary) {
-        flash("Please fill in the title, summary, and full narrative.");
-        return;
-      }
-
-      const stories = getLocalStories();
-
-      if (editingStoryId) {
-        const idx = stories.findIndex((s) => s.id === editingStoryId || s.storyId === editingStoryId);
-        if (idx >= 0) {
-          stories[idx] = {
-            ...stories[idx],
-            title,
-            category,
-            tag,
-            county,
-            community,
-            storyDate,
-            amountRaised: raised,
-            fundingGoal: goal,
-            summary,
-            speaker,
-            testimonial: quote,
-            activities,
-            narrative,
-            imageUrl: image,
-            status: status,
-            shareCode: stories[idx].shareCode || Math.random().toString(36).substring(2, 8)
-          };
-          flash(`Updated story "${title}".`, "success");
-        }
-      } else {
-        const newStory = {
-          id: "story_" + Date.now(),
-          shareCode: Math.random().toString(36).substring(2, 8),
-          reactions: { like: 0, heart: 0, celebrate: 0 },
-          title,
-          category,
-          tag,
-          county,
-          community,
-          storyDate,
-          amountRaised: raised,
-          fundingGoal: goal,
-          summary,
-          speaker,
-          testimonial: quote,
-          activities,
-          narrative,
-          imageUrl: image,
-          status: status,
-          createdBy: (session && session.name) || "Admin",
-          views: 0
-        };
-        stories.unshift(newStory);
-        flash(`Added new story "${title}".`, "success");
-      }
-
-      saveLocalStories(stories);
-      cachedStories = stories;
-      closeModal();
-      renderStoriesTable(session);
-
-      const targetStoryId = editingStoryId || newStory?.id;
-      const targetShareCode = (editingStoryId ? stories.find(s => (s.id || s.storyId) === editingStoryId)?.shareCode : newStory?.shareCode) || Math.random().toString(36).substring(2, 8);
-
-      // Background API attempt
-      callApi("createStory", {
-        token: session?.token,
-        title,
-        category,
-        tag,
-        county,
-        community,
-        storyDate,
-        summary,
-        content: narrative,
-        narrative: narrative,
-        speaker,
-        testimonial: quote,
-        quote,
-        activities,
-        imageUrl: image,
-        amountRaised: raised,
-        fundingGoal: goal,
-        status: status,
-        shareCode: targetShareCode
-      }).then((res) => {
-        if (res && res.ok && res.imageUrl && res.imageUrl !== image) {
-          const list = getLocalStories();
-          const target = list.find((s) => (s.id || s.storyId) === targetStoryId);
-          if (target) {
-            target.imageUrl = res.imageUrl;
-            saveLocalStories(list);
-            cachedStories = list;
-            renderStoriesTable(session);
-          }
-        }
-      }).catch(() => {});
-    }
-
-    renderStoriesTable(session);
-    syncCloudStories(session, false);
   }
 
-  async function syncCloudStories(session, notify = false) {
-    if (!API_URL || API_URL.includes("PASTE_YOUR")) return;
-    try {
-      let remoteStories = null;
-      try {
-        const res = await fetch(`${API_URL}?route=publicStories`);
-        const json = await res.json();
-        if (json && json.ok && Array.isArray(json.stories)) {
-          remoteStories = json.stories;
-        } else if (Array.isArray(json)) {
-          remoteStories = json;
+  function compressImage(file, maxW, maxH, quality, callback) {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let w = img.width;
+        let h = img.height;
+        if (w > maxW || h > maxH) {
+          const ratio = Math.min(maxW / w, maxH / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
         }
-      } catch (_) {}
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, w, h);
+        callback(canvas.toDataURL("image/jpeg", quality));
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
 
-      if (!remoteStories) {
-        try {
-          const res = await fetch(`${API_URL}?route=stories`);
-          const json = await res.json();
-          if (json && json.ok && Array.isArray(json.stories)) {
-            remoteStories = json.stories;
-          } else if (Array.isArray(json)) {
-            remoteStories = json;
-          }
-        } catch (_) {}
-      }
+  async function loadStoriesData() {
+    const session = window.__uafAdminSession;
+    if (!session || !session.token) return;
 
-      if (!remoteStories) {
-        try {
-          const res = await callApi("listStories", { token: session?.token });
-          if (res && res.ok && Array.isArray(res.stories)) {
-            remoteStories = res.stories;
-          }
-        } catch (_) {}
-      }
-
-      if (Array.isArray(remoteStories)) {
-        const deletedList = getDeletedStories();
-        const current = getLocalStories();
-        const mergedMap = new Map();
-        current.forEach((s) => mergedMap.set(String(s.id || s.storyId), s));
-        remoteStories.forEach((s) => {
-          const key = String(s.id || s.storyId);
-          const keyLower = key.toLowerCase();
-          if (keyLower === "story_blessing" || keyLower === "story_comfort" || keyLower === "story_emmanuel") return;
-          if (!isStoryDeleted(key, deletedList)) {
-            if (!mergedMap.has(key)) {
-              mergedMap.set(key, s);
-            } else {
-              const existing = mergedMap.get(key);
-              // Intelligently preserve image: If local has custom image and remote has logo fallback, keep local image!
-              const existingImg = existing.imageUrl || "";
-              const remoteImg = s.imageUrl || "";
-              let finalImg = existingImg;
-              if (remoteImg.includes("googleusercontent.com") || remoteImg.includes("drive.google.com") || (remoteImg && !remoteImg.includes("uaf-logo.png"))) {
-                finalImg = remoteImg;
-              } else if (!existingImg || existingImg.includes("uaf-logo.png")) {
-                finalImg = remoteImg || "assets/uaf-logo.png";
-              }
-
-              // Intelligently preserve narrative: keep whichever is longer so words are never truncated
-              const finalNar = (s.narrative && s.narrative.length > (existing.narrative || "").length) ? s.narrative : (existing.narrative || s.narrative || "");
-
-              mergedMap.set(key, {
-                ...existing,
-                ...s,
-                imageUrl: finalImg,
-                narrative: finalNar,
-                content: finalNar,
-                speaker: s.speaker || existing.speaker || "",
-                testimonial: s.testimonial || existing.testimonial || "",
-                activities: s.activities || existing.activities || ""
-              });
-            }
-          }
-        });
-        const merged = Array.from(mergedMap.values());
-        saveLocalStories(merged);
-        cachedStories = merged;
-        renderStoriesTable(session);
-        if (notify) flash(`Successfully synced ${remoteStories.length} stories from cloud!`, "success");
-      } else if (notify) {
-        flash("Cloud stories are up-to-date.", "success");
+    try {
+      const res = await window.__uafAdminCallApi("listStories", { token: session.token });
+      if (res.ok && Array.isArray(res.stories)) {
+        storiesList = res.stories;
+        renderStoriesTable();
       }
     } catch (err) {
-      if (notify) flash("Could not connect to cloud: " + err.message);
+      console.warn("Notice loading stories:", err);
     }
   }
 
-  function renderStoriesTable(session) {
-    const container = document.getElementById("stories-table-container");
-    if (!container) return;
+  function getFilteredStories() {
+    const search = (document.getElementById("stories-search-input")?.value || "").toLowerCase().trim();
+    const status = (document.getElementById("stories-status-filter")?.value || "ALL").toUpperCase();
 
-    cachedStories = getLocalStories();
-    const countEl = document.getElementById("count-stories-total");
-    if (countEl) countEl.textContent = cachedStories.length;
+    return storiesList.filter((s) => {
+      if (status !== "ALL" && String(s.status).toUpperCase() !== status) return false;
+      if (search) {
+        const text = `${s.title} ${s.storyId} ${s.community} ${s.county} ${s.summary}`.toLowerCase();
+        if (!text.includes(search)) return false;
+      }
+      return true;
+    });
+  }
 
-    let items = cachedStories.slice();
-    if (storyFilter !== "ALL") {
-      items = items.filter((s) => String(s.status || "DRAFT").toUpperCase() === storyFilter);
-    }
+  function renderStoriesTable() {
+    const tbody = document.getElementById("stories-table-body");
+    if (!tbody) return;
 
-    if (items.length === 0) {
-      container.innerHTML = '<p class="admin-muted" style="padding:28px;text-align:center;">No stories in this view. Click "+ Post Field Story" to add one.</p>';
+    const filtered = getFilteredStories();
+    if (filtered.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:24px;color:var(--ink-400);">No stories matching filters.</td></tr>`;
       return;
     }
 
-    const rows = items.map((s) => {
-      const st = String(s.status || "DRAFT").toUpperCase();
-      let badgeCls = "admin-badge--pending";
-      if (st === "PUBLISHED") badgeCls = "admin-badge--verified";
-      else if (st === "ARCHIVED") badgeCls = "admin-badge--failed";
-
-      const raised = Number(s.amountRaised || 0);
-      const goal = Number(s.fundingGoal || 0);
-      const goalStr = goal > 0 ? ` / ${formatMoney(goal)}` : "";
-      const storyId = s.id || s.storyId;
-      const shareCode = s.shareCode || storyId.replace("story_", "") || "c" + Math.random().toString(36).substring(2, 8);
-      const shortLink = `#/c/${shareCode}`;
-
-      let commentsCount = 0;
-      try {
-        const stored = localStorage.getItem(`uaf_story_comments_${storyId}`);
-        if (stored) commentsCount = JSON.parse(stored).length;
-      } catch (_) {}
-
-      const rx = s.reactions || { like: 0, heart: 0, celebrate: 0 };
-
-      return `
-        <tr>
-          <td style="width:60px;text-align:center;vertical-align:middle;">
-            <div style="width:48px;height:48px;background:#fff;border:1px solid var(--ink-200);border-radius:6px;overflow:hidden;margin:0 auto;display:flex;align-items:center;justify-content:center;">
-              <img src="${s.imageUrl || 'assets/uaf-logo.png'}" alt="" style="width:100%;height:100%;object-fit:cover;" onerror="this.src='assets/uaf-logo.png';" />
+    tbody.innerHTML = filtered.map((s) => `
+      <tr>
+        <td>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <img src="${s.imageUrl || '../assets/uaf-logo.png'}" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:1px solid var(--border);" onerror="this.src='../assets/uaf-logo.png';" />
+            <div>
+              <strong>${window.__uafEscapeHtml(s.title)}</strong>
+              <div style="font-size:11px;color:var(--ink-400);">${window.__uafEscapeHtml(s.storyId)}</div>
             </div>
-          </td>
-          <td>
-            <div style="font-weight:700;color:var(--ink-900);">${escapeHtml(s.title)}</div>
-            <div style="font-size:11.5px;color:var(--ink-500);margin-top:2px;">
-              <span class="admin-badge admin-badge--neutral" style="font-size:10.5px;padding:1px 6px;">${escapeHtml(s.category)}</span>
-              <span>${escapeHtml(s.community ? s.community + ", " : "")}${escapeHtml(s.county || "Liberia")}</span>
-            </div>
-            <div style="display:flex;align-items:center;gap:6px;margin-top:6px;flex-wrap:wrap;">
-              <span style="font-family:monospace;font-size:11px;background:#f1f5f9;color:#0f172a;padding:2px 6px;border-radius:4px;border:1px solid #cbd5e1;">${shortLink}</span>
-              <button type="button" class="btn btn--outline admin-copy-story-link" data-copy-link="${shortLink}" style="padding:1px 6px;font-size:10.5px;">Copy Link</button>
-              <button type="button" class="btn btn--outline admin-story-comments-btn" data-story-id="${storyId}" style="padding:1px 6px;font-size:10.5px;color:#0369a1;background:#f0f9ff;border-color:#bae6fd;">💬 Comments (${commentsCount})</button>
-              <span style="font-size:10.5px;color:#64748b;margin-left:4px;">👍 ${rx.like || 0} ❤️ ${rx.heart || 0} 🎉 ${rx.celebrate || 0}</span>
-            </div>
-          </td>
-          <td>
-            <div style="font-weight:700;color:var(--blue-700);">${formatMoney(raised)}</div>
-            <div style="font-size:11px;color:var(--ink-500);">${goalStr ? "Goal: " + formatMoney(goal) : "No target set"}</div>
-          </td>
-          <td style="font-size:12px;color:var(--ink-600);">${formatDate(s.storyDate)}</td>
-          <td><span class="admin-badge ${badgeCls}">${escapeHtml(st)}</span></td>
-          <td style="text-align:right;">
-            <div style="display:flex;gap:6px;justify-content:flex-end;">
-              <button class="btn btn--outline story-edit-btn" data-id="${storyId}" style="padding:4px 8px;font-size:11.5px;">Edit</button>
-              ${st === "PUBLISHED" 
-                ? `<button class="btn btn--outline story-toggle-status-btn" data-id="${storyId}" data-status="DRAFT" style="padding:4px 8px;font-size:11.5px;">To Draft</button>`
-                : `<button class="btn--verify story-toggle-status-btn" data-id="${storyId}" data-status="PUBLISHED" style="padding:4px 8px;font-size:11.5px;">Publish</button>`
-              }
-              <button class="btn btn--outline story-delete-btn" data-id="${storyId}" style="padding:4px 8px;font-size:11.5px;color:var(--red-700);">Delete</button>
-            </div>
-          </td>
-        </tr>
-      `;
-    }).join("");
+          </div>
+        </td>
+        <td>${window.__uafEscapeHtml(s.community ? s.community + ", " : "")}${window.__uafEscapeHtml(s.county || "Liberia")}</td>
+        <td><strong>${window.__uafFormatMoney(s.goal)}</strong></td>
+        <td style="color:#0284c7;font-weight:700;">${window.__uafFormatMoney(s.raised)}</td>
+        <td>
+          <div style="font-size:12px;font-weight:700;margin-bottom:2px;">${s.percent}%</div>
+          <div style="background:#e2e8f0;height:5px;width:80px;border-radius:999px;overflow:hidden;">
+            <div style="background:#0284c7;height:100%;width:${s.percent}%;"></div>
+          </div>
+        </td>
+        <td>
+          <span class="status-badge status-badge--${s.status.toLowerCase()}">${window.__uafEscapeHtml(s.status)}</span>
+        </td>
+        <td>
+          <div style="display:flex;gap:6px;">
+            <button type="button" class="btn btn--outline btn-sm btn-edit-story" data-id="${s.storyId}">Edit</button>
+            <button type="button" class="btn btn--outline btn-sm btn-toggle-story" data-id="${s.storyId}" data-status="${s.status}">
+              ${s.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
+            </button>
+            <button type="button" class="btn btn--outline btn-sm btn-delete-story" data-id="${s.storyId}" style="color:#b91c1c;">Delete</button>
+            <button type="button" class="btn btn--outline btn-sm btn-download-single-story" data-id="${s.storyId}" title="Download story record">Rec</button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
 
-    container.innerHTML = `
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th style="width:60px;text-align:center;">Photo</th>
-            <th>Title &amp; Location</th>
-            <th>Amount Raised</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th style="text-align:right;">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows}
-        </tbody>
-      </table>
-    `;
-
-    // Edit handler
-    container.querySelectorAll(".story-edit-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const id = btn.dataset.id;
-        const s = cachedStories.find((x) => (x.id || x.storyId) === id);
-        if (!s) return;
-
-        editingStoryId = id;
-        document.getElementById("story-modal-title").textContent = "Edit Story: " + s.title;
-        document.getElementById("story-title").value = s.title || "";
-        document.getElementById("story-category").value = s.category || "No Invisible Child";
-        document.getElementById("story-county").value = s.county || "Montserrado";
-        document.getElementById("story-community").value = s.community || "";
-        document.getElementById("story-date").value = s.storyDate ? s.storyDate.slice(0, 10) : "";
-        document.getElementById("story-raised").value = s.amountRaised != null ? s.amountRaised : 0;
-        document.getElementById("story-goal").value = s.fundingGoal != null ? s.fundingGoal : "";
-        document.getElementById("story-summary").value = s.summary || "";
-        document.getElementById("story-speaker").value = s.speaker || "";
-        document.getElementById("story-tag").value = s.tag || s.category || "";
-        document.getElementById("story-quote").value = s.testimonial || "";
-        document.getElementById("story-activities").value = s.activities || "";
-        document.getElementById("story-content").value = s.narrative || "";
-        document.getElementById("story-img-url").value = s.imageUrl || "";
-
-        currentStoryImageDataUrl = s.imageUrl || "assets/uaf-logo.png";
-        const imgPreview = document.getElementById("story-img-preview");
-        if (imgPreview) imgPreview.src = currentStoryImageDataUrl;
-
-        document.getElementById("story-modal").classList.remove("is-hidden");
-      });
+    // Attach row button events
+    tbody.querySelectorAll(".btn-edit-story").forEach((btn) => {
+      btn.addEventListener("click", () => openStoryEditor(btn.dataset.id));
     });
 
-    // Toggle status
-    container.querySelectorAll(".story-toggle-status-btn").forEach((btn) => {
+    tbody.querySelectorAll(".btn-toggle-story").forEach((btn) => {
+      btn.addEventListener("click", () => toggleStoryStatus(btn.dataset.id, btn.dataset.status));
+    });
+
+    tbody.querySelectorAll(".btn-delete-story").forEach((btn) => {
+      btn.addEventListener("click", () => deleteStory(btn.dataset.id));
+    });
+
+    tbody.querySelectorAll(".btn-download-single-story").forEach((btn) => {
       btn.addEventListener("click", () => {
-        const id = btn.dataset.id;
-        const newStatus = btn.dataset.status;
-        const stories = getLocalStories();
-        const idx = stories.findIndex((x) => (x.id || x.storyId) === id);
-        if (idx >= 0) {
-          stories[idx].status = newStatus;
-          saveLocalStories(stories);
-          cachedStories = stories;
-          flash(`Story status updated to ${newStatus}.`, "success");
-          renderStoriesTable(session);
+        const item = storiesList.find((x) => x.storyId === btn.dataset.id);
+        if (item) {
+          window.__uafDownloadRecordReceipt(`Story_Record_${item.storyId}.txt`, item.title, item);
         }
-      });
-    });
-
-    // Delete handler
-    container.querySelectorAll(".story-delete-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const id = btn.dataset.id;
-        const stories = getLocalStories();
-        const target = stories.find((x) => (x.id || x.storyId) === id);
-        if (!target) return;
-        if (confirm(`Are you sure you want to permanently delete "${target.title}"?`)) {
-          addDeletedStory(id);
-          const updated = stories.filter((x) => (x.id || x.storyId) !== id && !isStoryDeleted(x.id || x.storyId));
-          saveLocalStories(updated);
-          cachedStories = updated;
-
-          // Background server deletion if API connected
-          try {
-            callApi("deleteStory", { token: session?.token, id: id, storyId: id }).catch(() => {});
-          } catch (_) {}
-
-          flash(`Deleted "${target.title}".`, "success");
-          renderStoriesTable(session);
-        }
-      });
-    });
-
-    // Copy link handler
-    container.querySelectorAll(".admin-copy-story-link").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const link = btn.dataset.copyLink;
-        const fullUrl = `${window.location.origin}${window.location.pathname.replace(/\/admin(\/.*)?$/, "/")}${link}`;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(fullUrl).then(() => {
-            flash(`Story link copied: ${link}`, "success");
-          }).catch(() => {
-            window.prompt("Copy story link:", fullUrl);
-          });
-        } else {
-          window.prompt("Copy story link:", fullUrl);
-        }
-      });
-    });
-
-    // View comments handler
-    container.querySelectorAll(".admin-story-comments-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        handleViewStoryComments(btn.dataset.storyId);
       });
     });
   }
 
-  function handleViewStoryComments(storyId) {
-    const s = cachedStories.find((x) => (x.id || x.storyId) === storyId);
-    if (!s) return;
-    const modal = document.getElementById("story-comments-modal");
-    const titleEl = document.getElementById("story-comments-modal-title");
-    const contentEl = document.getElementById("story-comments-modal-content");
-    const closeBtn = document.getElementById("story-comments-modal-close");
-    if (!modal || !contentEl) return;
+  function openStoryEditor(storyId) {
+    editingStoryId = storyId;
+    const modal = document.getElementById("story-editor-modal");
+    const titleEl = document.getElementById("story-editor-title");
+    const form = document.getElementById("story-editor-form");
+    const preview = document.getElementById("se-img-preview");
+    const previewWrap = document.getElementById("se-img-preview-wrap");
 
-    if (titleEl) titleEl.textContent = `Community Comments: ${s.title}`;
+    form.reset();
+    if (previewWrap) previewWrap.style.display = "none";
 
-    if (closeBtn) {
-      closeBtn.onclick = () => {
-        modal.classList.add("is-hidden");
-      };
-    }
-    modal.onclick = (e) => {
-      if (e.target === modal) modal.classList.add("is-hidden");
-    };
+    if (storyId) {
+      titleEl.textContent = "Edit Campaign Story";
+      const s = storiesList.find((x) => x.storyId === storyId);
+      if (s) {
+        document.getElementById("se-story-id").value = s.storyId;
+        document.getElementById("se-title").value = s.title || "";
+        document.getElementById("se-goal").value = s.goal || "";
+        document.getElementById("se-status").value = s.status || "PUBLISHED";
+        document.getElementById("se-county").value = s.county || "";
+        document.getElementById("se-community").value = s.community || "";
+        document.getElementById("se-summary").value = s.summary || "";
+        document.getElementById("se-content").value = s.content || s.narrative || "";
+        document.getElementById("se-speaker").value = s.speaker || "";
+        document.getElementById("se-testimonial").value = s.testimonial || "";
+        document.getElementById("se-activities").value = s.activities || "";
+        document.getElementById("se-img-url").value = s.imageUrl || "";
 
-    let comments = [];
-    try {
-      const stored = localStorage.getItem(`uaf_story_comments_${storyId}`);
-      if (stored) comments = JSON.parse(stored);
-    } catch (_) {}
-
-    if (!comments.length) {
-      contentEl.innerHTML = '<p class="admin-muted" style="padding:24px;text-align:center;">No comments posted for this story yet.</p>';
+        if (s.imageUrl && preview && previewWrap) {
+          preview.src = s.imageUrl;
+          previewWrap.style.display = "block";
+        }
+      }
     } else {
-      contentEl.innerHTML = `
-        <div style="display:flex;flex-direction:column;gap:10px;">
-          ${comments.map((c) => `
-            <div style="background:${c.isPrivate ? '#fffbeb' : '#ffffff'};border:1px solid ${c.isPrivate ? '#fde68a' : '#e2e8f0'};border-radius:8px;padding:12px;">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <strong style="font-size:13px;color:var(--ink-900);">${escapeHtml(c.author || "Supporter")}</strong>
-                  ${c.isPrivate ? '<span style="background:#fee2e2;color:#b91c1c;border:1px solid #fecaca;padding:1px 6px;border-radius:4px;font-size:10.5px;font-weight:700;">🔒 Private to Admin</span>' : '<span style="background:#f0fdf4;color:#166534;border:1px solid #bbf7d0;padding:1px 6px;border-radius:4px;font-size:10.5px;font-weight:700;">Public Comment</span>'}
-                </div>
-                <span style="font-size:11px;color:var(--ink-500);">${formatDate(c.timestamp)}</span>
-              </div>
-              <p style="margin:0;font-size:12.5px;color:var(--ink-800);line-height:1.5;">${escapeHtml(c.text)}</p>
-            </div>
-          `).join("")}
-        </div>
-      `;
+      titleEl.textContent = "Create Campaign Story";
+      document.getElementById("se-story-id").value = "";
+      document.getElementById("se-status").value = "PUBLISHED";
     }
 
     modal.classList.remove("is-hidden");
+    modal.style.display = "flex";
   }
 
-  function flash(message, kind) {
-    const el = document.getElementById("stories-flash");
-    if (!el) return;
-    el.innerHTML = `<div class="admin-flash admin-flash--${kind === "success" ? "success" : "error"}">${escapeHtml(message)}</div>`;
-    setTimeout(() => { if (el) el.innerHTML = ""; }, 4000);
-  }
-
-  async function loadEvidence(session) {
-    const container = document.getElementById("evidence-table-container");
-    if (!container) return;
-    container.innerHTML = '<p class="admin-muted" style="padding:24px;text-align:center;">Loading evidence requests…</p>';
-
-    try {
-      const res = await callApi("listEvidenceRequests", { token: session?.token });
-      if (!res.ok) {
-        container.innerHTML = `<div class="admin-error" style="margin:16px;">${escapeHtml(res.error || "No active connection to backend.")}</div>`;
-        return;
-      }
-
-      cachedEvidence = res.requests || [];
-      const elCount = document.getElementById("count-evidence-total");
-      if (elCount) elCount.textContent = cachedEvidence.length;
-
-      if (!cachedEvidence.length) {
-        container.innerHTML = '<p class="admin-muted" style="padding:28px;text-align:center;">No data or evidence requests logged yet.</p>';
-        return;
-      }
-
-      const rows = cachedEvidence.map((r) => `
-        <tr>
-          <td>
-            <div style="font-weight:600;">${escapeHtml(r.requesterName)}</div>
-            <div style="font-size:11px;color:var(--ink-500);">${escapeHtml(r.organization || "Independent")} · ${escapeHtml(r.email)}</div>
-          </td>
-          <td style="max-width:280px;white-space:normal;font-size:12px;">${escapeHtml(r.requestDetails)}</td>
-          <td><span class="admin-badge admin-badge--pending">${escapeHtml(r.status)}</span></td>
-          <td>${formatDate(r.createdAt)}</td>
-          <td>
-            <button class="btn btn--outline" style="padding:4px 8px;font-size:11.5px;" data-evidence-id="${r.requestId}">Update</button>
-          </td>
-        </tr>
-      `).join("");
-
-      container.innerHTML = `
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Requester / Org</th>
-              <th>Request Details</th>
-              <th>Status</th>
-              <th>Date</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows}
-          </tbody>
-        </table>
-      `;
-
-      container.querySelectorAll("button[data-evidence-id]").forEach((b) => {
-        b.addEventListener("click", () => handleUpdateEvidence(b.dataset.evidenceId, session));
-      });
-    } catch (e) {
-      container.innerHTML = '<div class="admin-error" style="margin:16px;">Connection error or backend unavailable.</div>';
+  function closeStoryEditor() {
+    const modal = document.getElementById("story-editor-modal");
+    if (modal) {
+      modal.classList.add("is-hidden");
+      modal.style.display = "none";
     }
   }
 
-  async function handleUpdateEvidence(requestId, session) {
-    const statuses = ["UNDER_REVIEW", "APPROVED", "FULFILLED", "REJECTED", "CLOSED"];
-    const st = window.prompt(`Enter new status (${statuses.join(", ")}):`, "APPROVED");
-    if (!st) return;
+  async function handleSaveStory(e) {
+    e.preventDefault();
+    const session = window.__uafAdminSession;
+    const saveBtn = document.getElementById("btn-save-story");
 
-    const notes = window.prompt("Enter review notes or fulfillment link:", "Datasets provided securely via email");
+    const storyId = document.getElementById("se-story-id")?.value;
+    const goal = Number(document.getElementById("se-goal")?.value);
+
+    if (isNaN(goal) || goal <= 0) {
+      alert("Please specify a valid funding goal amount greater than 0.");
+      return;
+    }
+
+    const payload = {
+      token: session.token,
+      storyId: storyId || undefined,
+      title: document.getElementById("se-title")?.value.trim(),
+      goal: goal,
+      status: document.getElementById("se-status")?.value,
+      county: document.getElementById("se-county")?.value.trim(),
+      community: document.getElementById("se-community")?.value.trim(),
+      summary: document.getElementById("se-summary")?.value.trim(),
+      content: document.getElementById("se-content")?.value.trim(),
+      imageUrl: document.getElementById("se-img-url")?.value.trim(),
+      speaker: document.getElementById("se-speaker")?.value.trim(),
+      testimonial: document.getElementById("se-testimonial")?.value.trim(),
+      activities: document.getElementById("se-activities")?.value.trim()
+    };
+
+    saveBtn.setAttribute("disabled", "true");
+    saveBtn.textContent = "Saving to Database...";
 
     try {
-      const res = await callApi("updateEvidenceRequest", {
-        token: session?.token,
-        requestId: requestId,
-        status: st.trim().toUpperCase(),
-        reviewerNotes: notes ? notes.trim() : ""
-      });
-
+      const action = storyId ? "updateStory" : "createStory";
+      const res = await window.__uafAdminCallApi(action, payload);
       if (res.ok) {
-        flash(res.message || "Evidence request updated.", "success");
-        loadEvidence(session);
+        alert(res.message || "Story saved successfully!");
+        closeStoryEditor();
+        loadStoriesData();
       } else {
-        flash(res.error || "Failed to update evidence request.");
+        alert(res.error || "Save failed.");
       }
-    } catch (err) {
-      flash("Connection error.");
+    } catch (_) {
+      alert("Connection error while saving story.");
+    } finally {
+      saveBtn.removeAttribute("disabled");
+      saveBtn.textContent = "Save Story to Database";
     }
   }
 
-  window.__uafRegisterAdminModule && window.__uafRegisterAdminModule("stories", renderStoriesModule);
+  async function toggleStoryStatus(storyId, currentStatus) {
+    const session = window.__uafAdminSession;
+    const newStatus = currentStatus === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
+    try {
+      const res = await window.__uafAdminCallApi("updateStoryStatus", {
+        token: session.token,
+        storyId: storyId,
+        status: newStatus
+      });
+      if (res.ok) {
+        loadStoriesData();
+      } else {
+        alert(res.error || "Status update failed.");
+      }
+    } catch (_) {
+      alert("Connection notice: Could not update status.");
+    }
+  }
+
+  async function deleteStory(storyId) {
+    if (!confirm(`Are you sure you want to permanently delete story ${storyId}? This action cannot be undone.`)) {
+      return;
+    }
+    const session = window.__uafAdminSession;
+    try {
+      const res = await window.__uafAdminCallApi("deleteStory", { token: session.token, storyId });
+      if (res.ok) {
+        alert("Story deleted successfully.");
+        loadStoriesData();
+      } else {
+        alert(res.error || "Could not delete story.");
+      }
+    } catch (_) {
+      alert("Error deleting story.");
+    }
+  }
+
+  // Register with Admin Module Switcher
+  window.__uafRegisterAdminModule("stories", renderStoriesModule);
 })();
