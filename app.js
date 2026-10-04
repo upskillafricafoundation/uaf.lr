@@ -321,6 +321,10 @@
       `;
     }
 
+    // Render interactive reactions and comments
+    renderStoryReactions(story.id || story.storyId);
+    renderStoryComments(story.id || story.storyId);
+
     modal.classList.remove("is-hidden");
     modal.style.display = "flex";
     document.body.style.overflow = "hidden";
@@ -336,6 +340,140 @@
     document.body.style.overflow = "";
     if (window.__uafCarouselResume) window.__uafCarouselResume();
   }
+
+  /* ---------------------------------------------------------
+     STORY REACTIONS & COMMENTS CONTROLLER
+  --------------------------------------------------------- */
+  function getStoredReactions(storyId) {
+    try {
+      const stored = localStorage.getItem(`uaf_reactions_${storyId}`);
+      if (stored) return JSON.parse(stored);
+    } catch (_) {}
+    return { likes: 12, loves: 8, cheers: 5, userVoted: {} };
+  }
+
+  function saveStoredReactions(storyId, data) {
+    try {
+      localStorage.setItem(`uaf_reactions_${storyId}`, JSON.stringify(data));
+    } catch (_) {}
+  }
+
+  function renderStoryReactions(storyId) {
+    const bar = document.getElementById("story-modal-reactions-bar");
+    if (!bar) return;
+    const data = getStoredReactions(storyId);
+    const uv = data.userVoted || {};
+
+    bar.innerHTML = `
+      <div class="story-reactions-group">
+        <button type="button" class="reaction-btn ${uv.like ? "is-active" : ""}" data-reaction="like" title="Helpful / Insightful">
+          <span>👍</span>
+          <span class="reaction-count">${data.likes}</span>
+        </button>
+        <button type="button" class="reaction-btn ${uv.love ? "is-active" : ""}" data-reaction="love" title="Inspiring / Heartwarming">
+          <span>❤️</span>
+          <span class="reaction-count">${data.loves}</span>
+        </button>
+        <button type="button" class="reaction-btn ${uv.cheer ? "is-active" : ""}" data-reaction="cheer" title="Celebrate Impact">
+          <span>🎉</span>
+          <span class="reaction-count">${data.cheers}</span>
+        </button>
+      </div>
+    `;
+
+    bar.querySelectorAll(".reaction-btn").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const type = btn.dataset.reaction;
+        const cur = getStoredReactions(storyId);
+        cur.userVoted = cur.userVoted || {};
+        if (cur.userVoted[type]) {
+          cur.userVoted[type] = false;
+          if (type === "like") cur.likes = Math.max(0, cur.likes - 1);
+          if (type === "love") cur.loves = Math.max(0, cur.loves - 1);
+          if (type === "cheer") cur.cheers = Math.max(0, cur.cheers - 1);
+        } else {
+          cur.userVoted[type] = true;
+          if (type === "like") cur.likes++;
+          if (type === "love") cur.loves++;
+          if (type === "cheer") cur.cheers++;
+        }
+        saveStoredReactions(storyId, cur);
+        renderStoryReactions(storyId);
+      });
+    });
+  }
+
+  function getStoredComments(storyId) {
+    try {
+      const stored = localStorage.getItem(`uaf_comments_${storyId}`);
+      if (stored) return JSON.parse(stored);
+    } catch (_) {}
+    return [];
+  }
+
+  function saveStoredComments(storyId, comments) {
+    try {
+      localStorage.setItem(`uaf_comments_${storyId}`, JSON.stringify(comments));
+    } catch (_) {}
+  }
+
+  function renderStoryComments(storyId) {
+    const listEl = document.getElementById("story-comments-list");
+    const countEl = document.getElementById("story-comments-count");
+    if (!listEl) return;
+    const comments = getStoredComments(storyId);
+    if (countEl) countEl.textContent = comments.length;
+
+    if (comments.length === 0) {
+      listEl.innerHTML = `<p style="font-size:12px;color:var(--ink-400);font-style:italic;">No messages yet. Be the first to leave a message of encouragement!</p>`;
+      return;
+    }
+
+    listEl.innerHTML = comments.map((c) => `
+      <div class="story-comment-item">
+        <div class="story-comment-header">
+          <span class="story-comment-author">
+            ${escapeHtml(c.author)}
+            ${c.isPrivate ? '<span class="story-comment-badge-admin">Private (Admin Only)</span>' : ""}
+          </span>
+          <span class="story-comment-time">${escapeHtml(c.time || "Just now")}</span>
+        </div>
+        <p class="story-comment-text">${escapeHtml(c.text)}</p>
+      </div>
+    `).join("");
+  }
+
+  // Handle comment submission
+  const commentForm = document.getElementById("story-comment-form");
+  commentForm?.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const modal = document.getElementById("story-modal-backdrop");
+    const activeStoryId = modal?.dataset.activeStoryId;
+    if (!activeStoryId) return;
+
+    const authorInput = document.getElementById("comment-author");
+    const textInput = document.getElementById("comment-text");
+    const privateCheck = document.getElementById("comment-private");
+
+    const author = authorInput?.value.trim() || "Supporter";
+    const text = textInput?.value.trim() || "";
+    const isPrivate = privateCheck?.checked || false;
+
+    if (!text) return;
+
+    const comments = getStoredComments(activeStoryId);
+    comments.push({
+      author,
+      text,
+      isPrivate,
+      time: new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+    });
+    saveStoredComments(activeStoryId, comments);
+
+    textInput.value = "";
+    renderStoryComments(activeStoryId);
+    showToast(isPrivate ? "Message recorded privately for UAF administration." : "Message posted successfully!");
+  });
 
   document.getElementById("story-modal-close")?.addEventListener("click", closeStoryModal);
   document.getElementById("story-modal-done-btn")?.addEventListener("click", closeStoryModal);
@@ -501,6 +639,29 @@
     showToast("Donation updated to General Support");
   });
 
+  /* ---------------------------------------------------------
+     DONATION FREQUENCY & PAYMENT METHOD SELECTORS
+  --------------------------------------------------------- */
+  // Frequency Chips
+  document.querySelectorAll("#donation-frequency-chips .frequency-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      document.querySelectorAll("#donation-frequency-chips .frequency-chip").forEach((c) => c.classList.remove("is-active"));
+      chip.classList.add("is-active");
+      const hiddenInput = document.getElementById("don-frequency");
+      if (hiddenInput) hiddenInput.value = chip.dataset.freq || "Once";
+    });
+  });
+
+  // Payment Method Cards
+  document.querySelectorAll("#payment-methods-grid .payment-method-card").forEach((card) => {
+    card.addEventListener("click", () => {
+      document.querySelectorAll("#payment-methods-grid .payment-method-card").forEach((c) => c.classList.remove("is-active"));
+      card.classList.add("is-active");
+      const hiddenInput = document.getElementById("don-payment-method");
+      if (hiddenInput) hiddenInput.value = card.dataset.method || "MTN Mobile Money";
+    });
+  });
+
   // Submit Donation Form
   const donationForm = document.getElementById("donation-form");
   donationForm?.addEventListener("submit", async (e) => {
@@ -521,8 +682,11 @@
       name: document.getElementById("don-name")?.value.trim(),
       phone: document.getElementById("don-phone")?.value.trim(),
       email: document.getElementById("don-email")?.value.trim(),
+      address: document.getElementById("don-address")?.value.trim(),
       amount: amt,
       currency: selectedCurrency,
+      frequency: document.getElementById("don-frequency")?.value || "Once",
+      paymentMethod: document.getElementById("don-payment-method")?.value || "MTN Mobile Money",
       storyId: document.getElementById("don-story-select")?.value || "General Support",
       paymentReference: document.getElementById("don-payment-ref")?.value.trim(),
       message: document.getElementById("don-message")?.value.trim(),
@@ -620,16 +784,19 @@
 
   /* ---------------------------------------------------------
      IDENTIFY OSSC REPORT FORM (OutOfSchoolSubmissions -> status NEW)
+     With Multi-Child Profiles Repeater
   --------------------------------------------------------- */
   const osscForm = document.getElementById("report-form");
   const countInput = document.getElementById("rep-count");
   const profilesContainer = document.getElementById("children-profiles-container");
+  const addChildBtn = document.getElementById("btn-add-child-profile");
 
   function renderChildCards(count) {
     if (!profilesContainer) return;
     let n = parseInt(count, 10);
     if (isNaN(n) || n < 1) n = 1;
     if (n > 20) n = 20;
+    if (countInput) countInput.value = n;
 
     // Preserve existing child inputs
     const existing = [];
@@ -637,21 +804,25 @@
       existing.push({
         name: c.querySelector(".child-name")?.value || "",
         gender: c.querySelector(".child-gender")?.value || "",
-        age: c.querySelector(".child-age")?.value || ""
+        age: c.querySelector(".child-age")?.value || "",
+        barrier: c.querySelector(".child-barrier")?.value || ""
       });
     });
 
     profilesContainer.innerHTML = "";
     for (let i = 0; i < n; i++) {
-      const data = existing[i] || { name: "", gender: "", age: "" };
+      const data = existing[i] || { name: "", gender: "", age: "", barrier: "" };
       const card = document.createElement("div");
       card.className = "child-card";
       card.innerHTML = `
-        <div class="child-card__title">Child #${i + 1}</div>
+        <div class="child-card__header">
+          <span class="child-card__title">Child Profile #${i + 1}</span>
+          ${n > 1 ? `<button type="button" class="btn-remove-child" data-index="${i}" aria-label="Remove child">✕ Remove</button>` : ""}
+        </div>
         <div class="form-row-3">
           <div class="form-field">
-            <label>Child's Name (or initials) *</label>
-            <input type="text" class="child-name" value="${escapeHtml(data.name)}" placeholder="Name or Alias" required />
+            <label>Child's Full Name (or initials) *</label>
+            <input type="text" class="child-name" value="${escapeHtml(data.name)}" placeholder="e.g. Moses K." required />
           </div>
           <div class="form-field">
             <label>Gender *</label>
@@ -663,15 +834,45 @@
           </div>
           <div class="form-field">
             <label>Approx Age *</label>
-            <input type="number" class="child-age" min="3" max="18" value="${escapeHtml(data.age)}" placeholder="Age" required />
+            <input type="number" class="child-age" min="3" max="18" value="${escapeHtml(data.age)}" placeholder="Years" required />
           </div>
+        </div>
+        <div class="form-field" style="margin-top:10px;">
+          <label>Primary Exclusion Barrier</label>
+          <select class="child-barrier input-select">
+            <option value="Tuition fees & school uniform" ${data.barrier === "Tuition fees & school uniform" ? "selected" : ""}>Tuition fees &amp; school uniform</option>
+            <option value="Child labor / Street hawking" ${data.barrier === "Child labor / Street hawking" ? "selected" : ""}>Child labor / Street hawking</option>
+            <option value="No school facility nearby" ${data.barrier === "No school facility nearby" ? "selected" : ""}>No school facility nearby</option>
+            <option value="Single-parent vulnerability" ${data.barrier === "Single-parent vulnerability" ? "selected" : ""}>Single-parent vulnerability</option>
+            <option value="Disability / Special needs" ${data.barrier === "Disability / Special needs" ? "selected" : ""}>Disability / Special needs</option>
+            <option value="Orphan / Abandoned" ${data.barrier === "Orphan / Abandoned" ? "selected" : ""}>Orphan / Abandoned</option>
+          </select>
         </div>
       `;
       profilesContainer.appendChild(card);
     }
+
+    // Attach remove handlers
+    profilesContainer.querySelectorAll(".btn-remove-child").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        let curCount = parseInt(countInput?.value || "1", 10);
+        if (curCount > 1) {
+          renderChildCards(curCount - 1);
+        }
+      });
+    });
   }
 
-  countInput?.addEventListener("input", (e) => renderChildCards(e.target.value));
+  addChildBtn?.addEventListener("click", () => {
+    let curCount = parseInt(countInput?.value || "1", 10);
+    if (curCount < 20) {
+      renderChildCards(curCount + 1);
+    } else {
+      showToast("Maximum 20 children per batch report.");
+    }
+  });
+
+  countInput?.addEventListener("change", (e) => renderChildCards(e.target.value));
 
   osscForm?.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -682,20 +883,30 @@
     const childProfiles = [];
     profilesContainer?.querySelectorAll(".child-card").forEach((c) => {
       childProfiles.push({
-        name: c.querySelector(".child-name")?.value.trim(),
-        gender: c.querySelector(".child-gender")?.value,
-        age: c.querySelector(".child-age")?.value
+        name: c.querySelector(".child-name")?.value.trim() || "",
+        gender: c.querySelector(".child-gender")?.value || "",
+        age: c.querySelector(".child-age")?.value || "",
+        barrier: c.querySelector(".child-barrier")?.value || ""
       });
     });
+
+    const summaryText = childProfiles.map((cp, idx) =>
+      `[Child ${idx + 1}: ${cp.name}, ${cp.gender}, age ${cp.age} (${cp.barrier})]`
+    ).join("; ");
+
+    const notes = [
+      document.getElementById("rep-notes")?.value.trim(),
+      childProfiles.length > 0 ? `Children Profile Details: ${summaryText}` : ""
+    ].filter(Boolean).join(" | ");
 
     const payload = {
       reporterName: document.getElementById("rep-name")?.value.trim(),
       reporterPhone: document.getElementById("rep-phone")?.value.trim(),
       county: document.getElementById("rep-county")?.value,
       community: document.getElementById("rep-community")?.value.trim(),
-      childCount: countInput?.value || 1,
-      notes: (document.getElementById("rep-notes")?.value.trim() || "") +
-        (childProfiles.length > 0 ? " | Children: " + JSON.stringify(childProfiles) : ""),
+      childCount: childProfiles.length || countInput?.value || 1,
+      notes,
+      children: childProfiles,
       consent: document.getElementById("rep-consent")?.checked || false
     };
 
@@ -733,6 +944,132 @@
       renderChildCards(1);
     }
   });
+
+  /* ---------------------------------------------------------
+     SEARCH DIALOG & HIDDEN ADMIN GATEWAY CONTROLLER
+  --------------------------------------------------------- */
+  const searchBackdrop = document.getElementById("search-dialog-backdrop");
+  const searchCloseBtn = document.getElementById("search-dialog-close");
+  const searchInput = document.getElementById("search-query-input");
+  const searchResultsList = document.getElementById("search-results-list");
+
+  function openSearchDialog() {
+    if (!searchBackdrop) return;
+    searchBackdrop.classList.remove("is-hidden");
+    if (searchInput) {
+      searchInput.value = "";
+      setTimeout(() => searchInput.focus(), 100);
+    }
+    renderSearchResults("");
+  }
+
+  function closeSearchDialog() {
+    if (!searchBackdrop) return;
+    searchBackdrop.classList.add("is-hidden");
+  }
+
+  document.getElementById("btn-header-search")?.addEventListener("click", openSearchDialog);
+  searchCloseBtn?.addEventListener("click", closeSearchDialog);
+  searchBackdrop?.addEventListener("click", (e) => {
+    if (e.target.id === "search-dialog-backdrop") closeSearchDialog();
+  });
+
+  function renderSearchResults(query) {
+    if (!searchResultsList) return;
+    const q = (query || "").trim().toLowerCase();
+    const stories = (window.UAF_DATA && window.UAF_DATA.getStories) ? window.UAF_DATA.getStories() : [];
+
+    const matchedStories = stories.filter((s) => {
+      if (!q) return true;
+      const text = `${s.title || ""} ${s.summary || ""} ${s.county || ""} ${s.community || ""} ${s.tag || ""}`.toLowerCase();
+      return text.includes(q);
+    }).slice(0, 6);
+
+    let html = "";
+
+    // Hidden Admin Portal gateway item - accessible via search
+    const matchesAdmin = !q || "admin portal login staff backend dashboard manage".includes(q) || q.includes("adm") || q.includes("log") || q.includes("sta");
+    if (matchesAdmin) {
+      html += `
+        <div class="search-result-item search-result-item--admin" data-action="go-admin">
+          <strong>🔐 Admin Portal (Staff Login)</strong>
+          <small>Authorized access for campaign editors, donation verifiers & institutional data desks.</small>
+        </div>
+      `;
+    }
+
+    if (matchedStories.length > 0) {
+      html += matchedStories.map((s) => `
+        <div class="search-result-item" data-story-id="${escapeHtml(s.id || s.storyId)}">
+          <strong>${escapeHtml(s.title)}</strong>
+          <small>${escapeHtml(s.county || "Liberia")} · ${escapeHtml(s.tag || "Campaign Case")}</small>
+        </div>
+      `).join("");
+    } else if (!matchesAdmin) {
+      html += `
+        <div style="padding:16px;text-align:center;color:var(--ink-400);font-size:13px;">
+          No matching stories found for "${escapeHtml(query)}".
+        </div>
+      `;
+    }
+
+    searchResultsList.innerHTML = html;
+
+    // Click on Admin Portal
+    searchResultsList.querySelectorAll("[data-action='go-admin']").forEach((item) => {
+      item.addEventListener("click", () => {
+        closeSearchDialog();
+        window.location.href = "admin/index.html";
+      });
+    });
+
+    // Click on story result
+    searchResultsList.querySelectorAll("[data-story-id]").forEach((item) => {
+      item.addEventListener("click", () => {
+        const sId = item.dataset.storyId;
+        closeSearchDialog();
+        navigateTo("donate");
+        setTimeout(() => openStoryModal(sId), 300);
+      });
+    });
+  }
+
+  searchInput?.addEventListener("input", (e) => {
+    renderSearchResults(e.target.value);
+  });
+
+  /* ---------------------------------------------------------
+     TIMED DONATION ENGAGEMENT POPUP CONTROLLER
+  --------------------------------------------------------- */
+  const engagementModal = document.getElementById("donation-engagement-modal");
+  const engagementCloseBtn = document.getElementById("donation-engagement-close");
+  const engagementDismissBtn = document.getElementById("btn-engagement-dismiss");
+  const engagementDonateBtn = document.getElementById("btn-engagement-donate");
+
+  function closeEngagementModal() {
+    if (engagementModal) engagementModal.classList.add("is-hidden");
+  }
+
+  function triggerEngagementPopup() {
+    if (!engagementModal) return;
+    if (sessionStorage.getItem("uaf_engagement_seen")) return;
+    sessionStorage.setItem("uaf_engagement_seen", "true");
+    engagementModal.classList.remove("is-hidden");
+  }
+
+  engagementCloseBtn?.addEventListener("click", closeEngagementModal);
+  engagementDismissBtn?.addEventListener("click", closeEngagementModal);
+  engagementModal?.addEventListener("click", (e) => {
+    if (e.target.id === "donation-engagement-modal") closeEngagementModal();
+  });
+
+  engagementDonateBtn?.addEventListener("click", () => {
+    closeEngagementModal();
+    navigateTo("donate", "donation-section");
+  });
+
+  // Trigger popup after 45 seconds of active browsing
+  setTimeout(triggerEngagementPopup, 45000);
 
   /* ---------------------------------------------------------
      PWA INSTALLATION PROMPT

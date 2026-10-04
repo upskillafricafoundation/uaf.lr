@@ -50,6 +50,12 @@
     </div>
     <div class="app-header__spacer"></div>
     <div class="app-header__actions">
+      <button type="button" class="btn-header-search" id="btn-header-search" aria-label="Search stories, communities, or staff portal">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2">
+          <circle cx="11" cy="11" r="8"/>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+      </button>
       <button type="button" class="btn-header-install" data-action="install" aria-label="Install App">
         <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2">
           <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
@@ -319,6 +325,19 @@
             <!-- DONATION FORM -->
             <form id="donation-form" class="donation-form-body">
               <input type="hidden" id="don-dedicated-story-id" value="" />
+              <input type="hidden" id="don-payment-method" value="MTN Mobile Money" />
+              <input type="hidden" id="don-frequency" value="Once" />
+
+              <!-- Frequency Chips -->
+              <div class="form-field" style="margin-bottom: 14px;">
+                <label class="form-label-caps">Donation Frequency</label>
+                <div class="frequency-chips" id="donation-frequency-chips">
+                  <button type="button" class="frequency-chip is-active" data-freq="Once">Once</button>
+                  <button type="button" class="frequency-chip" data-freq="Weekly">Weekly</button>
+                  <button type="button" class="frequency-chip" data-freq="Monthly">Monthly</button>
+                  <button type="button" class="frequency-chip" data-freq="Yearly">Yearly</button>
+                </div>
+              </div>
 
               <!-- Currency & Amount Chips -->
               <div class="form-row-space">
@@ -336,6 +355,29 @@
               <div class="form-field" style="margin-bottom:16px;">
                 <label for="custom-amount">Custom Amount (<span id="currency-symbol-label">USD $</span>)</label>
                 <input type="number" id="custom-amount" min="1" disabled placeholder="Select 'Custom' above or type amount" />
+              </div>
+
+              <!-- Payment Method Selector -->
+              <div class="form-field" style="margin-bottom: 16px;">
+                <label class="form-label-caps">Payment Method</label>
+                <div class="payment-methods-grid" id="payment-methods-grid">
+                  <div class="payment-method-card is-active" data-method="MTN Mobile Money">
+                    <strong>MTN MoMo</strong>
+                    <small style="display:block;font-size:11px;color:var(--ink-500);">*156# Direct Dial</small>
+                  </div>
+                  <div class="payment-method-card" data-method="Orange Money">
+                    <strong>Orange Money</strong>
+                    <small style="display:block;font-size:11px;color:var(--ink-500);">#144# Transfer</small>
+                  </div>
+                  <div class="payment-method-card" data-method="Bank Transfer">
+                    <strong>Bank Deposit</strong>
+                    <small style="display:block;font-size:11px;color:var(--ink-500);">Ecobank Liberia</small>
+                  </div>
+                  <div class="payment-method-card" data-method="Cash / Office">
+                    <strong>Cash / In-Person</strong>
+                    <small style="display:block;font-size:11px;color:var(--ink-500);">Paynesville Office</small>
+                  </div>
+                </div>
               </div>
 
               <!-- Campaign / Story Selector Dropdown -->
@@ -365,9 +407,14 @@
                   <input type="email" id="don-email" placeholder="For official email receipt" />
                 </div>
                 <div class="form-field">
-                  <label for="don-payment-ref">MTN Sender Number / Transfer Reference *</label>
-                  <input type="text" id="don-payment-ref" placeholder="Sender phone or Txn ID" required />
+                  <label for="don-address">Home / Community Address (Optional)</label>
+                  <input type="text" id="don-address" placeholder="e.g. Duport Road, Paynesville" />
                 </div>
+              </div>
+
+              <div class="form-field" style="margin-bottom:14px;">
+                <label for="don-payment-ref">Sender Number / Transaction Reference *</label>
+                <input type="text" id="don-payment-ref" placeholder="Mobile Money sender phone or Bank reference ID" required />
               </div>
 
               <!-- Optional Dedication Message -->
@@ -568,6 +615,11 @@
             <!-- Dynamic Child Profiles Repeater Container -->
             <div id="children-profiles-container" style="margin-top:14px;"></div>
 
+            <button type="button" class="btn-add-child-profile" id="btn-add-child-profile">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              <span>+ Add Another Child Profile</span>
+            </button>
+
             <!-- 3. Observations and Notes -->
             <div class="form-field" style="margin-top:14px;">
               <label for="rep-notes">Additional Observations &amp; Family Situation</label>
@@ -663,6 +715,28 @@
           <div class="story-modal-share" id="story-modal-share-bar"></div>
         </div>
       </div>
+
+      <!-- Story Comments & Messages of Encouragement -->
+      <div class="story-comments-section" id="story-comments-section">
+        <h3 style="font-size:15px;font-weight:700;color:var(--navy-900);margin:0 0 10px;">Community Messages &amp; Prayers (<span id="story-comments-count">0</span>)</h3>
+        <div class="story-comments-list" id="story-comments-list">
+          <p style="font-size:12px;color:var(--ink-400);font-style:italic;">No messages yet. Be the first to leave a message of encouragement!</p>
+        </div>
+        
+        <form id="story-comment-form" style="margin-top:10px;">
+          <div class="form-row-2">
+            <input type="text" id="comment-author" placeholder="Your Name or Alias" required style="padding:8px 12px;font-size:12.5px;border:1px solid var(--border);border-radius:6px;width:100%;" />
+            <div style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink-600);">
+              <input type="checkbox" id="comment-private" style="cursor:pointer;" />
+              <label for="comment-private" style="cursor:pointer;margin:0;">Keep Private (Admin Only)</label>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <input type="text" id="comment-text" placeholder="Write a message of hope or encouragement..." required style="flex:1;padding:8px 12px;font-size:12.5px;border:1px solid var(--border);border-radius:6px;" />
+            <button type="submit" class="btn btn--primary" style="padding:8px 16px;font-size:12px;white-space:nowrap;">Post</button>
+          </div>
+        </form>
+      </div>
     </div>
 
     <div class="story-modal-footer">
@@ -698,6 +772,53 @@
           <li><strong>iPhone / iPad (Safari):</strong> Tap the <strong>Share</strong> button (box with up arrow), then tap <strong>"Add to Home Screen"</strong>.</li>
           <li><strong>Computer (Chrome / Edge):</strong> Click the install icon in your browser address bar.</li>
         </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================
+     MODAL 3: TIMED DONATION ENGAGEMENT POPUP MODAL
+     ========================================================= -->
+<div class="donation-engagement-backdrop is-hidden" id="donation-engagement-modal" role="dialog" aria-modal="true">
+  <div class="donation-engagement-card">
+    <button type="button" class="donation-engagement-close" id="donation-engagement-close" aria-label="Close popup">&times;</button>
+    <div class="donation-engagement-icon-wrap">
+      <svg viewBox="0 0 24 24" width="30" height="30" fill="#e11d48">
+        <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+      </svg>
+    </div>
+    <span class="donation-engagement-badge">Campaign Drive Appeal</span>
+    <h3 class="donation-engagement-title">Please Donate, Educate a Kid or Empower a household</h3>
+    <p class="donation-engagement-desc">Over 1,200 out-of-school children across Montserrado, Margibi, and Grand Bassa await verified school fee subsidies and learning kits. A modest gift of $5 or $10 keeps a child safely in class.</p>
+    <div class="donation-engagement-actions">
+      <button type="button" class="btn-engagement-donate" id="btn-engagement-donate">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>
+        <span>Donate Form</span>
+      </button>
+      <button type="button" class="btn-engagement-dismiss" id="btn-engagement-dismiss">Maybe Later</button>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================
+     MODAL 4: SEARCH DIALOG MODAL (With Hidden Admin Gateway)
+     ========================================================= -->
+<div class="dialog-backdrop is-hidden" id="search-dialog-backdrop" role="dialog" aria-modal="true">
+  <div class="dialog-window" style="max-width: 480px;">
+    <div class="dialog-header">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <h3 style="margin:0;font-size:16px;">Search Campaign Drive</h3>
+      </div>
+      <button type="button" class="dialog-close" id="search-dialog-close">&times;</button>
+    </div>
+    <div class="dialog-body" style="padding: 16px 20px;">
+      <div style="margin-bottom: 14px;">
+        <input type="text" class="search-input-field" id="search-query-input" placeholder="Type story, county, topic, or keyword..." autocomplete="off" />
+      </div>
+      <div class="search-results-list" id="search-results-list">
+        <!-- Rendered dynamically by search controller -->
       </div>
     </div>
   </div>

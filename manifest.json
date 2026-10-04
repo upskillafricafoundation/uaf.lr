@@ -29,9 +29,9 @@
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     },
     {
-      "name": "Communities Statistics",
-      "short_name": "Statistics",
-      "url": "./index.html#/statistics",
+      "name": "Identify Out-of-School Children",
+      "short_name": "Report OSSC",
+      "url": "./index.html#/submit-ossc",
       "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]

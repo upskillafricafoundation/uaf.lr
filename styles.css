@@ -1777,6 +1777,513 @@ body {
   margin-top: 6px;
 }
 
+/* =========================================================
+   HEADER SEARCH BUTTON & SEARCH MODAL (Hidden Admin Gateway)
+   ========================================================= */
+.btn-header-search {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  background: #ffffff;
+  color: var(--ink-700);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+.btn-header-search:hover {
+  background: var(--teal-050);
+  color: var(--teal-600);
+  border-color: var(--teal-400);
+  transform: scale(1.05);
+}
+
+.search-input-field {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 14px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  color: var(--ink-900);
+  outline: none;
+  transition: all 0.2s ease;
+}
+.search-input-field:focus {
+  border-color: var(--teal-600);
+  box-shadow: 0 0 0 3px rgba(0, 122, 153, 0.15);
+}
+
+.search-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.search-result-item {
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+.search-result-item:hover {
+  background: #ffffff;
+  border-color: var(--teal-600);
+  box-shadow: var(--shadow-sm);
+  transform: translateX(3px);
+}
+.search-result-item strong {
+  display: block;
+  font-size: 13.5px;
+  color: var(--navy-900);
+  margin-bottom: 2px;
+}
+.search-result-item small {
+  font-size: 11.5px;
+  color: var(--ink-500);
+}
+.search-result-item--admin {
+  background: #f0f9ff !important;
+  border-color: #7dd3fc !important;
+}
+.search-result-item--admin:hover {
+  background: #e0f2fe !important;
+  border-color: var(--teal-600) !important;
+}
+
+/* =========================================================
+   TIMED DONATION ENGAGEMENT POPUP MODAL
+   ========================================================= */
+.donation-engagement-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 24, 44, 0.72);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  animation: fadeIn 0.25s ease-out;
+}
+
+.donation-engagement-card {
+  background: #ffffff;
+  border-radius: 20px;
+  max-width: 460px;
+  width: 100%;
+  padding: 30px 24px 24px;
+  text-align: center;
+  position: relative;
+  box-shadow: 0 25px 50px -12px rgba(6, 24, 44, 0.35);
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  animation: modalPopUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes modalPopUp {
+  0% { opacity: 0; transform: scale(0.92) translateY(14px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.donation-engagement-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: #f1f5f9;
+  border: none;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--ink-500);
+  cursor: pointer;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+.donation-engagement-close:hover {
+  background: #e2e8f0;
+  color: var(--ink-900);
+  transform: rotate(90deg);
+}
+
+.donation-engagement-icon-wrap {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: #ffe4e6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 14px;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.18);
+  animation: pulseHeart 2s infinite ease-in-out;
+}
+
+@keyframes pulseHeart {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.donation-engagement-badge {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--teal-600);
+  background: var(--teal-050);
+  border: 1px solid var(--teal-100);
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 999px;
+  margin-bottom: 8px;
+}
+
+.donation-engagement-title {
+  font-family: var(--font-heading);
+  font-size: 19px;
+  font-weight: 800;
+  color: var(--navy-900);
+  line-height: 1.3;
+  margin: 0 0 10px;
+}
+
+.donation-engagement-desc {
+  font-size: 13px;
+  color: var(--ink-600);
+  line-height: 1.5;
+  margin: 0 0 20px;
+}
+
+.donation-engagement-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.btn-engagement-donate {
+  flex: 1;
+  min-width: 160px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--rose-600), #be123c);
+  color: #ffffff;
+  border: none;
+  border-radius: var(--radius-full);
+  padding: 12px 20px;
+  font-family: var(--font-heading);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(225, 29, 72, 0.3);
+  transition: all 0.2s ease;
+}
+.btn-engagement-donate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(225, 29, 72, 0.4);
+}
+
+.btn-engagement-dismiss {
+  background: transparent;
+  color: var(--ink-500);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  padding: 12px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-engagement-dismiss:hover {
+  background: var(--surface-alt);
+  color: var(--ink-800);
+}
+
+/* =========================================================
+   DONATION FREQUENCY CHIPS & PAYMENT METHODS
+   ========================================================= */
+.frequency-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin: 8px 0 16px;
+}
+
+.frequency-chip {
+  padding: 7px 14px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--ink-700);
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.frequency-chip:hover {
+  border-color: var(--teal-600);
+  background: var(--teal-050);
+}
+.frequency-chip.is-active {
+  background: var(--teal-600);
+  color: #ffffff;
+  border-color: var(--teal-600);
+  box-shadow: 0 2px 8px rgba(0, 122, 153, 0.25);
+}
+
+.payment-methods-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+  margin: 8px 0 16px;
+}
+
+.payment-method-card {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.payment-method-card:hover {
+  border-color: var(--teal-600);
+  background: var(--teal-050);
+}
+.payment-method-card.is-active {
+  border-color: var(--teal-600);
+  background: var(--teal-050);
+  box-shadow: 0 0 0 2px var(--teal-600);
+  font-weight: 700;
+  color: var(--teal-700);
+}
+
+/* =========================================================
+   DYNAMIC CHILD REPEATER (Multiple OSSC Submission)
+   ========================================================= */
+.child-card {
+  background: var(--surface-alt);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 12px;
+  position: relative;
+  animation: cardEntrance 0.3s ease-out;
+}
+
+.child-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.child-card__title {
+  font-family: var(--font-heading);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--teal-700);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-remove-child {
+  background: transparent;
+  border: 1px solid #fca5a5;
+  color: #dc2626;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.btn-remove-child:hover {
+  background: #fee2e2;
+}
+
+.btn-add-child-profile {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 18px;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--teal-600);
+  background: var(--teal-050);
+  color: var(--teal-700);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  margin-top: 6px;
+  transition: all 0.15s ease;
+}
+.btn-add-child-profile:hover {
+  background: var(--teal-100);
+}
+
+.form-row-3 {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
+}
+@media (max-width: 600px) {
+  .form-row-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   STORY REACTIONS & COMMENTS (Reinstated)
+   ========================================================= */
+.story-reactions-group {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.reaction-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--ink-700);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.reaction-btn:hover {
+  border-color: var(--teal-600);
+  transform: scale(1.05);
+}
+.reaction-btn.is-active {
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #166534;
+  animation: reactionPop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes reactionPop {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+.story-comments-section {
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--border);
+}
+
+.story-comments-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.story-comment-item {
+  padding: 10px 14px;
+  background: var(--surface-alt);
+  border-radius: 10px;
+  border: 1px solid var(--border);
+}
+.story-comment-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-size: 12px;
+}
+.story-comment-author {
+  font-weight: 700;
+  color: var(--navy-900);
+}
+.story-comment-time {
+  color: var(--ink-400);
+}
+.story-comment-text {
+  font-size: 12.5px;
+  color: var(--ink-800);
+  line-height: 1.4;
+  margin: 0;
+}
+.story-comment-badge-admin {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  color: #7c2d12;
+  background: #ffedd5;
+  padding: 1px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+}
+
+/* =========================================================
+   OLD STORIES ANIMATIONS & DELIGHTFUL EFFECTS
+   ========================================================= */
+@keyframes cardEntrance {
+  0% { opacity: 0; transform: translateY(18px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.campaign-card {
+  animation: cardEntrance 0.35s ease-out;
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.25s ease;
+}
+
+.campaign-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 16px 36px -6px rgba(6, 24, 44, 0.14), 0 4px 12px -2px rgba(6, 24, 44, 0.06);
+  border-color: var(--teal-400);
+}
+
+.campaign-card__img-wrap img {
+  transition: transform 0.4s ease;
+}
+.campaign-card:hover .campaign-card__img-wrap img {
+  transform: scale(1.04);
+}
+
+.carousel-pulse-dot,
+.ussd-pulse-dot {
+  animation: pulseDot 1.8s infinite ease-in-out;
+}
+
+@keyframes pulseDot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.6; }
+}
+
+.stories-carousel-dots .carousel-dot {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.stories-carousel-dots .carousel-dot.is-active {
+  width: 24px;
+  border-radius: 999px;
+  background: var(--teal-600);
+}
+
 /* Toast */
 .toast {
   position: fixed;
