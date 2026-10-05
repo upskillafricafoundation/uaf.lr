@@ -3,163 +3,101 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>UAF Campaign Drive — Admin Portal</title>
+<title>UAF Impact — Admin Portal</title>
 <meta name="robots" content="noindex, nofollow" />
-<link rel="stylesheet" href="../styles.css?v=31" />
-<link rel="stylesheet" href="admin.css?v=31" />
+<link rel="stylesheet" href="../styles.css?v=30" />
+<link rel="stylesheet" href="admin.css?v=30" />
 </head>
 <body>
 
 <div id="admin-shell">
 
-  <!-- ============ LOGIN SCREEN ============ -->
+  <!-- ============ LOGIN ============ -->
   <div id="login-screen" class="admin-center">
     <form id="login-form" class="admin-card admin-card--login">
       <img src="../assets/uaf-logo.png" alt="Upskill Africa Foundation" class="admin-login__logo" />
-      <h1>UAF Campaign Drive</h1>
-      <p class="admin-muted">Sign in to manage campaign stories, verify donations, review submitted data, and download institutional reports.</p>
-      
+      <h1>UAF Impact — Admin</h1>
+      <p class="admin-muted">Sign in with your administrator account. This area is separate from the public app and is never cached offline.</p>
       <div class="form-field">
-        <label for="login-email">Email Address</label>
-        <input type="email" id="login-email" required autocomplete="username" placeholder="admin@upskillafrica.org" />
+        <label for="login-email">Email</label>
+        <input type="email" id="login-email" required autocomplete="username" />
       </div>
-      
       <div class="form-field">
         <label for="login-password">Password</label>
-        <input type="password" id="login-password" required autocomplete="current-password" placeholder="••••••••••••" />
+        <input type="password" id="login-password" required autocomplete="current-password" />
       </div>
-      
       <div class="form-field">
-        <label for="login-role">Access Role</label>
-        <select id="login-role" required class="input-select">
-          <option value="ADMIN">Administrator</option>
-          <option value="VIEWER">Read-Only Viewer</option>
+        <label for="login-role">Role</label>
+        <select id="login-role" required style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13.5px;background:#fff;">
+          <option value="ADMIN">Admin</option>
+          <option value="EXECUTIVE_STAFF">Executive Staff</option>
         </select>
       </div>
-
       <div id="login-error" class="admin-error is-hidden"></div>
-      
-      <button type="submit" class="btn btn--primary btn--full" style="padding:11px;">Sign In</button>
-      
-      <div style="margin-top:16px;text-align:center;">
-        <a href="../index.html#/menu" class="btn btn--outline" style="font-size:12px;text-decoration:none;padding:6px 14px;">
-          &larr; Return to Public Website
+      <button type="submit" class="btn btn--primary btn--full">Sign in</button>
+      <div style="margin-top:14px;text-align:center;">
+        <a href="../index.html#/menu" class="btn btn--outline" style="display:inline-flex;align-items:center;gap:6px;font-size:12.5px;text-decoration:none;padding:8px 14px;border-radius:var(--radius-sm);">
+          ← Return to Public Website Menu
         </a>
       </div>
     </form>
   </div>
 
-  <!-- ============ AUTHENTICATED DASHBOARD SHELL ============ -->
+  <!-- ============ AUTHENTICATED SHELL ============ -->
   <div id="dashboard-screen" class="is-hidden">
     <header class="admin-header">
       <div class="admin-header__brand">
         <img src="../assets/uaf-logo.png" alt="" />
-        <strong>UAF Admin Portal</strong>
+        <strong>UAF Impact Admin</strong>
       </div>
-      <div class="admin-header__user">
-        <a href="../index.html#/menu" class="btn btn--outline btn-sm">
-          Public Site &rarr;
+      <div class="admin-header__user" style="display:flex;align-items:center;gap:10px;">
+        <a href="../index.html#/menu" class="btn btn--outline" style="font-size:12px;padding:5px 12px;text-decoration:none;display:inline-flex;align-items:center;gap:5px;font-weight:600;">
+          ← Public Website Menu
         </a>
-        <span id="admin-user-label" class="admin-user-badge"></span>
-        <button id="logout-btn" class="btn btn--outline btn-sm">Log out</button>
+        <span id="admin-user-label"></span>
+        <button id="logout-btn" class="btn btn--outline">Log out</button>
       </div>
     </header>
 
     <main class="admin-main">
-      <!-- 4 Areas Only Navigation -->
       <nav class="admin-nav">
-        <div class="admin-nav__title">Operations</div>
+        <div class="admin-nav__title">Modules</div>
         <div class="admin-nav__item is-active" data-module="dashboard">Dashboard</div>
-        <div class="admin-nav__item" data-module="stories">Stories &amp; Campaigns</div>
-        <div class="admin-nav__item" data-module="donations">Donations Review</div>
-        <div class="admin-nav__item" data-module="submissions">Submitted Data</div>
+        <div class="admin-nav__item" data-module="community">Community Data</div>
+        <div class="admin-nav__item" data-module="programs">UAF Programs</div>
+        <div class="admin-nav__item" data-module="partners">Partners &amp; Logos</div>
+        <div class="admin-nav__item" data-module="donations">Donations</div>
+        <div class="admin-nav__item" data-module="stories">Stories &amp; Evidence</div>
+        <div class="admin-nav__item" data-module="users">Users &amp; Roles</div>
+        <div class="admin-nav__item" data-module="audit">Audit Logs</div>
       </nav>
 
-      <!-- Dashboard Panel (Small) -->
       <section id="admin-modules" class="admin-content">
-        <div class="admin-card">
-          <div class="dash-welcome-row">
-            <div>
-              <h2>Operations Dashboard</h2>
-              <p class="admin-muted">Authenticated as <strong id="welcome-name"></strong> (<span id="welcome-role"></span>).</p>
-            </div>
-            <button type="button" class="btn btn--primary" id="btn-dash-download-all">
-              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-              <span>Download All Data (1-Click)</span>
-            </button>
-          </div>
-
-          <!-- 4 High-Level Metric KPI Cards -->
-          <div class="admin-kpi-grid" style="margin-top:20px;">
-            <div class="admin-kpi-card" data-goto-module="donations">
-              <div class="admin-kpi-card__label">Pending Donations</div>
-              <div class="admin-kpi-card__value" id="kpi-pending-donations">0</div>
-              <div class="admin-kpi-card__sub" id="kpi-pending-badge">Review needed</div>
-            </div>
-
-            <div class="admin-kpi-card">
-              <div class="admin-kpi-card__label">Total Verified Funds</div>
-              <div class="admin-kpi-card__value" id="kpi-verified-funds">$0.00</div>
-              <div class="admin-kpi-card__sub" id="kpi-verified-count">0 donations approved</div>
-            </div>
-
-            <div class="admin-kpi-card" data-goto-module="submissions">
-              <div class="admin-kpi-card__label">New Data Requests</div>
-              <div class="admin-kpi-card__value" id="kpi-new-data-reqs">0</div>
-              <div class="admin-kpi-card__sub">Institutional inquiries</div>
-            </div>
-
-            <div class="admin-kpi-card" data-goto-module="submissions">
-              <div class="admin-kpi-card__label">New OSSC Reports</div>
-              <div class="admin-kpi-card__value" id="kpi-new-ossc-reports">0</div>
-              <div class="admin-kpi-card__sub">Community child cases</div>
-            </div>
-          </div>
-
-          <!-- Active Stories Progress Summary Table -->
-          <div style="margin-top:32px;">
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-              <h3 style="margin:0;font-size:16px;">Campaign Stories Progress Summary</h3>
-              <button type="button" class="btn btn--outline btn-sm" id="btn-refresh-dashboard">Refresh Data</button>
-            </div>
-            
-            <div class="table-scroll-wrap">
-              <table class="admin-table">
-                <thead>
-                  <tr>
-                    <th>Story Title</th>
-                    <th>Goal (USD)</th>
-                    <th>Raised (USD)</th>
-                    <th>Progress</th>
-                    <th>Status</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody id="dash-stories-table-body">
-                  <tr>
-                    <td colspan="6" style="text-align:center;padding:18px;color:var(--ink-400);">Loading summary...</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+        <div class="admin-card" style="max-width:680px;">
+          <h2>Administrator Portal</h2>
+          <p>You're authenticated as <strong id="welcome-name"></strong> (<span id="welcome-role"></span>).</p>
+          <p class="admin-muted">All administrative and operational modules are online. Use the navigation sidebar on the left to review community reports, verify incoming mobile money and bank donations, publish field stories, manage staff accounts, or inspect system audit logs.</p>
+          <div style="margin-top:20px;padding:16px;background:var(--blue-050);border-radius:var(--radius-md);font-size:13px;color:var(--blue-900);">
+            <strong>Platform Integrity Notice:</strong> All public-facing statistics adhere strictly to the Zero-Fabrication protocol. Only submissions and donations explicitly marked as <code>VERIFIED</code> or <code>PUBLISHED</code> by authorized staff will be reflected on the public PWA.
           </div>
         </div>
       </section>
 
-      <!-- Dynamic module container for Stories, Donations, and Submitted Data -->
+      <!-- Dynamic module container -->
       <section id="admin-module-panel" class="admin-content is-hidden"></section>
     </main>
   </div>
 
 </div>
 
-<!-- Admin Modals Container -->
-<div id="admin-modal-container"></div>
-
-<script src="../config.js?v=31"></script>
-<script src="admin.js?v=31"></script>
-<script src="stories.js?v=31"></script>
-<script src="donations.js?v=31"></script>
-<script src="submissions.js?v=31"></script>
+<script src="../config.js?v=30"></script>
+<script src="admin.js?v=30"></script>
+<script src="community.js?v=30"></script>
+<script src="programs.js?v=30"></script>
+<script src="partners.js?v=30"></script>
+<script src="donations.js?v=30"></script>
+<script src="stories.js?v=30"></script>
+<script src="users.js?v=30"></script>
+<script src="audit.js?v=30"></script>
 </body>
 </html>

@@ -1,11 +1,11 @@
 /* =========================================================
-   UAF CAMPAIGN DRIVE — SERVICE WORKER (v31)
+   UAF CAMPAIGN DRIVE — SERVICE WORKER (v30)
    Features auto-update, network-first strategy for app code,
    and instant cache invalidation so installed devices always
    receive the latest updates immediately.
    ========================================================= */
 
-const CACHE_VERSION = "uaf-campaign-drive-v31";
+const CACHE_VERSION = "uaf-campaign-drive-v30";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -18,8 +18,10 @@ const APP_SHELL = [
   "./assets/active-campaigns-hands-bg.svg",
   "./assets/uaf-logo.png",
   "./assets/nic-logo.png",
-  "./assets/icon-donate.webp",
+  "./assets/icon-impact.png",
   "./assets/icon-request.png",
+  "./assets/icon-donate.webp",
+  "./assets/icon-partners.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/apple-touch-icon.png",
@@ -36,72 +38,84 @@ self.addEventListener("install", (event) => {
           cache.add(url).catch((err) => console.warn("PWA pre-cache notice:", url, err))
         )
       );
-    }).then(() => self.skipWaiting())
-  );
-});
-
-// Activate: clean up old cache versions immediately
-self.addEventListener("activate", (event) => {
-  event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys.map((key) => {
-          if (key !== CACHE_VERSION) {
-            return caches.delete(key);
-          }
-        })
-      );
-    }).then(() => self.clients.claim())
-  );
-});
-
-// Fetch: Network-first for dynamic scripts and HTML, cache-first for static icons/assets
-self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  const url = new URL(req.url);
-
-  // Ignore cross-origin Google Sheets API or chrome-extension calls
-  if (url.origin !== self.location.origin) {
-    return;
-  }
-
-  // Admin portal is never cached offline
-  if (url.pathname.includes("/admin/")) {
-    return;
-  }
-
-  // Network-first for app code and pages
-  if (
-    req.mode === "navigate" ||
-    url.pathname.endsWith(".html") ||
-    url.pathname.endsWith(".js") ||
-    url.pathname.endsWith(".css")
-  ) {
-    event.respondWith(
-      fetch(req)
-        .then((networkRes) => {
-          if (networkRes && networkRes.status === 200) {
-            const resClone = networkRes.clone();
-            caches.open(CACHE_VERSION).then((cache) => cache.put(req, resClone));
-          }
-          return networkRes;
-        })
-        .catch(() => caches.match(req).then((cached) => cached || caches.match("./index.html")))
-    );
-    return;
-  }
-
-  // Cache-first for images and icons
-  event.respondWith(
-    caches.match(req).then((cached) => {
-      if (cached) return cached;
-      return fetch(req).then((networkRes) => {
-        if (networkRes && networkRes.status === 200) {
-          const resClone = networkRes.clone();
-          caches.open(CACHE_VERSION).then((cache) => cache.put(req, resClone));
-        }
-        return networkRes;
-      });
     })
   );
+  self.skipWaiting();
+});
+
+// Activate: delete ALL old caches immediately and take control of all open clients
+self.addEventListener("activate", (event) => {
+  event.waitUntil(
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key !== CACHE_VERSION)
+          .map((key) => caches.delete(key))
+      )
+    ).then(() => self.clients.claim())
+  );
+});
+
+// Message listener for manual client-side commands
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.action === "skipWaiting") {
+    self.skipWaiting();
+  }
+  if (event.data && event.data.action === "clearCache") {
+    caches.keys().then((names) => Promise.all(names.map((name) => caches.delete(name))));
+  }
+});
+
+// Fetch: Network-First for core code & navigation, Cache-First for static media
+self.addEventListener("fetch", (event) => {
+  const req = event.request;
+  if (req.method !== "GET") return;
+
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+  if (url.pathname.includes("/admin") || url.pathname.includes("/api")) return;
+
+  const isCodeOrDoc = req.mode === "navigate" ||
+                      url.pathname.endsWith(".html") ||
+                      url.pathname.endsWith(".js") ||
+                      url.pathname.endsWith(".css") ||
+                      url.pathname.endsWith(".json");
+
+  if (isCodeOrDoc) {
+    // Network-first strategy for rapid code updates
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res && res.status === 200) {
+            const clone = res.clone();
+            caches.open(CACHE_VERSION).then((cache) => cache.put(req, clone));
+          }
+          return res;
+        })
+        .catch(() => {
+          return caches.match(req).then((cached) => {
+            if (cached) return cached;
+            if (req.mode === "navigate") {
+              return caches.match("./index.html").then((fb) => fb || caches.match("./"));
+            }
+            return cached;
+          });
+        })
+    );
+  } else {
+    // Cache-first for images/assets with background refresh
+    event.respondWith(
+      caches.match(req).then((cached) => {
+        const fetchPromise = fetch(req).then((res) => {
+          if (res && res.status === 200) {
+            const clone = res.clone();
+            caches.open(CACHE_VERSION).then((cache) => cache.put(req, clone));
+          }
+          return res;
+        }).catch(() => null);
+
+        return cached || fetchPromise;
+      })
+    );
+  }
 });
