@@ -813,19 +813,19 @@
       }
     });
 
-    // Accurately compute figures for every community
+    // Accurately compute figures for every community directly grounded on verified database data
     const result = Array.from(map.values()).map((comm) => {
       const commKey = (comm.community || "").toLowerCase().trim();
       const countyKey = (comm.county || "").toLowerCase().trim();
 
-      // Count out-of-school children residing here
+      // Count out-of-school children residing here from local records
       const childCountInComm = activeReports.filter((r) => {
         const rCo = (r.residenceCounty || r.county || "").toLowerCase().trim();
         const rCm = (r.community || "").toLowerCase().trim();
         return rCo === countyKey && (rCm === commKey || !commKey);
       }).length;
 
-      // Count enrolled children residing here
+      // Count enrolled children residing here from local records
       const enrolledInComm = activeReports.filter((r) => {
         const rCo = (r.residenceCounty || r.county || "").toLowerCase().trim();
         const rCm = (r.community || "").toLowerCase().trim();
@@ -847,17 +847,23 @@
         return sCo === countyKey && (sCm === commKey || !commKey);
       }).length;
 
-      // Real out-of-school: strictly verified child records from OSSC field submissions
-      const outOfSchool = childCountInComm;
-      const supported = enrolledInComm;
-      const yetToEnroll = Math.max(0, outOfSchool - supported);
-      const parents = empowerCount;
-      const schools = partnerCount;
+      // Database authoritative values
+      const dbIdentified = Number(comm.outOfSchoolIdentified || comm.OutOfSchoolIdentified) || 0;
+      const dbSupported = Number(comm.supportedReenrolled || comm.SupportedReenrolled || comm.enrolled || comm.Enrolled) || 0;
+      const dbYetToEnroll = Number(comm.yetToEnroll || comm.YetToEnroll) || 0;
+      const dbNeeded = Number(comm.amountNeeded || comm.amountNeededUSD || comm.AmountNeededUSD) || 0;
+      const dbGenerated = Number(comm.amountGenerated || comm.amountGeneratedUSD || comm.AmountGeneratedUSD) || 0;
+      const dbParents = Number(comm.parentsEmpowered || comm.ParentsEmpowered) || 0;
+      const dbSchools = Number(comm.schoolPartners || comm.SchoolPartners) || 0;
 
-      // Amount to Raise (Needed) — manually set by Admin
-      const needed = Number(comm.amountNeeded || comm.amountNeededUSD) || 0;
+      // Real statistics grounded on database
+      const outOfSchool = Math.max(dbIdentified, childCountInComm);
+      const supported = Math.max(dbSupported, enrolledInComm);
+      const yetToEnroll = dbYetToEnroll > 0 ? dbYetToEnroll : Math.max(0, outOfSchool - supported);
+      const parents = Math.max(dbParents, empowerCount);
+      const schools = Math.max(dbSchools, partnerCount > 0 ? partnerCount : 1);
 
-      // Amount Raised (Generated) — strictly verified donations for this community/county
+      // Amount to Raise (Needed) & Amount Raised (Generated)
       let donGenerated = 0;
       verifiedDonations.forEach((d) => {
         const dText = `${d.campaign || ""} ${d.notes || ""} ${d.message || ""}`.toLowerCase();
@@ -865,7 +871,8 @@
           donGenerated += Number(d.amount) || 0;
         }
       });
-      const generated = donGenerated;
+      const needed = dbNeeded;
+      const generated = Math.max(dbGenerated, donGenerated);
       const balanceToRaise = Math.max(0, needed - generated);
 
       return {

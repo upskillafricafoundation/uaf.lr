@@ -51,8 +51,7 @@
 
   function applyRolePermissions(role) {
     const superUser = isSuperAdmin(role);
-    // Executive Staff access only community data, Donation, Stories and Evidence
-    const allowedModules = ["dashboard", "community", "donations", "stories"];
+    const allowedModules = ["dashboard", "community", "programs", "partners", "donations", "stories"];
 
     document.querySelectorAll(".admin-nav__item[data-module]").forEach((item) => {
       const mod = item.dataset.module;
@@ -171,7 +170,7 @@
 
     const session = window.__uafAdminSession;
     const superUser = session && isSuperAdmin(session.role);
-    const allowedModules = ["dashboard", "community", "donations", "stories"];
+    const allowedModules = ["dashboard", "community", "programs", "partners", "donations", "stories"];
 
     if (!superUser && !allowedModules.includes(key)) {
       dashboardPanel.classList.add("is-hidden");
@@ -179,7 +178,7 @@
       modulePanel.innerHTML = `
         <div class="admin-card">
           <h2>Access Restricted</h2>
-          <p class="admin-muted">Your current role (${escapeHtml(getDisplayRole(session?.role))}) only has access to Community Data, Donations, Stories &amp; Evidence. Admin privileges are required to access this module.</p>
+          <p class="admin-muted">Your current role (${escapeHtml(getDisplayRole(session?.role))}) does not have access to this module. Admin privileges are required.</p>
         </div>
       `;
       return;
