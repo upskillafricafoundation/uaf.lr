@@ -1283,6 +1283,7 @@
     // Elements
     const parentsEl = document.getElementById("stat-parents-empowered");
     const identifiedEl = document.getElementById("stat-children-identified");
+    const enrolledEl = document.getElementById("stat-children-enrolled");
     const awaitingEl = document.getElementById("stat-children-awaiting");
     const commsEl = document.getElementById("stat-communities-reached");
     const schoolsEl = document.getElementById("stat-school-partners");
@@ -1298,6 +1299,7 @@
     if (!rows.length) {
       if (parentsEl) parentsEl.textContent = "0";
       if (identifiedEl) identifiedEl.textContent = "0";
+      if (enrolledEl) enrolledEl.textContent = "0";
       if (awaitingEl) awaitingEl.textContent = "0";
       if (commsEl) commsEl.textContent = "0";
       if (schoolsEl) schoolsEl.textContent = "0";
@@ -1317,6 +1319,7 @@
 
     const parentsEmpowered = sum(rows, "parentsEmpowered");
     const outOfSchoolIdentified = sum(rows, "outOfSchoolIdentified");
+    const childrenEnrolled = sum(rows, "supportedReenrolled");
     const childrenAwaiting = sum(rows, "yetToEnroll");
     const communitiesReached = new Set(rows.map((r) => `${r.county}|${r.community}`)).size;
     const schoolPartners = sum(rows, "schoolPartners");
@@ -1328,6 +1331,7 @@
 
     if (parentsEl) parentsEl.textContent = fmt(parentsEmpowered);
     if (identifiedEl) identifiedEl.textContent = fmt(outOfSchoolIdentified);
+    if (enrolledEl) enrolledEl.textContent = fmt(childrenEnrolled);
     if (awaitingEl) awaitingEl.textContent = fmt(childrenAwaiting);
     if (commsEl) commsEl.textContent = fmt(communitiesReached);
     if (schoolsEl) schoolsEl.textContent = fmt(schoolPartners);
@@ -1612,6 +1616,11 @@
 
         if (!name || !gender || !age || !origin || !resCounty || !childComm || !livingWith || !causeOfExclusion || !statement || !consent) {
           window.__uafShowToast?.(`Please complete all required fields and consent for Child #${i + 1}.`);
+          return;
+        }
+
+        if (age < 5 || age > 17) {
+          window.__uafShowToast?.(`Child #${i + 1} (${name || 'Unnamed'}) age must be between 5 and 17 years old.`);
           return;
         }
 

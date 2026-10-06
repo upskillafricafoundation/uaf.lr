@@ -536,7 +536,7 @@
       saveStoryRecord("PUBLISHED", session);
     });
 
-    function saveStoryRecord(status, session) {
+    async function saveStoryRecord(status, session) {
       const title = document.getElementById("story-title").value.trim();
       const category = document.getElementById("story-category").value;
       const county = document.getElementById("story-county").value;
@@ -557,70 +557,19 @@
         return;
       }
 
-      const stories = getLocalStories();
-
-      if (editingStoryId) {
-        const idx = stories.findIndex((s) => s.id === editingStoryId || s.storyId === editingStoryId);
-        if (idx >= 0) {
-          stories[idx] = {
-            ...stories[idx],
-            title,
-            category,
-            tag,
-            county,
-            community,
-            storyDate,
-            amountRaised: raised,
-            fundingGoal: goal,
-            summary,
-            speaker,
-            testimonial: quote,
-            activities,
-            narrative,
-            imageUrl: image,
-            status: status,
-            shareCode: stories[idx].shareCode || Math.random().toString(36).substring(2, 8)
-          };
-          flash(`Updated story "${title}".`, "success");
-        }
-      } else {
-        const newStory = {
-          id: "story_" + Date.now(),
-          shareCode: Math.random().toString(36).substring(2, 8),
-          reactions: { like: 0, heart: 0, celebrate: 0 },
-          title,
-          category,
-          tag,
-          county,
-          community,
-          storyDate,
-          amountRaised: raised,
-          fundingGoal: goal,
-          summary,
-          speaker,
-          testimonial: quote,
-          activities,
-          narrative,
-          imageUrl: image,
-          status: status,
-          createdBy: (session && session.name) || "Admin",
-          views: 0
-        };
-        stories.unshift(newStory);
-        flash(`Added new story "${title}".`, "success");
+      const saveBtn = status === "PUBLISHED" ? document.getElementById("story-save-publish-btn") : document.getElementById("story-save-draft-btn");
+      const originalText = saveBtn ? saveBtn.textContent : "";
+      if (saveBtn) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
       }
 
-      saveLocalStories(stories);
-      cachedStories = stories;
-      closeModal();
-      renderStoriesTable(session);
-
-      const targetStoryId = editingStoryId || newStory?.id;
-      const targetShareCode = (editingStoryId ? stories.find(s => (s.id || s.storyId) === editingStoryId)?.shareCode : newStory?.shareCode) || Math.random().toString(36).substring(2, 8);
-
-      // Background API attempt
-      callApi("createStory", {
+      const isEditing = !!editingStoryId;
+      const action = isEditing ? "updateStory" : "createStory";
+      const payload = {
         token: session?.token,
+        id: editingStoryId || undefined,
+        storyId: editingStoryId || undefined,
         title,
         category,
         tag,
@@ -637,20 +586,97 @@
         imageUrl: image,
         amountRaised: raised,
         fundingGoal: goal,
-        status: status,
-        shareCode: targetShareCode
-      }).then((res) => {
-        if (res && res.ok && res.imageUrl && res.imageUrl !== image) {
-          const list = getLocalStories();
-          const target = list.find((s) => (s.id || s.storyId) === targetStoryId);
-          if (target) {
-            target.imageUrl = res.imageUrl;
-            saveLocalStories(list);
-            cachedStories = list;
-            renderStoriesTable(session);
+        status: status
+      };
+
+      try {
+        let finalImage = image;
+        let serverStory = null;
+
+        const res = await callApi(action, payload);
+        if (res && res.ok === false) {
+          flash(res.error || "Failed to save story to server.", "error");
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = originalText;
           }
+          return;
         }
-      }).catch(() => {});
+
+        if (res && res.ok && res.story) {
+          serverStory = res.story;
+          finalImage = res.story.imageUrl || finalImage;
+        } else if (res && res.imageUrl) {
+          finalImage = res.imageUrl;
+        }
+
+        const stories = getLocalStories();
+
+        if (isEditing) {
+          const idx = stories.findIndex((s) => (s.id || s.storyId) === editingStoryId);
+          if (idx >= 0) {
+            stories[idx] = {
+              ...stories[idx],
+              ...(serverStory || {}),
+              title,
+              category,
+              tag,
+              county,
+              community,
+              storyDate,
+              amountRaised: raised,
+              fundingGoal: goal,
+              summary,
+              speaker,
+              testimonial: quote,
+              activities,
+              narrative,
+              imageUrl: finalImage,
+              status: status,
+              shareCode: (serverStory && serverStory.shareCode) || stories[idx].shareCode || Math.random().toString(36).substring(2, 8)
+            };
+            flash(`Updated story "${title}".`, "success");
+          }
+        } else {
+          const newStory = {
+            id: (serverStory && (serverStory.id || serverStory.storyId)) || ("story_" + Date.now()),
+            storyId: (serverStory && (serverStory.storyId || serverStory.id)) || undefined,
+            shareCode: (serverStory && serverStory.shareCode) || Math.random().toString(36).substring(2, 8),
+            reactions: { like: 0, heart: 0, celebrate: 0 },
+            title,
+            category,
+            tag,
+            county,
+            community,
+            storyDate,
+            amountRaised: raised,
+            fundingGoal: goal,
+            summary,
+            speaker,
+            testimonial: quote,
+            activities,
+            narrative,
+            imageUrl: finalImage,
+            status: status,
+            createdBy: (session && session.name) || "Admin",
+            views: 0
+          };
+          stories.unshift(newStory);
+          flash(`Successfully published story "${title}".`, "success");
+        }
+
+        saveLocalStories(stories);
+        cachedStories = stories;
+        closeModal();
+        renderStoriesTable(session);
+      } catch (err) {
+        flash("Error saving story: " + (err.message || err), "error");
+      } finally {
+        if (saveBtn) {
+          saveBtn.disabled = false;
+          saveBtn.textContent = originalText;
+        }
+      }
     }
 
     renderStoriesTable(session);
@@ -876,41 +902,62 @@
 
     // Toggle status
     container.querySelectorAll(".story-toggle-status-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const id = btn.dataset.id;
         const newStatus = btn.dataset.status;
         const stories = getLocalStories();
         const idx = stories.findIndex((x) => (x.id || x.storyId) === id);
         if (idx >= 0) {
-          stories[idx].status = newStatus;
-          saveLocalStories(stories);
-          cachedStories = stories;
-          flash(`Story status updated to ${newStatus}.`, "success");
-          renderStoriesTable(session);
+          btn.disabled = true;
+          try {
+            const res = await callApi("updateStoryStatus", { token: session?.token, id, storyId: id, status: newStatus });
+            if (res && res.ok === false) {
+              flash(res.error || "Failed to update story status on server.", "error");
+              btn.disabled = false;
+              return;
+            }
+            stories[idx].status = newStatus;
+            saveLocalStories(stories);
+            cachedStories = stories;
+            flash(`Story status updated to ${newStatus}.`, "success");
+            renderStoriesTable(session);
+          } catch (err) {
+            flash("Error updating status: " + (err.message || err), "error");
+            btn.disabled = false;
+          }
         }
       });
     });
 
     // Delete handler
     container.querySelectorAll(".story-delete-btn").forEach((btn) => {
-      btn.addEventListener("click", () => {
+      btn.addEventListener("click", async () => {
         const id = btn.dataset.id;
         const stories = getLocalStories();
         const target = stories.find((x) => (x.id || x.storyId) === id);
         if (!target) return;
         if (confirm(`Are you sure you want to permanently delete "${target.title}"?`)) {
-          addDeletedStory(id);
-          const updated = stories.filter((x) => (x.id || x.storyId) !== id && !isStoryDeleted(x.id || x.storyId));
-          saveLocalStories(updated);
-          cachedStories = updated;
-
-          // Background server deletion if API connected
+          btn.disabled = true;
+          btn.textContent = "...";
           try {
-            callApi("deleteStory", { token: session?.token, id: id, storyId: id }).catch(() => {});
-          } catch (_) {}
-
-          flash(`Deleted "${target.title}".`, "success");
-          renderStoriesTable(session);
+            const res = await callApi("deleteStory", { token: session?.token, id: id, storyId: id });
+            if (res && res.ok === false) {
+              flash(res.error || "Failed to delete story from server.", "error");
+              btn.disabled = false;
+              btn.textContent = "Delete";
+              return;
+            }
+            addDeletedStory(id);
+            const updated = stories.filter((x) => (x.id || x.storyId) !== id && !isStoryDeleted(x.id || x.storyId));
+            saveLocalStories(updated);
+            cachedStories = updated;
+            flash(`Permanently deleted "${target.title}".`, "success");
+            renderStoriesTable(session);
+          } catch (err) {
+            flash("Error deleting story: " + (err.message || err), "error");
+            btn.disabled = false;
+            btn.textContent = "Delete";
+          }
         }
       });
     });

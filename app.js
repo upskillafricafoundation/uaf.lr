@@ -1524,7 +1524,7 @@
             <div class="form-row-2">
               <div class="form-field">
                 <label>Child Age *</label>
-                <input type="number" class="child-age" min="3" max="21" placeholder="Age (3–21)" required />
+                <input type="number" class="child-age" min="5" max="17" placeholder="Age (5–17)" required />
               </div>
               <div class="form-field">
                 <label>Child Origin (County) *</label>

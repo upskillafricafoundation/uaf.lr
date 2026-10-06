@@ -636,7 +636,7 @@
             <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;">
               <div class="form-field">
                 <label for="child-edit-age">Child Age *</label>
-                <input type="number" id="child-edit-age" min="3" max="21" required />
+                <input type="number" id="child-edit-age" min="5" max="17" required />
               </div>
               <div class="form-field">
                 <label for="child-edit-residence-county">Residence County *</label>
@@ -1133,9 +1133,28 @@
     });
   }
 
-  function handleDeleteSub(rowNumber, session) {
+  async function handleDeleteSub(rowNumber, session) {
     if (!confirm("Are you sure you want to permanently delete this child record? This action cannot be undone.")) return;
     const target = cachedSubmissions.find((item) => Number(item.rowNumber) === rowNumber);
+
+    try {
+      if (API_URL) {
+        const res = await callApi("deleteOutOfSchoolSubmission", {
+          token: session?.token,
+          rowNumber: rowNumber,
+          id: target?.id,
+          timestamp: target?.timestamp,
+          childName: target?.childName
+        });
+        if (res && res.ok === false) {
+          flash(res.error || "Failed to delete child record from database.", "error");
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Server delete warning:", err);
+    }
+
     addDeletedSubmission(target || { rowNumber });
 
     // Clean up uaf_ossc_reports in localStorage
@@ -1155,18 +1174,7 @@
     renderSubmissionsTable(session);
     loadStats(session);
     window.dispatchEvent(new Event("uaf_data_updated"));
-    flash("Child record permanently deleted.", "success");
-
-    // Server deletion
-    try {
-      callApi("deleteOutOfSchoolSubmission", {
-        token: session?.token,
-        rowNumber: rowNumber,
-        id: target?.id,
-        timestamp: target?.timestamp,
-        childName: target?.childName
-      }).catch(() => {});
-    } catch (_) {}
+    flash("Child record permanently deleted from database.", "success");
   }
 
   function handleEditSub(rowNumber, session) {
@@ -1454,8 +1462,41 @@
       return;
     }
 
-    const sub = cachedSubmissions.find(s => Number(s.rowNumber) === rowNumber);
-    if (!sub) return;
+    const saveBtn = e.target.querySelector('button[type="submit"]');
+    const origText = saveBtn ? saveBtn.textContent : "";
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = "Enrolling...";
+    }
+
+    try {
+      if (API_URL) {
+        const res = await callApi("enrollChild", {
+          token: session.token,
+          rowNumber: rowNumber,
+          childName: sub.childName,
+          schoolName: schoolName,
+          enrollmentDate: date,
+          schoolYear: schoolYear,
+          notes: notes
+        });
+        if (res && res.ok === false) {
+          flash(res.error || "Failed to record enrollment on server.", "error");
+          if (saveBtn) {
+            saveBtn.disabled = false;
+            saveBtn.textContent = origText;
+          }
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Enroll server warning:", err);
+    } finally {
+      if (saveBtn) {
+        saveBtn.disabled = false;
+        saveBtn.textContent = origText;
+      }
+    }
 
     // Update in memory
     sub.enrolled = true;
@@ -1500,19 +1541,6 @@
       if (existingIdx >= 0) enrollments[existingIdx] = enrObj;
       else enrollments.unshift(enrObj);
       localStorage.setItem("uaf_child_enrollments", JSON.stringify(enrollments));
-    } catch (_) {}
-
-    // Background backend call
-    try {
-      callApi("enrollChild", {
-        token: session.token,
-        rowNumber: rowNumber,
-        childName: sub.childName,
-        schoolName: schoolName,
-        enrollmentDate: date,
-        schoolYear: schoolYear,
-        notes: notes
-      }).catch(() => {});
     } catch (_) {}
 
     document.getElementById("child-enrollment-modal").classList.add("is-hidden");
@@ -2261,10 +2289,27 @@
     window.dispatchEvent(new Event("uaf_data_updated"));
   }
 
-  function handleDeleteStat(rowNumber, session) {
+  async function handleDeleteStat(rowNumber, session) {
     const item = cachedStats.find((s) => Number(s.rowNumber) === rowNumber);
     const commName = item ? item.community : "this community";
     if (!confirm(`Are you sure you want to permanently delete statistics for ${commName}?`)) return;
+
+    try {
+      if (API_URL) {
+        const res = await callApi("deleteCommunityStat", {
+          token: session.token,
+          rowNumber: rowNumber,
+          county: item?.county,
+          community: item?.community
+        });
+        if (res && res.ok === false) {
+          flash(res.error || "Failed to delete community stat from database.", "error");
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn("Delete stat server warning:", err);
+    }
 
     addDeletedStat(item || { rowNumber });
     cachedStats = cachedStats.filter((s) => Number(s.rowNumber) !== rowNumber && !isStatDeleted(s));
@@ -2273,17 +2318,7 @@
       localStorage.setItem("uaf_admin_communities", JSON.stringify(cachedStats));
     } catch (_) {}
 
-    // Background backend call
-    try {
-      callApi("deleteCommunityStat", {
-        token: session.token,
-        rowNumber: rowNumber,
-        county: item?.county,
-        community: item?.community
-      }).catch(() => {});
-    } catch (_) {}
-
-    flash("Community statistics removed.", "success");
+    flash(`Community statistics for ${commName} permanently deleted.`, "success");
     loadStats(session);
     window.dispatchEvent(new Event("uaf_data_updated"));
   }
