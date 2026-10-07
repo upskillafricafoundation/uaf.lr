@@ -914,7 +914,8 @@
         if (idx >= 0) {
           btn.disabled = true;
           try {
-            const res = await callApi("updateStoryStatus", { token: session?.token, id, storyId: id, status: newStatus });
+            const token = session?.token || sessionStorage.getItem("uaf_admin_token") || window.__uafAdminSession?.token || "";
+            const res = await callApi("updateStoryStatus", { token, id, storyId: id, status: newStatus });
             if (res && res.ok === false) {
               flash(res.error || "Failed to update story status on server.", "error");
               btn.disabled = false;
@@ -944,7 +945,15 @@
           btn.disabled = true;
           btn.textContent = "...";
           try {
-            const res = await callApi("deleteStory", { token: session?.token, id: id, storyId: id });
+            const token = session?.token || sessionStorage.getItem("uaf_admin_token") || window.__uafAdminSession?.token || "";
+            const res = await callApi("deleteStory", {
+              token: token,
+              id: target.storyId || target.id || id,
+              storyId: target.storyId || target.id || id,
+              title: target.title || "",
+              shareCode: target.shareCode || "",
+              rowNumber: target.rowNumber || target.__row || undefined
+            });
             if (res && res.ok === false) {
               flash(res.error || "Failed to delete story from server.", "error");
               btn.disabled = false;
@@ -952,6 +961,10 @@
               return;
             }
             addDeletedStory(id);
+            if (target.id) addDeletedStory(target.id);
+            if (target.storyId) addDeletedStory(target.storyId);
+            if (target.shareCode) addDeletedStory(target.shareCode);
+            if (target.title) addDeletedStory(target.title);
             const updated = stories.filter((x) => (x.id || x.storyId) !== id && !isStoryDeleted(x.id || x.storyId));
             saveLocalStories(updated);
             cachedStories = updated;
