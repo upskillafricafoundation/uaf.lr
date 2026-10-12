@@ -734,8 +734,7 @@
       const shareBar = document.getElementById("story-modal-share-bar");
       if (shareBar) {
         const shareCode = story.shareCode || (story.id ? story.id.replace("story_", "") : storyId);
-        const storyShortUrl = `${window.location.origin}${window.location.pathname}#/c/${shareCode}`;
-        const shareText = `Read "${story.title}" on UAF Campaign Drive. Support verified education & empowerment in Liberia:`;
+         const storyShortUrl = window.__uafShareUrl(shareCode);        const shareText = `Read "${story.title}" on UAF Campaign Drive. Support verified education & empowerment in Liberia:`;
 
         shareBar.innerHTML = `
           <div class="story-social-share-row" style="margin:12px 0 16px;">
@@ -926,8 +925,7 @@
         if (!url) {
           const shareCode = copyBtn.dataset.shareCode || copyBtn.dataset.storyId;
           if (shareCode) {
-            url = `${window.location.origin}${window.location.pathname}#/c/${encodeURIComponent(shareCode)}`;
-          }
+         url = window.__uafShareUrl(shareCode);          }
         }
         if (url) {
           if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -949,8 +947,7 @@
         const storyId = shareBtn.dataset.shareStoryId || shareBtn.dataset.storyId;
         const story = storyId && window.__uafGetStory ? window.__uafGetStory(storyId) : null;
         const shareCode = shareBtn.dataset.shareCode || story?.shareCode || (storyId ? storyId.replace("story_", "") : "");
-        const shareUrl = `${window.location.origin}${window.location.pathname}#/c/${encodeURIComponent(shareCode)}`;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
+         const shareUrl = window.__uafShareUrl(shareCode);        if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(shareUrl).then(() => {
             showToast("Story link copied to clipboard!");
           }).catch(() => fallbackCopyText(shareUrl));
@@ -969,13 +966,19 @@
       const codeMatch = hash.match(/#\/?c\/([a-zA-Z0-9_-]+)/i);
       if (codeMatch && codeMatch[1]) {
         const shareCode = codeMatch[1];
-        const story = window.__uafGetStoryByShareCode ? window.__uafGetStoryByShareCode(shareCode) : null;
-        const targetId = story ? story.id : shareCode;
         goTo("donate");
+        const tryOpen = () => {
+          const story = window.__uafGetStoryByShareCode ? window.__uafGetStoryByShareCode(shareCode) : null;
+          if (!story || typeof window.__uafOpenStoryDetailModal !== "function") return false;
+          window.__uafOpenStoryDetailModal(story.id || story.storyId || shareCode);
+          return true;
+        };
         setTimeout(() => {
-          if (typeof window.__uafOpenStoryDetailModal === "function") {
-            window.__uafOpenStoryDetailModal(targetId);
-          }
+          if (tryOpen()) return;
+          // Stories are still downloading: open as soon as they arrive
+          const onUpdate = () => { if (tryOpen()) window.removeEventListener("uaf_stories_updated", onUpdate); };
+          window.addEventListener("uaf_stories_updated", onUpdate);
+          setTimeout(() => window.removeEventListener("uaf_stories_updated", onUpdate), 20000);
         }, 300);
         return;
       }
