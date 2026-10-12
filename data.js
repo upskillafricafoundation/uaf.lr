@@ -1066,6 +1066,18 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
   }
   window.__uafSyncRemoteStories = syncRemoteStories;
 
+     window.__uafLoadStoryByCode = async function (code) {
+    try {
+      const res = await fetch(`${API_URL}?route=story&code=${encodeURIComponent(code)}&_=${Date.now()}`, { cache: "no-store" });
+      const json = await res.json();
+      if (json && json.ok && json.story) {
+        const key = String(json.story.storyId || json.story.id);
+        if (!storiesCache.some((s) => String(s.storyId || s.id) === key)) storiesCache.unshift(json.story);
+        return json.story;
+      }
+    } catch (_) {}
+    return null;
+  };
 
   /* ---------------------------------------------------------
      FETCH — FUNDING SUMMARY
