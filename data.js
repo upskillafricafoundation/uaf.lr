@@ -253,8 +253,7 @@
     const grid = document.getElementById("fundraising-stories-grid");
     if (!grid) return;
 
-    const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").toUpperCase() !== "ARCHIVED");
-    const statusText = document.getElementById("carousel-status-text");
+const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").toUpperCase() === "PUBLISHED");    const statusText = document.getElementById("carousel-status-text");
     const pulseDot = document.getElementById("carousel-pulse-dot");
     const prevBtn = document.getElementById("carousel-prev-btn");
     const nextBtn = document.getElementById("carousel-next-btn");
@@ -1076,8 +1075,8 @@
 
       // 1. Try GET request with route=publicStories
       try {
-        const res = await fetch(`${API_URL}?route=publicStories`);
-        const json = await res.json();
+fetch(`${API_URL}?route=publicStories&_=${Date.now()}`)        
+   const json = await res.json();
         if (json && json.ok && Array.isArray(json.stories)) {
           remoteStories = json.stories;
         } else if (Array.isArray(json)) {
@@ -1130,9 +1129,12 @@
         } catch (_) {}
 
         const mergedMap = new Map();
+        // Published stories come ONLY from the server, so old or removed ones disappear.
+        // Local copies are kept only for drafts/archived items (the admin's own browser).
         localStories.forEach((s) => {
           const key = String(s.id || s.storyId || "").trim();
-          if (key && !deletedList.includes(key)) mergedMap.set(key, s);
+          const st = String(s.status || "").toUpperCase();
+          if (key && !deletedList.includes(key) && st && st !== "PUBLISHED") mergedMap.set(key, s);
         });
 
         remoteStories.forEach((s) => {
