@@ -988,8 +988,11 @@
     container.querySelectorAll(".admin-copy-story-link").forEach((btn) => {
       btn.addEventListener("click", () => {
         const link = btn.dataset.copyLink;
-        const fullUrl = `${window.location.origin}${window.location.pathname.replace(/\/admin(\/.*)?$/, "/")}${link}`;
-        if (navigator.clipboard && navigator.clipboard.writeText) {
+        const code = String(link).replace(/^#\/c\//, "");
+        const base = (window.UAF_CONFIG && window.UAF_CONFIG.SHARE_BASE) || "";
+        const fullUrl = base
+          ? base + encodeURIComponent(code)
+          : `${window.location.origin}${window.location.pathname.replace(/\/admin(\/.*)?$/, "/")}${link}`;        if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(fullUrl).then(() => {
             flash(`Story link copied: ${link}`, "success");
           }).catch(() => {
