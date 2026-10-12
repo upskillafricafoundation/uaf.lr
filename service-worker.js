@@ -5,7 +5,7 @@
    receive the latest updates immediately.
    ========================================================= */
 
-const CACHE_VERSION = "uaf-campaign-drive-v32";
+const CACHE_VERSION = "uaf-campaign-drive-v33";
 const APP_SHELL = [
   "./",
   "./index.html",
