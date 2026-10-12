@@ -918,86 +918,47 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
       return [];
     }
   }
-
-  function saveOfflineQueue(queue) {
+  /* ---------------------------------------------------------
+     DATABASE SUBMIT HELPER (no browser storage, no offline drafts)
+  --------------------------------------------------------- */
+  async function postToDatabase(payload) {
+    if (!isConfigured) return { ok: false, error: "The app is not connected to the database." };
+    if (!navigator.onLine) return { ok: false, error: "No internet connection. Nothing was submitted. Please reconnect and try again." };
     try {
-      localStorage.setItem("uaf_offline_queue", JSON.stringify(queue));
+      const res = await fetch(API_URL, {
+        method: "POST",
+        headers: { "Content-Type": "text/plain;charset=utf-8" },
+        body: JSON.stringify(payload)
+      });
+      const json = await res.json();
+      if (json && json.ok) return json;
+      return { ok: false, error: (json && json.error) || "The database did not confirm the submission." };
+    } catch (err) {
+      return { ok: false, error: "Could not reach the database. Nothing was submitted. Please try again." };
+    }
+  }
+
+  // One-time cleanup: send anything an older version left in this browser, then remove the old keys.
+  let isFlushing = false;
+  async function flushLegacyBrowserData() {
+    if (isFlushing) return;
+    isFlushing = true;
+    let old = [];
+    try { old = JSON.parse(localStorage.getItem("uaf_offline_queue") || "[]"); } catch (_) {}
+    const left = [];
+    for (const d of old) {
+      const j = await postToDatabase(d.payload);
+      if (!j.ok) left.push(d);
+    }
+    try {
+      if (left.length) localStorage.setItem("uaf_offline_queue", JSON.stringify(left));
+      else localStorage.removeItem("uaf_offline_queue");
+      ["uaf_ossc_reports", "uaf_evidence_requests", "uaf_local_donations"].forEach((k) => localStorage.removeItem(k));
     } catch (_) {}
-    window.__uafUpdateOnlineStatus && window.__uafUpdateOnlineStatus();
+    isFlushing = false;
   }
-
-  function queueOfflineDraft(type, payload, friendlyDesc) {
-    const queue = getOfflineQueue();
-    const item = {
-      id: "draft_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
-      type: type,
-      payload: payload,
-      friendlyDesc: friendlyDesc,
-      queuedAt: new Date().toISOString(),
-      status: "draft"
-    };
-    queue.push(item);
-    saveOfflineQueue(queue);
-
-    window.__uafShowToast?.("Saved offline as draft. Submission will auto-sync once internet connection is restored.");
-  }
-
-  let isSyncing = false;
-  async function syncOfflineDrafts() {
-    if (isSyncing) return;
-    const queue = getOfflineQueue();
-    if (!queue.length) return;
-
-    if (!navigator.onLine) {
-      return;
-    }
-
-    isSyncing = true;
-    console.info(`UAF Impact: Auto-syncing ${queue.length} offline draft(s)...`);
-
-    const successfulIds = [];
-    for (const draft of queue) {
-      try {
-        if (isConfigured) {
-          const res = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify(draft.payload)
-          });
-          const json = await res.json();
-          if (json.ok) {
-            successfulIds.push(draft.id);
-          }
-        } else {
-          // Local offline-first fallback sync
-          if (draft.type === "submitOutOfSchoolReport") {
-            const reports = JSON.parse(localStorage.getItem("uaf_ossc_reports") || "[]");
-            reports.unshift({ ...draft.payload, syncedAt: new Date().toISOString() });
-            localStorage.setItem("uaf_ossc_reports", JSON.stringify(reports));
-          } else if (draft.type === "createDonation") {
-            const donations = JSON.parse(localStorage.getItem("uaf_local_donations") || "[]");
-            donations.unshift({ ...draft.payload, syncedAt: new Date().toISOString() });
-            localStorage.setItem("uaf_local_donations", JSON.stringify(donations));
-          }
-          successfulIds.push(draft.id);
-        }
-      } catch (err) {
-        console.warn("UAF Impact: Sync failed for draft", draft.id, err);
-      }
-    }
-
-    if (successfulIds.length > 0) {
-      const remaining = queue.filter((d) => !successfulIds.includes(d.id));
-      saveOfflineQueue(remaining);
-      window.__uafShowToast?.(`Sync complete! ${successfulIds.length} draft(s) successfully synced to main system.`);
-      loadFundingSummary();
-    }
-
-    isSyncing = false;
-    window.__uafUpdateOnlineStatus && window.__uafUpdateOnlineStatus();
-  }
-  window.__uafSyncOfflineDrafts = syncOfflineDrafts;
-
+  window.__uafSyncOfflineDrafts = flushLegacyBrowserData;
+  
   /* ---------------------------------------------------------
      FETCH — PUBLIC DATA
   --------------------------------------------------------- */
