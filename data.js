@@ -12,6 +12,23 @@
   "use strict";
 
   const API_URL = (window.UAF_CONFIG && window.UAF_CONFIG.API_URL) || "";
+     // Image fallback: retry a Google Drive image through the thumbnail link once, then use the logo.
+  window.__uafImgFallback = function (img) {
+    try {
+      var src = img.getAttribute("src") || "";
+      var tries = Number(img.dataset.tries || 0);
+      var m = /googleusercontent\.com\/d\/([\w-]{15,})/.exec(src) ||
+              /[?&]id=([\w-]{15,})/.exec(src) ||
+              /\/file\/d\/([\w-]{15,})/.exec(src);
+      if (m && tries === 0) {
+        img.dataset.tries = "1";
+        img.src = "https://drive.google.com/thumbnail?id=" + m[1] + "&sz=w1000";
+        return;
+      }
+    } catch (e) {}
+    img.onerror = null;
+    img.src = "assets/uaf-logo.png";
+  };
   const isConfigured = API_URL && !API_URL.includes("PASTE_YOUR");
 
   let publicData = null;      // { counties, communities, funding, generatedAt }
@@ -281,8 +298,7 @@
       return `
         <div class="campaign-card campaign-card--heroic" data-story-id="${escapeHtml(storyId)}" data-share-code="${escapeHtml(shareCode)}">
           <div class="campaign-card__img-wrap">
-            <img src="${s.imageUrl || 'assets/uaf-logo.png'}" alt="${escapeHtml(s.title)}" class="campaign-card__img" onerror="this.src='assets/uaf-logo.png';" />
-            <div class="campaign-card__views-badge">
+<img src="${s.imageUrl || 'assets/uaf-logo.png'}" referrerpolicy="no-referrer" loading="lazy" alt="${escapeHtml(s.title)}" class="campaign-card__img" onerror="window.__uafImgFallback(this)" />            <div class="campaign-card__views-badge">
               <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
               <span class="story-views-count" data-story-views="${escapeHtml(storyId)}">${views} ${views === 1 ? "read" : "reads"}</span>
             </div>
