@@ -30,7 +30,13 @@
     img.src = "assets/uaf-logo.png";
   };
   const isConfigured = API_URL && !API_URL.includes("PASTE_YOUR");
-
+  // One place that builds the shareable link of a story
+  window.__uafShareUrl = function (code) {
+    var base = (window.UAF_CONFIG && window.UAF_CONFIG.SHARE_BASE) || "";
+    var c = encodeURIComponent(String(code || ""));
+    if (base) return base + c;
+    return window.location.origin + window.location.pathname + "#/c/" + c;
+  };
   let publicData = null;      // { counties, communities, funding, generatedAt }
   let fundingSummary = null;  // { totalVerifiedUSD, verifiedDonationCount, uniqueSupporterCount }
 
@@ -290,8 +296,8 @@
       const views = (viewsMap[storyId] != null ? viewsMap[storyId] : (s.views || 0));
       const goalText = goal > 0 ? `<span class="goal-val">of ${formatMoney(goal)} goal</span>` : "";
       const shareCode = s.shareCode || storyId;
-      const shareUrl = `${window.location.origin}${window.location.pathname}#/c/${encodeURIComponent(shareCode)}`;
-      const reactions = window.__uafGetStoryReactions ? window.__uafGetStoryReactions(storyId) : { counts: { like: 0, heart: 0, celebrate: 0 }, voted: {} };
+      const shareUrl = window.__uafShareUrl(shareCode);      
+       const reactions = window.__uafGetStoryReactions ? window.__uafGetStoryReactions(storyId) : { counts: { like: 0, heart: 0, celebrate: 0 }, voted: {} };
       const counts = reactions.counts || {};
       const voted = reactions.voted || {};
 
