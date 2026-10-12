@@ -601,6 +601,12 @@
 
         const res = await callApi(action, payload);
 
+        // If the server did not save the story/image, stop and tell the admin.
+        if (!res || res.ok === false) {
+          flash("Story NOT published: " + ((res && res.error) || "could not reach the server."), "error");
+          return;
+        }
+
         if (res && res.ok && res.story) {
           serverStory = res.story;
           finalImage = res.story.imageUrl || finalImage;
@@ -672,8 +678,7 @@
           flash(isEditing ? `Updated story "${title}".` : `Successfully posted story "${title}".`, "success");
         }
       } catch (err) {
-        flash("Story saved locally! Error connecting to server: " + (err.message || err), "success");
-        closeModal();
+        flash("Story NOT published. Connection error: " + (err.message || err), "error");        closeModal();
         renderStoriesTable(session);
       } finally {
         if (saveBtn) {
