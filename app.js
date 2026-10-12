@@ -650,6 +650,9 @@
       if (imgEl && imgWrap) {
         if (story.imageUrl && String(story.imageUrl).trim()) {
           imgEl.style.display = "block";
+          imgEl.dataset.tries = "0";
+          imgEl.referrerPolicy = "no-referrer";
+          imgEl.onerror = function () { if (window.__uafImgFallback) window.__uafImgFallback(imgEl); };
           imgEl.src = story.imageUrl;
           imgWrap.style.display = "block";
         } else {
