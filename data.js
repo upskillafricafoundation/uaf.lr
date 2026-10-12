@@ -10,7 +10,7 @@
 
 (() => {
   "use strict";
-
+  ["uaf_stories", "uaf_deleted_stories"].forEach((k) => { try { localStorage.removeItem(k); } catch (_) {} });
   const API_URL = (window.UAF_CONFIG && window.UAF_CONFIG.API_URL) || "";
      // Image fallback: retry a Google Drive image through the thumbnail link once, then use the logo.
   window.__uafImgFallback = function (img) {
@@ -78,30 +78,14 @@
 
   const DEFAULT_STORIES_DATASET = [];
 
-  function getUafStories() {
-    let deletedList = [];
-    try {
-      deletedList = JSON.parse(localStorage.getItem("uaf_deleted_stories") || "[]");
-    } catch (_) {}
+    // Stories live ONLY in memory for this page view. The database is the only source.
+  let storiesCache = [];
+  let storiesLoadState = "loading"; // "loading" | "ready" | "error"
 
-    try {
-      const stored = localStorage.getItem("uaf_stories");
-      if (stored !== null) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          return parsed.filter((s) => {
-            const sId = String(s.id || s.storyId || "").trim();
-            const sIdLower = sId.toLowerCase();
-            if (sIdLower === "story_blessing" || sIdLower === "story_comfort" || sIdLower === "story_emmanuel") return false;
-            return !deletedList.includes(sId);
-          });
-        }
-      }
-    } catch (_) {}
-    return [];
+  function getUafStories() {
+    return storiesCache;
   }
   window.__uafGetStories = getUafStories;
-
   window.__uafGetStory = function (storyId) {
     if (!storyId) return null;
     const clean = String(storyId).trim().toLowerCase();
@@ -258,7 +242,14 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
     const prevBtn = document.getElementById("carousel-prev-btn");
     const nextBtn = document.getElementById("carousel-next-btn");
     const progressTrack = document.querySelector(".stories-carousel-progress-track");
-
+    if (storiesLoadState === "loading") {
+      grid.innerHTML = '<p style="grid-column:1/-1;text-align:center;padding:40px;color:#64748b;">Loading campaigns…</p>';
+      return;
+    }
+    if (storiesLoadState === "error") {
+      grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;padding:40px;color:#64748b;">Could not load campaigns from the database. Check your connection and <button type="button" onclick="window.__uafSyncRemoteStories()">try again</button>.</div>';
+      return;
+    }
     if (stories.length === 0) {
       if (statusText) statusText.textContent = "0 Active Campaigns";
       if (pulseDot) pulseDot.style.display = "none";
@@ -1030,19 +1021,6 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || "Unknown API error");
       publicData = json;
-      if (json && Array.isArray(json.stories) && json.stories.length > 0) {
-        let deletedList = [];
-        try {
-          deletedList = JSON.parse(localStorage.getItem("uaf_deleted_stories") || "[]");
-        } catch (_) {}
-        const filtered = json.stories.filter((s) => !deletedList.includes(String(s.id || s.storyId).trim()));
-        if (filtered.length > 0) {
-          try {
-            localStorage.setItem("uaf_stories", JSON.stringify(filtered));
-          } catch (_) {}
-          renderFundraisingStories();
-        }
-      }
       refreshMergedDataset();
       renderAll();
       syncRemoteStories();
@@ -1068,123 +1046,26 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
      and synchronizes them into local storage so all client devices (Android,
      iOS, desktop) instantly display stories added by administrators.
   --------------------------------------------------------- */
-  async function syncRemoteStories() {
+   async function syncRemoteStories() {
     if (!isConfigured) return;
     try {
-      let remoteStories = null;
-
-      // 1. Try GET request with route=publicStories
-      try {
-fetch(`${API_URL}?route=publicStories&_=${Date.now()}`)        
-   const json = await res.json();
-        if (json && json.ok && Array.isArray(json.stories)) {
-          remoteStories = json.stories;
-        } else if (Array.isArray(json)) {
-          remoteStories = json;
-        }
-      } catch (_) {}
-
-      // 2. Fallback: try GET request with route=stories
-      if (!remoteStories) {
-        try {
-          const res = await fetch(`${API_URL}?route=stories`);
-          const json = await res.json();
-          if (json && json.ok && Array.isArray(json.stories)) {
-            remoteStories = json.stories;
-          } else if (Array.isArray(json)) {
-            remoteStories = json;
-          }
-        } catch (_) {}
+      const res = await fetch(`${API_URL}?route=publicStories&_=${Date.now()}`, { cache: "no-store" });
+      const json = await res.json();
+      if (!json || json.ok !== true || !Array.isArray(json.stories)) {
+        throw new Error((json && json.error) || "Bad response from server");
       }
-
-      // 3. Check if publicData already included stories
-      if (!remoteStories && publicData && Array.isArray(publicData.stories)) {
-        remoteStories = publicData.stories;
-      }
-
-      // 4. Fallback: try POST with action=listStories
-      if (!remoteStories) {
-        try {
-          const res = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "listStories" })
-          });
-          const json = await res.json();
-          if (json && json.ok && Array.isArray(json.stories)) {
-            remoteStories = json.stories;
-          }
-        } catch (_) {}
-      }
-
-      if (Array.isArray(remoteStories)) {
-        let deletedList = [];
-        try {
-          deletedList = JSON.parse(localStorage.getItem("uaf_deleted_stories") || "[]");
-        } catch (_) {}
-
-        let localStories = [];
-        try {
-          localStories = JSON.parse(localStorage.getItem("uaf_stories") || "[]");
-        } catch (_) {}
-
-        const mergedMap = new Map();
-        // Published stories come ONLY from the server, so old or removed ones disappear.
-        // Local copies are kept only for drafts/archived items (the admin's own browser).
-        localStories.forEach((s) => {
-          const key = String(s.id || s.storyId || "").trim();
-          const st = String(s.status || "").toUpperCase();
-          if (key && !deletedList.includes(key) && st && st !== "PUBLISHED") mergedMap.set(key, s);
-        });
-
-        remoteStories.forEach((s) => {
-          const key = String(s.id || s.storyId || "").trim();
-          const keyLower = key.toLowerCase();
-          if (keyLower === "story_blessing" || keyLower === "story_comfort" || keyLower === "story_emmanuel") return;
-          if (!key || deletedList.includes(key)) return;
-
-          if (!mergedMap.has(key)) {
-            mergedMap.set(key, s);
-          } else {
-            const existing = mergedMap.get(key);
-            // Intelligently preserve image: If local has custom image and remote has logo fallback, keep local image!
-            const existingImg = existing.imageUrl || "";
-            const remoteImg = s.imageUrl || "";
-            let finalImg = existingImg;
-            if (remoteImg.includes("googleusercontent.com") || remoteImg.includes("drive.google.com") || (remoteImg && !remoteImg.includes("uaf-logo.png"))) {
-              finalImg = remoteImg;
-            } else if (!existingImg || existingImg.includes("uaf-logo.png")) {
-              finalImg = remoteImg || "assets/uaf-logo.png";
-            }
-
-            // Intelligently preserve narrative: keep whichever is longer so words are never truncated
-            const finalNar = (s.narrative && s.narrative.length > (existing.narrative || "").length) ? s.narrative : (existing.narrative || s.narrative || "");
-
-            mergedMap.set(key, {
-              ...existing,
-              ...s,
-              imageUrl: finalImg,
-              narrative: finalNar,
-              content: finalNar,
-              speaker: s.speaker || existing.speaker || "",
-              testimonial: s.testimonial || existing.testimonial || "",
-              activities: s.activities || existing.activities || ""
-            });
-          }
-        });
-
-        const merged = Array.from(mergedMap.values());
-        try {
-          localStorage.setItem("uaf_stories", JSON.stringify(merged));
-        } catch (_) {}
-        renderFundraisingStories();
-        window.dispatchEvent(new Event("uaf_stories_updated"));
-      }
+      storiesCache = json.stories;
+      storiesLoadState = "ready";
     } catch (err) {
-      console.warn("UAF Impact: could not sync remote stories.", err);
+      console.warn("UAF Impact: could not load stories from the database.", err);
+      storiesCache = [];
+      storiesLoadState = "error";
     }
+    renderFundraisingStories();
+    window.dispatchEvent(new Event("uaf_stories_updated"));
   }
   window.__uafSyncRemoteStories = syncRemoteStories;
+
 
   /* ---------------------------------------------------------
      FETCH — FUNDING SUMMARY
