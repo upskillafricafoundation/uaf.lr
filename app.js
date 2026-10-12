@@ -960,25 +960,22 @@
 
     // Deep link support: auto-open story detail modal when #/c/<code> or #/donate?story=... is visited
     function handleStoryDeepLink() {
-      const hash = window.location.hash || "";
-
+      const qCode = new URLSearchParams(window.location.search).get("c");
+      const hash = window.location.hash || (qCode ? "#/c/" + qCode : "");
+       
       // 1. Opaque short link: #/c/x7k9p2 or #c/x7k9p2
       const codeMatch = hash.match(/#\/?c\/([a-zA-Z0-9_-]+)/i);
       if (codeMatch && codeMatch[1]) {
         const shareCode = codeMatch[1];
         goTo("donate");
-        const tryOpen = () => {
-          const story = window.__uafGetStoryByShareCode ? window.__uafGetStoryByShareCode(shareCode) : null;
-          if (!story || typeof window.__uafOpenStoryDetailModal !== "function") return false;
-          window.__uafOpenStoryDetailModal(story.id || story.storyId || shareCode);
-          return true;
-        };
-        setTimeout(() => {
-          if (tryOpen()) return;
-          // Stories are still downloading: open as soon as they arrive
-          const onUpdate = () => { if (tryOpen()) window.removeEventListener("uaf_stories_updated", onUpdate); };
-          window.addEventListener("uaf_stories_updated", onUpdate);
-          setTimeout(() => window.removeEventListener("uaf_stories_updated", onUpdate), 20000);
+                setTimeout(async () => {
+          const story = (window.__uafGetStoryByShareCode && window.__uafGetStoryByShareCode(shareCode))
+            || (window.__uafLoadStoryByCode && await window.__uafLoadStoryByCode(shareCode));
+          if (story && typeof window.__uafOpenStoryDetailModal === "function") {
+            window.__uafOpenStoryDetailModal(story.id || story.storyId);
+          } else {
+            showToast("This story link is not available.");
+          }
         }, 300);
         return;
       }
