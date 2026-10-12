@@ -249,7 +249,7 @@
             <!-- 5. Summary -->
             <div class="form-field" style="margin-top:12px;">
               <label for="story-summary" style="font-weight:600;">Summary / Excerpt (Short description for card) *</label>
-              <textarea id="story-summary" rows="2" maxlength="280" required placeholder="Brief 1-2 sentence overview shown directly on the story card..."></textarea>
+              <textarea id="story-summary" rows="4" maxlength="2000" required placeholder="Brief 1-2 sentence overview shown directly on the story card..."></textarea>
             </div>
 
             <!-- 6. Speaker & Testimonial Quote -->
