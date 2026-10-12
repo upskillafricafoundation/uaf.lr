@@ -1547,13 +1547,14 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
       submitBtn?.setAttribute("disabled", "true");
 
       // Group Child Intake Splitting: save each child as an individual separate record
-      const individualReports = children.map((c, idx) => {
+      if (!form.dataset.batchId) form.dataset.batchId = String(Date.now());
+       const individualReports = children.map((c, idx) => {
         const rowNum = Date.now() + idx;
         return {
           action: "submitOutOfSchoolReport",
           rowNumber: rowNum,
-          id: `ossc_${Date.now()}_${idx + 1}`,
-          timestamp: new Date().toISOString(),
+          id: `ossc_${form.dataset.batchId}_${idx + 1}`,
+         timestamp: new Date().toISOString(),
           reporterName,
           reporterPhone,
           reporterOrg,
@@ -1588,64 +1589,30 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
       });
 
       // Register each community dynamically under its residence county
-      individualReports.forEach((cr) => {
-        registerDynamicCommunity(cr.childCommunity, cr.residenceCounty, 1);
-      });
+      window.__uafShowToast?.("Submitting… please keep this page open while photos upload.");
 
-      // Store individually in local storage
-      try {
-        const storedReports = JSON.parse(localStorage.getItem("uaf_ossc_reports") || "[]");
-        individualReports.forEach((cr) => storedReports.unshift(cr));
-        localStorage.setItem("uaf_ossc_reports", JSON.stringify(storedReports));
-      } catch (_) {}
-
-      // OFFLINE HANDLING
-      if (!navigator.onLine) {
-        individualReports.forEach((cr) => {
-          queueOfflineDraft("submitOutOfSchoolReport", cr, `OSSC: ${cr.childName} (${cr.childCommunity}, ${cr.residenceCounty})`);
-        });
-        window.__uafShowToast?.(`${individualReports.length} child case(s) saved as offline draft.`);
-        form.reset();
-        if (childCountInput) {
-          childCountInput.value = "1";
-          childCountInput.dispatchEvent(new Event("change"));
-        }
-        submitBtn?.removeAttribute("disabled");
-        return;
-      }
-
-      if (!isConfigured) {
-        window.__uafShowToast?.(`Report submitted! ${individualReports.length} child profile(s) logged for field verification.`);
-        form.reset();
-        if (childCountInput) {
-          childCountInput.value = "1";
-          childCountInput.dispatchEvent(new Event("change"));
-        }
-        submitBtn?.removeAttribute("disabled");
-        return;
-      }
-
+      let savedCount = 0;
+      const failed = [];
       for (const cr of individualReports) {
-        try {
-          const res = await fetch(API_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify(cr)
-          });
-          const json = await res.json();
-          if (!json.ok) {
-            queueOfflineDraft("submitOutOfSchoolReport", cr, `OSSC: ${cr.childName}`);
-          }
-        } catch (err) {
-          queueOfflineDraft("submitOutOfSchoolReport", cr, `OSSC: ${cr.childName}`);
+        const json = await postToDatabase(cr);
+        if (json.ok) {
+          savedCount++;
+          registerDynamicCommunity(cr.childCommunity, cr.residenceCounty, 1);
+        } else {
+          failed.push({ name: cr.childName, error: json.error });
         }
       }
 
-      window.__uafShowToast?.(`Submitted ${individualReports.length} child case(s) for verification. Thank you.`);
-      form.reset();
-      if (childCountInput) {
-        childCountInput.value = "1";
-        childCountInput.dispatchEvent(new Event("change"));
+      if (failed.length === 0) {
+        window.__uafShowToast?.(`Saved ${savedCount} child case(s) to the database. Thank you.`);
+        delete form.dataset.batchId;
+        form.reset();
+        if (childCountInput) {
+          childCountInput.value = "1";
+          childCountInput.dispatchEvent(new Event("change"));
+        }
+      } else {
+        window.__uafShowToast?.(`NOT SUBMITTED: ${failed.map((f) => f.name).join(", ")}. ${failed[0].error} Your form was kept so you can try again.`);
       }
       submitBtn?.removeAttribute("disabled");
     });
@@ -1998,53 +1965,23 @@ startxref
       };
 
       // OFFLINE HANDLING
-      if (!navigator.onLine) {
-        queueOfflineDraft("createDonation", payload, `Donation: ${currency} ${amount} from ${name}${dedicatedStoryTitle ? ` (For: ${dedicatedStoryTitle})` : ""}`);
+      payload.storyId = dedicatedStoryId || "General Support";
+      payload.requestId = form.dataset.requestId ||
+        (form.dataset.requestId = "don_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8));
+
+      const json = await postToDatabase(payload);
+      if (json.ok) {
+        delete form.dataset.requestId;
         form.reset();
         window.__uafClearStoryDonationTie && window.__uafClearStoryDonationTie();
-        submitBtn?.removeAttribute("disabled");
-        if (span) span.textContent = originalText;
-        else submitBtn.textContent = originalText;
-        return;
+        window.__uafShowToast?.(json.message || `Donation recorded. Reference: ${json.transactionId}. Awaiting UAF verification.`);
+        loadFundingSummary();
+      } else {
+        window.__uafShowToast?.("NOT SUBMITTED: " + json.error + " Your details are still on the form. Please try again.");
       }
-
-      if (!isConfigured) {
-        window.__uafShowToast?.(`Thank you! Transfer record submitted. Ref: UAF-MOMO-${Date.now().toString().slice(-6)}`);
-        form.reset();
-        window.__uafClearStoryDonationTie && window.__uafClearStoryDonationTie();
-        submitBtn?.removeAttribute("disabled");
-        if (span) span.textContent = originalText;
-        else submitBtn.textContent = originalText;
-        return;
-      }
-
-      try {
-        const res = await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
-        });
-        const json = await res.json();
-
-        if (json.ok) {
-          form.reset();
-          window.__uafClearStoryDonationTie && window.__uafClearStoryDonationTie();
-          window.__uafShowToast?.(json.message || `Donation Ref: ${json.transactionId}. Awaiting UAF verification.`);
-          loadFundingSummary();
-        } else {
-          queueOfflineDraft("createDonation", payload, `Donation: ${currency} ${amount}`);
-          form.reset();
-          window.__uafClearStoryDonationTie && window.__uafClearStoryDonationTie();
-        }
-      } catch (err) {
-        queueOfflineDraft("createDonation", payload, `Donation: ${currency} ${amount}`);
-        form.reset();
-        window.__uafClearStoryDonationTie && window.__uafClearStoryDonationTie();
-      } finally {
-        submitBtn?.removeAttribute("disabled");
-        if (span) span.textContent = originalText;
-        else submitBtn.textContent = originalText;
-      }
+      submitBtn?.removeAttribute("disabled");
+      if (span) span.textContent = originalText;
+      else submitBtn.textContent = originalText;
     });
   }
 
