@@ -9,7 +9,7 @@
      CACHE BUSTING & INSTANT UPDATE PURGE
      Purges old caches on installed devices to ensure immediate updates
   --------------------------------------------------------- */
-  const CURRENT_BUILD_VER = "2026-10-02-uaf-campaign-drive-v33";
+  const CURRENT_BUILD_VER = "2026-10-02-uaf-campaign-drive-v34";
   try {
     const savedBuild = localStorage.getItem("uaf_app_build_version");
     if (savedBuild !== CURRENT_BUILD_VER) {
