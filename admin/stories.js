@@ -32,61 +32,11 @@
   const DEFAULT_STORIES = [];
 
   // Persistent Story Deletion Tombstones
-  function getDeletedStories() {
-    try {
-      return JSON.parse(localStorage.getItem("uaf_deleted_stories") || "[]");
-    } catch (_) {
-      return [];
-    }
-  }
+    // Old browser copies are removed; the database is the only source.
+  ["uaf_stories", "uaf_deleted_stories"].forEach((k) => { try { localStorage.removeItem(k); } catch (_) {} });
 
-  function addDeletedStory(id) {
-    if (!id) return;
-    const list = getDeletedStories();
-    const str = String(id).trim();
-    if (!list.includes(str)) {
-      list.push(str);
-      try {
-        localStorage.setItem("uaf_deleted_stories", JSON.stringify(list));
-      } catch (_) {}
-    }
-  }
-
-  function isStoryDeleted(id, deletedList) {
-    if (!id) return false;
-    const list = deletedList || getDeletedStories();
-    const str = String(id).trim();
-    return list.includes(str);
-  }
-
-  function getLocalStories() {
-    const deletedList = getDeletedStories();
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored !== null) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          return parsed.filter((s) => {
-            const sId = String(s.id || s.storyId || "").trim();
-            const sIdLower = sId.toLowerCase();
-            if (sIdLower === "story_blessing" || sIdLower === "story_comfort" || sIdLower === "story_emmanuel") return false;
-            return !isStoryDeleted(sId, deletedList);
-          });
-        }
-      }
-    } catch (_) {}
-
-    return [];
-  }
-
-  function saveLocalStories(stories) {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(stories));
-      window.dispatchEvent(new Event("uaf_stories_updated"));
-    } catch (e) {
-      console.error("Failed to save stories to localStorage:", e);
-    }
-  }
+  function getLocalStories() { return cachedStories; }       // memory only
+  function saveLocalStories(stories) { cachedStories = stories; }
 
   async function callApi(action, payload) {
     if (!API_URL || API_URL.includes("PASTE_YOUR")) {
@@ -614,69 +564,16 @@
           finalImage = res.imageUrl;
         }
 
-        const stories = getLocalStories();
-
-        if (isEditing) {
-          const idx = stories.findIndex((s) => (s.id || s.storyId) === editingStoryId);
-          if (idx >= 0) {
-            stories[idx] = {
-              ...stories[idx],
-              ...(serverStory || {}),
-              title,
-              category,
-              tag,
-              county,
-              community,
-              storyDate,
-              amountRaised: raised,
-              fundingGoal: goal,
-              summary,
-              speaker,
-              testimonial: quote,
-              activities,
-              narrative,
-              imageUrl: finalImage,
-              status: status,
-              shareCode: (serverStory && serverStory.shareCode) || stories[idx].shareCode || Math.random().toString(36).substring(2, 8)
-            };
-          }
-        } else {
-          const newStory = {
-            id: (serverStory && (serverStory.id || serverStory.storyId)) || ("story_" + Date.now()),
-            storyId: (serverStory && (serverStory.storyId || serverStory.id)) || undefined,
-            shareCode: (serverStory && serverStory.shareCode) || Math.random().toString(36).substring(2, 8),
-            reactions: { like: 0, heart: 0, celebrate: 0 },
-            title,
-            category,
-            tag,
-            county,
-            community,
-            storyDate,
-            amountRaised: raised,
-            fundingGoal: goal,
-            summary,
-            speaker,
-            testimonial: quote,
-            activities,
-            narrative,
-            imageUrl: finalImage,
-            status: status,
-            createdBy: (session && session.name) || "Admin",
-            views: 0
-          };
-          stories.unshift(newStory);
+              // Re-read from the database and confirm the story is really there
+        const savedId = res.storyId || (serverStory && (serverStory.storyId || serverStory.id)) || editingStoryId;
+        const loaded = await syncCloudStories(session, false);
+        const found = loaded && cachedStories.some((s) => String(s.storyId || s.id) === String(savedId));
+        if (!found) {
+          flash("The server replied OK, but the story could NOT be confirmed in the database. Do not repost yet. Check the News tab first.", "error");
+          return;
         }
-
-        saveLocalStories(stories);
-        cachedStories = stories;
         closeModal();
-        renderStoriesTable(session);
-
-        if (res && res.ok === false) {
-          flash(`Story saved locally! (Note: ${res.error || 'Server sync pending'})`, "success");
-        } else {
-          flash(isEditing ? `Updated story "${title}".` : `Successfully posted story "${title}".`, "success");
-        }
+        flash(isEditing ? `Updated story "${title}".` : `Posted story "${title}" (confirmed in database).`, "success"); 
       } catch (err) {
         flash("Story NOT published. Connection error: " + (err.message || err), "error");        closeModal();
         renderStoriesTable(session);
@@ -692,94 +589,18 @@
     syncCloudStories(session, false);
   }
 
-  async function syncCloudStories(session, notify = false) {
-    if (!API_URL || API_URL.includes("PASTE_YOUR")) return;
-    try {
-      let remoteStories = null;
-      try {
-        const res = await fetch(`${API_URL}?route=publicStories`);
-        const json = await res.json();
-        if (json && json.ok && Array.isArray(json.stories)) {
-          remoteStories = json.stories;
-        } else if (Array.isArray(json)) {
-          remoteStories = json;
-        }
-      } catch (_) {}
-
-      if (!remoteStories) {
-        try {
-          const res = await fetch(`${API_URL}?route=stories`);
-          const json = await res.json();
-          if (json && json.ok && Array.isArray(json.stories)) {
-            remoteStories = json.stories;
-          } else if (Array.isArray(json)) {
-            remoteStories = json;
-          }
-        } catch (_) {}
-      }
-
-      if (!remoteStories) {
-        try {
-          const res = await callApi("listStories", { token: session?.token });
-          if (res && res.ok && Array.isArray(res.stories)) {
-            remoteStories = res.stories;
-          }
-        } catch (_) {}
-      }
-
-      if (Array.isArray(remoteStories)) {
-        const deletedList = getDeletedStories();
-        const current = getLocalStories();
-        const mergedMap = new Map();
-        current.forEach((s) => mergedMap.set(String(s.id || s.storyId), s));
-        remoteStories.forEach((s) => {
-          const key = String(s.id || s.storyId);
-          const keyLower = key.toLowerCase();
-          if (keyLower === "story_blessing" || keyLower === "story_comfort" || keyLower === "story_emmanuel") return;
-          if (!isStoryDeleted(key, deletedList)) {
-            if (!mergedMap.has(key)) {
-              mergedMap.set(key, s);
-            } else {
-              const existing = mergedMap.get(key);
-              // Intelligently preserve image: If local has custom image and remote has logo fallback, keep local image!
-              const existingImg = existing.imageUrl || "";
-              const remoteImg = s.imageUrl || "";
-              let finalImg = existingImg;
-              if (remoteImg.includes("googleusercontent.com") || remoteImg.includes("drive.google.com") || (remoteImg && !remoteImg.includes("uaf-logo.png"))) {
-                finalImg = remoteImg;
-              } else if (!existingImg || existingImg.includes("uaf-logo.png")) {
-                finalImg = remoteImg || "assets/uaf-logo.png";
-              }
-
-              // Intelligently preserve narrative: keep whichever is longer so words are never truncated
-              const finalNar = (s.narrative && s.narrative.length > (existing.narrative || "").length) ? s.narrative : (existing.narrative || s.narrative || "");
-
-              mergedMap.set(key, {
-                ...existing,
-                ...s,
-                imageUrl: finalImg,
-                narrative: finalNar,
-                content: finalNar,
-                speaker: s.speaker || existing.speaker || "",
-                testimonial: s.testimonial || existing.testimonial || "",
-                activities: s.activities || existing.activities || ""
-              });
-            }
-          }
-        });
-        const merged = Array.from(mergedMap.values());
-        saveLocalStories(merged);
-        cachedStories = merged;
-        renderStoriesTable(session);
-        if (notify) flash(`Successfully synced ${remoteStories.length} stories from cloud!`, "success");
-      } else if (notify) {
-        flash("Cloud stories are up-to-date.", "success");
-      }
-    } catch (err) {
-      if (notify) flash("Could not connect to cloud: " + err.message);
+    async function syncCloudStories(session, notify = false) {
+    const token = session?.token || sessionStorage.getItem("uaf_admin_token") || window.__uafAdminSession?.token || "";
+    const res = await callApi("listStories", { token });
+    if (!res || res.ok !== true || !Array.isArray(res.stories)) {
+      flash("Could not load stories from the database: " + ((res && res.error) || "no response"), "error");
+      return false;
     }
+    cachedStories = res.stories;
+    renderStoriesTable(session);
+    if (notify) flash("Loaded " + res.stories.length + " stories from the database.", "success");
+    return true;
   }
-
   function renderStoriesTable(session) {
     const container = document.getElementById("stories-table-container");
     if (!container) return;
@@ -926,11 +747,7 @@
               btn.disabled = false;
               return;
             }
-            stories[idx].status = newStatus;
-            saveLocalStories(stories);
-            cachedStories = stories;
-            flash(`Story status updated to ${newStatus}.`, "success");
-            renderStoriesTable(session);
+            await syncCloudStories(session, false);
           } catch (err) {
             flash("Error updating status: " + (err.message || err), "error");
             btn.disabled = false;
@@ -965,16 +782,8 @@
               btn.textContent = "Delete";
               return;
             }
-            addDeletedStory(id);
-            if (target.id) addDeletedStory(target.id);
-            if (target.storyId) addDeletedStory(target.storyId);
-            if (target.shareCode) addDeletedStory(target.shareCode);
-            if (target.title) addDeletedStory(target.title);
-            const updated = stories.filter((x) => (x.id || x.storyId) !== id && !isStoryDeleted(x.id || x.storyId));
-            saveLocalStories(updated);
-            cachedStories = updated;
+            await syncCloudStories(session, false);
             flash(`Permanently deleted "${target.title}".`, "success");
-            renderStoriesTable(session);
           } catch (err) {
             flash("Error deleting story: " + (err.message || err), "error");
             btn.disabled = false;
