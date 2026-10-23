@@ -213,6 +213,7 @@
   let currentTab = "submissions";
   let statusFilter = "ALL";
   let childSearch = "";
+  let childYear = "";
 
   function renderCommunityModule(container, session) {
     if (!can("REVIEW_SUBMISSIONS", session.role) && !can("MANAGE_STATS", session.role)) {
@@ -271,7 +272,12 @@
           <input type="search" id="child-search-input" class="admin-search-input" autocomplete="off"
             placeholder="Search child by name or ID (e.g. UAF-OSSC-2024-000002), parent, community…"
             style="flex:1;min-width:240px;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13.5px;" />
+          <select id="child-year-filter" title="Filter by year reported" style="padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:13px;">
+            <option value="">All years</option>
+          </select>
           <span id="child-search-count" class="admin-muted" style="font-size:12px;white-space:nowrap;"></span>
+          <button type="button" id="btn-export-children-xlsx" class="btn btn--outline" style="font-size:12px;padding:8px 12px;">⬇ Excel</button>
+          <button type="button" id="btn-export-children-pdf" class="btn btn--outline" style="font-size:12px;padding:8px 12px;">⬇ PDF</button>
         </div>
 
         <div class="admin-filter-bar">
@@ -772,6 +778,16 @@
       });
     }
 
+    const childYearEl = document.getElementById("child-year-filter");
+    if (childYearEl) {
+      childYearEl.addEventListener("change", () => {
+        childYear = childYearEl.value;
+        renderSubmissionsTable(session);
+      });
+    }
+    document.getElementById("btn-export-children-xlsx")?.addEventListener("click", () => exportChildren("xlsx"));
+    document.getElementById("btn-export-children-pdf")?.addEventListener("click", () => exportChildren("pdf"));
+
     // Submissions filter buttons
     const filterBtns = container.querySelectorAll("button[data-sub-filter]");
     filterBtns.forEach((btn) => {
@@ -996,10 +1012,26 @@
     if (elCountSub) elCountSub.textContent = items.length;
   }
 
-  function renderSubmissionsTable(session) {
-    const container = document.getElementById("submissions-table-container");
-    if (!container) return;
+  /* ---------------------------------------------------------
+     CHILD LIST: year / status / search filtering + EXPORT
+  --------------------------------------------------------- */
+  function childReportYear(r) {
+    const m = String(r.timestamp || "").match(/^(\d{4})/);
+    return m ? m[1] : "";
+  }
 
+  function populateChildYears() {
+    const sel = document.getElementById("child-year-filter");
+    if (!sel) return;
+    const years = Array.from(new Set(cachedSubmissions.map(childReportYear).filter(Boolean))).sort().reverse();
+    const current = childYear;
+    sel.innerHTML = '<option value="">All years</option>' + years.map((y) => `<option value="${y}">${y}</option>`).join("");
+    sel.value = years.indexOf(current) !== -1 ? current : "";
+    childYear = sel.value;
+  }
+
+  /** Children currently matching the status buttons + year + search box. */
+  function getFilteredChildren() {
     let items = cachedSubmissions.slice();
     if (statusFilter !== "ALL") {
       items = items.filter((it) => {
@@ -1009,7 +1041,7 @@
         return st === statusFilter;
       });
     }
-
+    if (childYear) items = items.filter((it) => childReportYear(it) === childYear);
     const q = childSearch.toLowerCase().trim();
     if (q) {
       const terms = q.split(/\s+/);
@@ -1021,11 +1053,130 @@
         return terms.every((t) => hay.indexOf(t) !== -1);
       });
     }
+    return items;
+  }
+
+  const EXPORT_COLUMNS = [
+    ["Case ID", (r) => r.submissionId || r.id || ""],
+    ["Child Name", (r) => r.childName],
+    ["Gender", (r) => r.gender],
+    ["Age", (r) => r.childAge],
+    ["County", (r) => r.residenceCounty || r.county],
+    ["Community", (r) => r.community],
+    ["Origin County", (r) => r.originCounty],
+    ["Parent / Guardian", (r) => r.parentName],
+    ["Parent Phone", (r) => r.parentPhone],
+    ["Living With", (r) => r.livingWith],
+    ["Years Out of School", (r) => r.yearsOutOfSchool],
+    ["Last Class", (r) => r.currentClass],
+    ["Cause of Exclusion", (r) => r.causeOfExclusion],
+    ["Status", (r) => String(r.status || "DRAFT").toUpperCase()],
+    ["Enrolled School", (r) => r.enrolledSchool],
+    ["School Year", (r) => r.schoolYear],
+    ["Enrollment Date", (r) => r.enrollmentDate],
+    ["Reported By", (r) => r.reporterName],
+    ["Year Reported", (r) => childReportYear(r)],
+    ["Date Reported", (r) => String(r.timestamp || "").slice(0, 10)]
+  ];
+
+  function loadScriptOnce(src) {
+    return new Promise((resolve, reject) => {
+      if (document.querySelector(`script[data-lib="${src}"]`)) return resolve();
+      const el = document.createElement("script");
+      el.src = src;
+      el.dataset.lib = src;
+      el.onload = () => resolve();
+      el.onerror = () => reject(new Error("Could not load " + src));
+      document.head.appendChild(el);
+    });
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+  }
+
+  async function exportChildren(kind) {
+    const items = getFilteredChildren();
+    if (!items.length) {
+      flash("Nothing to export. No children match the current filters.", "error");
+      return;
+    }
+    const clean = (v) => (v == null || v === "—" ? "" : String(v));
+    const header = EXPORT_COLUMNS.map((c) => c[0]);
+    const body = items.map((r) => EXPORT_COLUMNS.map((c) => clean(c[1](r))));
+
+    const statusLabel = { ALL: "All", DRAFT: "Pending", VERIFIED: "Verified", ENROLLED: "Enrolled", REJECTED: "Rejected" }[statusFilter] || statusFilter;
+    const filterText = `Status: ${statusLabel} | Year: ${childYear || "All"}${childSearch.trim() ? ` | Search: "${childSearch.trim()}"` : ""}`;
+    const stamp = new Date().toISOString().slice(0, 10);
+    const base = `UAF-children-${statusLabel}-${childYear || "all-years"}-${stamp}`.replace(/\s+/g, "_");
+
+    const btn = document.getElementById(kind === "xlsx" ? "btn-export-children-xlsx" : "btn-export-children-pdf");
+    const orig = btn ? btn.textContent : "";
+    if (btn) { btn.disabled = true; btn.textContent = "Preparing…"; }
+
+    try {
+      if (kind === "xlsx") {
+        try {
+          await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
+          const ws = XLSX.utils.aoa_to_sheet([header].concat(body));
+          ws["!cols"] = header.map((h, i) => ({ wch: Math.min(40, Math.max(h.length + 2, ...body.map((row) => String(row[i]).length + 2))) }));
+          const wb = XLSX.utils.book_new();
+          XLSX.utils.book_append_sheet(wb, ws, "Children");
+          XLSX.writeFile(wb, base + ".xlsx");
+        } catch (e) {
+          // Offline / library blocked: CSV opens in Excel too
+          const esc = (v) => '"' + String(v).replace(/"/g, '""') + '"';
+          const csv = "\ufeff" + [header].concat(body).map((row) => row.map(esc).join(",")).join("\r\n");
+          downloadBlob(new Blob([csv], { type: "text/csv;charset=utf-8;" }), base + ".csv");
+          flash("Excel library unavailable, downloaded as CSV (opens in Excel).", "success");
+          return;
+        }
+      } else {
+        await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js");
+        await loadScriptOnce("https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js");
+        const doc = new window.jspdf.jsPDF({ orientation: "landscape", unit: "pt", format: "a3" });
+        doc.setFontSize(16);
+        doc.text("Upskill Africa Foundation - Identified Children", 40, 40);
+        doc.setFontSize(10);
+        doc.text(`${filterText}  |  ${items.length} record${items.length === 1 ? "" : "s"}  |  Generated ${stamp}`, 40, 58);
+        doc.autoTable({
+          head: [header],
+          body: body,
+          startY: 72,
+          styles: { fontSize: 7, cellPadding: 3, overflow: "linebreak" },
+          headStyles: { fillColor: [3, 105, 161] },
+          margin: { left: 40, right: 40 }
+        });
+        doc.save(base + ".pdf");
+      }
+      flash(`Downloaded ${items.length} record${items.length === 1 ? "" : "s"}.`, "success");
+    } catch (err) {
+      console.warn("Export failed", err);
+      flash("Download failed. Check your internet connection and try again.", "error");
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = orig; }
+    }
+  }
+
+  function renderSubmissionsTable(session) {
+    const container = document.getElementById("submissions-table-container");
+    if (!container) return;
+
+    populateChildYears();
+    let items = getFilteredChildren();
+    const q = childSearch.toLowerCase().trim();
     const countEl = document.getElementById("child-search-count");
-    if (countEl) countEl.textContent = q ? `${items.length} match${items.length === 1 ? "" : "es"}` : "";
+    if (countEl) countEl.textContent = (q || childYear) ? `${items.length} match${items.length === 1 ? "" : "es"}` : "";
 
     if (items.length === 0) {
-      container.innerHTML = q
+      container.innerHTML = (q || childYear)
         ? '<p class="admin-muted" style="padding:28px;text-align:center;">No child matches your search.</p>'
         : '<p class="admin-muted" style="padding:28px;text-align:center;">No identified child records in this category.</p>';
       return;
