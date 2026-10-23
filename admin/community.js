@@ -212,6 +212,7 @@
   let cachedEmpowerment = [];
   let currentTab = "submissions";
   let statusFilter = "ALL";
+  let childSearch = "";
 
   function renderCommunityModule(container, session) {
     if (!can("REVIEW_SUBMISSIONS", session.role) && !can("MANAGE_STATS", session.role)) {
@@ -264,6 +265,13 @@
             <div class="admin-stat-card__label">Verified Reports</div>
             <div class="admin-stat-card__value" id="stat-verified-reports" style="color:var(--blue-700);">0</div>
           </div>
+        </div>
+
+        <div style="display:flex;gap:8px;align-items:center;margin:0 0 10px;flex-wrap:wrap;">
+          <input type="search" id="child-search-input" class="admin-search-input" autocomplete="off"
+            placeholder="Search child by name or ID (e.g. UAF-OSSC-2024-000002), parent, community…"
+            style="flex:1;min-width:240px;padding:9px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:13.5px;" />
+          <span id="child-search-count" class="admin-muted" style="font-size:12px;white-space:nowrap;"></span>
         </div>
 
         <div class="admin-filter-bar">
@@ -757,6 +765,16 @@
       flash("Refreshed all community data.", "success");
     });
 
+    // Child search (name / ID / parent / community)
+    const childSearchEl = document.getElementById("child-search-input");
+    if (childSearchEl) {
+      childSearchEl.value = childSearch;
+      childSearchEl.addEventListener("input", () => {
+        childSearch = childSearchEl.value;
+        renderSubmissionsTable(session);
+      });
+    }
+
     // Submissions filter buttons
     const filterBtns = container.querySelectorAll("button[data-sub-filter]");
     filterBtns.forEach((btn) => {
@@ -995,8 +1013,24 @@
       });
     }
 
+    const q = childSearch.toLowerCase().trim();
+    if (q) {
+      const terms = q.split(/\s+/);
+      items = items.filter((r) => {
+        const hay = [
+          r.childName, r.submissionId, r.clientSubmissionId, r.id, r.parentName, r.parentPhone,
+          r.reporterName, r.community, r.county, r.residenceCounty, r.enrolledSchool
+        ].map((v) => String(v == null ? "" : v).toLowerCase()).join(" | ");
+        return terms.every((t) => hay.indexOf(t) !== -1);
+      });
+    }
+    const countEl = document.getElementById("child-search-count");
+    if (countEl) countEl.textContent = q ? `${items.length} match${items.length === 1 ? "" : "es"}` : "";
+
     if (items.length === 0) {
-      container.innerHTML = '<p class="admin-muted" style="padding:28px;text-align:center;">No identified child records in this category.</p>';
+      container.innerHTML = q
+        ? '<p class="admin-muted" style="padding:28px;text-align:center;">No child matches your search.</p>'
+        : '<p class="admin-muted" style="padding:28px;text-align:center;">No identified child records in this category.</p>';
       return;
     }
 
@@ -1056,6 +1090,7 @@
               `}
               <div>
                 <strong>${escapeHtml(r.childName || "Child Case")}</strong>
+                ${r.submissionId ? `<div style="font-size:10.5px;color:var(--ink-400);font-family:monospace;">${escapeHtml(r.submissionId)}</div>` : ""}
                 <div style="font-size:11px;color:var(--ink-500);">${escapeHtml(r.gender || "—")} · Age ${escapeHtml(r.childAge || "—")}</div>
               </div>
             </div>
