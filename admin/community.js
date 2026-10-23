@@ -439,10 +439,7 @@
             <div class="form-field">
               <label for="enroll-school-year">School Year *</label>
               <select id="enroll-school-year" required>
-                <option value="2024/2025">2024/2025</option>
-                <option value="2025/2026" selected>2025/2026</option>
-                <option value="2026/2027">2026/2027</option>
-                <option value="2027/2028">2027/2028</option>
+                ${Array.from({ length: 28 }, (_, i) => `<option value="${2022 + i}/${2023 + i}">${2022 + i}/${2023 + i}</option>`).join("")}
               </select>
             </div>
             <div class="form-field">
