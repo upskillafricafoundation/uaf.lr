@@ -1395,7 +1395,7 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
     const repCountySel = document.getElementById("rep-county");
     const repChildCountySel = document.getElementById("rep-child-county");
 
-    const years = ["2026", "2027"];
+    const years = Array.from({ length: 28 }, (_, i) => String(2023 + i)); // 2023 - 2050
 
     if (countySel) {
       countySel.innerHTML = '<option value="">All 15 Counties</option>';
