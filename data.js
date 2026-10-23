@@ -433,22 +433,33 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
     }
   ];
 
+  // Partners / programs delivered by the database (public route). Filled by loadPublicLists().
+  let serverPartners = [];
+  let serverPrograms = [];
+
+  function escapeAttr(str) {
+    return String(str == null ? "" : str).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+
   function getUafPartners() {
     let deletedList = [];
     try {
       deletedList = JSON.parse(localStorage.getItem("uaf_deleted_partners") || "[]");
     } catch (_) {}
 
+    let base = DEFAULT_PARTNERS_DATASET;
     try {
       const stored = localStorage.getItem("uaf_partners");
       if (stored !== null) {
         const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          return parsed.filter((p) => !deletedList.includes(String(p.id || p.name).trim()));
-        }
+        if (Array.isArray(parsed)) base = parsed;
       }
     } catch (_) {}
-    return DEFAULT_PARTNERS_DATASET.filter((p) => !deletedList.includes(String(p.id || p.name).trim()));
+
+    // Database partners are added on top (de-duplicated by name)
+    const seen = new Set(base.map((p) => String(p.name || "").trim().toLowerCase()));
+    const extra = serverPartners.filter((p) => !seen.has(String(p.name || "").trim().toLowerCase()));
+    return base.concat(extra).filter((p) => !deletedList.includes(String(p.id || p.name).trim()));
   }
   window.__uafGetPartners = getUafPartners;
 
@@ -465,7 +476,7 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
     container.innerHTML = partners.map((p) => `
       <div class="partner-card">
         <div class="partner-card__logo-wrap">
-          <img src="${p.logoUrl || 'assets/uaf-logo.png'}" alt="${escapeHtml(p.name)}" class="partner-card__logo" onerror="this.src='assets/uaf-logo.png';" />
+          <img src="${escapeAttr(p.logoUrl || 'assets/uaf-logo.png')}" alt="${escapeAttr(p.name)}" class="partner-card__logo" onerror="this.onerror=null;this.src='assets/uaf-logo.png';" />
         </div>
         <div class="partner-card__title">${escapeHtml(p.name)}</div>
         <div class="partner-card__type">${escapeHtml(p.type || "Collaborator")}</div>
@@ -1311,6 +1322,41 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
         });
       });
     }
+
+    // Programs typed into the Programs tab of the database (public: ACTIVE / PUBLISHED / VERIFIED)
+    grid.querySelectorAll("[data-db-program]").forEach((el) => el.remove());
+    const shown = new Set(Array.from(grid.querySelectorAll(".program-item__title")).map((el) => el.textContent.trim().toLowerCase()));
+    serverPrograms.forEach((p) => {
+      const key = String(p.title || "").trim().toLowerCase();
+      if (!key || shown.has(key)) return;
+      shown.add(key);
+      const card = document.createElement("div");
+      card.className = "program-item-card";
+      card.setAttribute("data-db-program", "1");
+      card.innerHTML = `
+        <div class="program-item__icon"><span class="program-badge-bullet"></span></div>
+        <div class="program-item__title">${escapeHtml(p.title)}</div>
+        <p class="program-item__desc">${escapeHtml(p.desc)}</p>
+        <span class="program-item__tag">${escapeHtml(p.tag || "Program")}</span>
+      `;
+      grid.appendChild(card);
+    });
+  }
+
+  async function loadPublicLists() {
+    if (!isConfigured) return;
+    const get = async (route) => {
+      try {
+        const res = await fetch(`${API_URL}?route=${route}&_=${Date.now()}`, { cache: "no-store" });
+        const json = await res.json();
+        return json && json.ok ? json : null;
+      } catch (_) { return null; }
+    };
+    const [pj, gj] = await Promise.all([get("publicPartners"), get("publicPrograms")]);
+    if (pj && Array.isArray(pj.partners)) serverPartners = pj.partners;
+    if (gj && Array.isArray(gj.programs)) serverPrograms = gj.programs;
+    renderPartners();
+    renderUafPrograms();
   }
 
   window.addEventListener("uaf_data_updated", () => {
@@ -1330,34 +1376,6 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
     }
   });
 
-  /* ---------------------------------------------------------
-     RENDER — PARTNERS (from storage or defaults)
-  --------------------------------------------------------- */
-  function renderPartners() {
-    const container = document.getElementById("partners-grid-display");
-    if (!container) return;
-    let partners = null;
-    try {
-      const stored = localStorage.getItem("uaf_partners");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed) && parsed.length > 0) partners = parsed;
-      }
-    } catch (e) {}
-    if (!partners) return;
-
-    container.innerHTML = partners.map((p) => `
-      <div class="partner-card">
-        <div class="partner-card__logo-wrap">
-          <img src="${p.logoUrl || 'assets/uaf-logo.png'}" alt="${escapeHtml(p.name)}" class="partner-card__logo" />
-        </div>
-        <div class="partner-card__title">${escapeHtml(p.name)}</div>
-        <div class="partner-card__type">${escapeHtml(p.type || "Partner")}</div>
-        <p class="partner-card__desc">${escapeHtml(p.desc || "")}</p>
-      </div>
-    `).join("");
-  }
-  window.addEventListener("uaf_partners_updated", renderPartners);
   window.addEventListener("uaf_programs_updated", renderUafPrograms);
 
   function renderAll() {
@@ -1998,6 +2016,7 @@ startxref
     initDonationForm();
     loadPublicData();
     loadFundingSummary();
+    loadPublicLists();
     syncRemoteStories();
   };
 })();
