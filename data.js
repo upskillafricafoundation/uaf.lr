@@ -713,6 +713,12 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
     updateCommunityDropdown(getSelectedFilters().county);
   }
 
+  // Year a locally stored report belongs to (from its timestamp; current year if unknown)
+  function reportYear(r) {
+    const m = String((r && (r.timestamp || r.createdAt)) || "").match(/^(\d{4})/);
+    return m ? m[1] : String(new Date().getFullYear());
+  }
+
   function getMergedCommunities() {
     let delComms = [];
     try {
@@ -801,13 +807,14 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
     const base = rawBase.filter((c) => !isDeletedKey(c.county, c.community));
 
     const map = new Map();
+    // One row per county + community + YEAR (so 2023, 2024, 2025... stay separate)
     base.forEach((c) => {
-      const key = `${(c.county || "").toLowerCase().trim()}|${(c.community || "").toLowerCase().trim()}`;
+      const key = `${(c.county || "").toLowerCase().trim()}|${(c.community || "").toLowerCase().trim()}|${String(c.year || "").trim()}`;
       map.set(key, { ...c });
     });
 
     dynamic.forEach((d) => {
-      const key = `${(d.county || "").toLowerCase().trim()}|${(d.community || "").toLowerCase().trim()}`;
+      const key = `${(d.county || "").toLowerCase().trim()}|${(d.community || "").toLowerCase().trim()}|${String(d.year || "").trim()}`;
       if (!map.has(key)) {
         map.set(key, { ...d });
       }
@@ -818,12 +825,13 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
       const co = (r.residenceCounty || r.county || "").trim();
       const cm = (r.community || "").trim();
       if (co && cm && !isDeletedKey(co, cm)) {
-        const key = `${co.toLowerCase()}|${cm.toLowerCase()}`;
+        const ry = reportYear(r);
+        const key = `${co.toLowerCase()}|${cm.toLowerCase()}|${ry}`;
         if (!map.has(key)) {
           map.set(key, {
             community: cm,
             county: co,
-            year: "2026",
+            year: ry,
             outOfSchoolIdentified: 0,
             supportedReenrolled: 0,
             yetToEnroll: 0,
@@ -843,6 +851,7 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
 
       // Count out-of-school children residing here from local records
       const childCountInComm = activeReports.filter((r) => {
+        if (String(comm.year || "") && reportYear(r) !== String(comm.year)) return false;
         const rCo = (r.residenceCounty || r.county || "").toLowerCase().trim();
         const rCm = (r.community || "").toLowerCase().trim();
         return rCo === countyKey && (rCm === commKey || !commKey);
@@ -850,6 +859,7 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
 
       // Count enrolled children residing here from local records
       const enrolledInComm = activeReports.filter((r) => {
+        if (String(comm.year || "") && reportYear(r) !== String(comm.year)) return false;
         const rCo = (r.residenceCounty || r.county || "").toLowerCase().trim();
         const rCm = (r.community || "").toLowerCase().trim();
         const isEnrolled = r.enrolled === true || enrollments.some((en) => String(en.childName || "").toLowerCase().trim() === String(r.childName || "").toLowerCase().trim());
