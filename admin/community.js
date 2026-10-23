@@ -1489,6 +1489,13 @@
     const schoolYear = document.getElementById("enroll-school-year").value;
     const notes = document.getElementById("enroll-notes").value.trim();
 
+    // The child being enrolled (was never looked up before, which made Save fail silently)
+    const sub = cachedSubmissions.find((s) => Number(s.rowNumber) === rowNumber);
+    if (!sub) {
+      alert("Could not find this child record. Please refresh the list and try again.");
+      return;
+    }
+
     if (!schoolName) {
       alert("Please select a partner school or type a custom school name.");
       return;
@@ -1507,10 +1514,15 @@
           token: session.token,
           rowNumber: rowNumber,
           childName: sub.childName,
+          school: schoolName,
           schoolName: schoolName,
           enrollmentDate: date,
           schoolYear: schoolYear,
-          notes: notes
+          notes: notes,
+          county: sub.residenceCounty || sub.county,
+          community: sub.community,
+          gender: sub.gender,
+          age: sub.childAge
         });
         if (res && res.ok === false) {
           flash(res.error || "Failed to record enrollment on server.", "error");
