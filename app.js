@@ -9,7 +9,7 @@
      CACHE BUSTING & INSTANT UPDATE PURGE
      Purges old caches on installed devices to ensure immediate updates
   --------------------------------------------------------- */
-  const CURRENT_BUILD_VER = "2026-10-02-uaf-campaign-drive-v34";
+  const CURRENT_BUILD_VER = "2026-11-08-uaf-campaign-drive-v26";
   try {
     const savedBuild = localStorage.getItem("uaf_app_build_version");
     if (savedBuild !== CURRENT_BUILD_VER) {
@@ -130,6 +130,10 @@
     location.hash = `#/${clean}`;
   }
   window.__uafGoTo = goTo;
+
+  // The "UAF" word in the header opens the admin login page (must not be hijacked by the brand's data-goto)
+  const brandUafLink = document.getElementById("brand-uaf-link");
+  if (brandUafLink) brandUafLink.addEventListener("click", (e) => e.stopPropagation());
 
   // Universal global click delegation for all [data-goto] elements (menu cards, buttons, links)
   document.addEventListener("click", (e) => {

@@ -25,6 +25,8 @@
   };
 
   function can(permission, role) {
+    const sp = window.__uafAdminSession && window.__uafAdminSession.permissions;
+    if (sp && sp.length) return sp.includes("*") || sp.includes(permission === "EXPORT_DONATIONS" ? "VIEW_DONATIONS" : permission);
     if (!role) return true;
     const r = String(role).toUpperCase().trim().replace(/[\s-]+/g, "_");
     if (r === "SUPER_ADMIN" || r === "ADMIN" || r === "SUPERADMIN") return true;

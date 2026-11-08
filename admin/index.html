@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>UAF Impact — Admin Portal</title>
 <meta name="robots" content="noindex, nofollow" />
-<link rel="stylesheet" href="../styles.css?v=35" />
-<link rel="stylesheet" href="admin.css?v=35" />
+<link rel="stylesheet" href="../styles.css?v=26" />
+<link rel="stylesheet" href="admin.css?v=26" />
 </head>
 <body>
 
@@ -19,19 +19,12 @@
       <h1>UAF Impact — Admin</h1>
       <p class="admin-muted">Sign in with your administrator account. This area is separate from the public app and is never cached offline.</p>
       <div class="form-field">
-        <label for="login-email">Email</label>
-        <input type="email" id="login-email" required autocomplete="username" />
+        <label for="login-email">Username or Email</label>
+        <input type="text" id="login-email" required autocomplete="username" />
       </div>
       <div class="form-field">
         <label for="login-password">Password</label>
         <input type="password" id="login-password" required autocomplete="current-password" />
-      </div>
-      <div class="form-field">
-        <label for="login-role">Role</label>
-        <select id="login-role" required style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13.5px;background:#fff;">
-          <option value="ADMIN">Admin</option>
-          <option value="EXECUTIVE_STAFF">Executive Staff</option>
-        </select>
       </div>
       <div id="login-error" class="admin-error is-hidden"></div>
       <button type="submit" class="btn btn--primary btn--full">Sign in</button>
@@ -68,6 +61,10 @@
         <div class="admin-nav__item" data-module="partners">Partners &amp; Logos</div>
         <div class="admin-nav__item" data-module="donations">Donations</div>
         <div class="admin-nav__item" data-module="stories">Stories &amp; Evidence</div>
+        <div class="admin-nav__item" data-module="partnerships">Partnerships</div>
+        <div class="admin-nav__item" data-module="tasks">Tasks</div>
+        <div class="admin-nav__item" data-module="communications">Communications</div>
+        <div class="admin-nav__item" data-module="accounts">Accounts &amp; Access</div>
       </nav>
 
       <section id="admin-modules" class="admin-content">
@@ -88,12 +85,18 @@
 
 </div>
 
-<script src="../config.js?v=35"></script>
-<script src="admin.js?v=35"></script>
-<script src="community.js?v=35"></script>
-<script src="programs.js?v=35"></script>
-<script src="partners.js?v=35"></script>
-<script src="donations.js?v=35"></script>
-<script src="stories.js?v=35"></script>
+<script src="../config.js?v=26"></script>
+<script src="admin.js?v=26"></script>
+<script src="community.js?v=26"></script>
+<script src="team-common.js?v=26"></script>
+<script src="programs-hub.js?v=26"></script>
+<script src="partners.js?v=26"></script>
+<script src="donations.js?v=26"></script>
+<script src="stories.js?v=26"></script>
+<script src="partnerships.js?v=26"></script>
+<script src="tasks.js?v=26"></script>
+<script src="communications.js?v=26"></script>
+<script src="accounts.js?v=26"></script>
+<script src="recovery.js?v=26"></script>
 </body>
 </html>

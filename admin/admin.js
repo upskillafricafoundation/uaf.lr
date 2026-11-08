@@ -38,28 +38,42 @@
 
   function isSuperAdmin(role) {
     const r = String(role || "").toUpperCase().trim().replace(/[\s-]+/g, "_");
-    return r === "SUPER_ADMIN" || r === "ADMIN" || r === "SUPERADMIN";
-  }
-
-  function normalizeRole(role) {
-    return isSuperAdmin(role) ? "SUPER_ADMIN" : "EXECUTIVE_STAFF";
+    return r === "SUPER_ADMIN" || r === "SUPERADMIN";
   }
 
   function getDisplayRole(role) {
-    return isSuperAdmin(role) ? "Admin" : "Executive Staff";
+    const r = String(role || "").toUpperCase().trim().replace(/[\s-]+/g, "_");
+    if (r === "SUPER_ADMIN") return "Super Admin";
+    return r.split("_").map((w) => w.charAt(0) + w.slice(1).toLowerCase()).join(" ") || "Staff";
   }
 
-  function applyRolePermissions(role) {
-    const superUser = isSuperAdmin(role);
-    const allowedModules = ["dashboard", "community", "programs", "partners", "donations", "stories"];
+  // Which permission(s) unlock each menu module (the server enforces the same rules).
+  const MODULE_PERMISSIONS = {
+    dashboard: null,
+    community: ["MANAGE_COMMUNITIES", "REVIEW_OUT_OF_SCHOOL_SUBMISSION", "VERIFY_COMMUNITY_STATS", "MANAGE_IMPACT_DATA"],
+    programs: ["MANAGE_PROGRAMS", "MANAGE_IMPACT"],
+    partners: ["MANAGE_PARTNERS"],
+    partnerships: ["MANAGE_PARTNERSHIPS"],
+    donations: ["VIEW_DONATIONS"],
+    stories: ["MANAGE_NEWS", "REVIEW_EVIDENCE_REQUEST"],
+    tasks: ["VIEW_TASKS", "MANAGE_TASKS"],
+    communications: ["VIEW_INBOX", "SEND_EMAIL", "MANAGE_CONTACTS"],
+    accounts: "SUPER_ONLY"
+  };
 
+  function canAccessModule(session, mod) {
+    if (!session) return false;
+    if (isSuperAdmin(session.role)) return true;
+    const need = MODULE_PERMISSIONS[mod];
+    if (need === undefined || need === "SUPER_ONLY") return false;
+    if (need === null) return true;
+    const perms = session.permissions || [];
+    return perms.indexOf("*") !== -1 || need.some((p) => perms.indexOf(p) !== -1);
+  }
+
+  function applyRolePermissions(session) {
     document.querySelectorAll(".admin-nav__item[data-module]").forEach((item) => {
-      const mod = item.dataset.module;
-      if (superUser || allowedModules.includes(mod)) {
-        item.style.display = "";
-      } else {
-        item.style.display = "none";
-      }
+      item.style.display = canAccessModule(session, item.dataset.module) ? "" : "none";
     });
   }
 
@@ -69,7 +83,7 @@
     document.getElementById("welcome-name").textContent = session.name;
     document.getElementById("welcome-role").textContent = displayRole;
     document.getElementById("admin-user-label").textContent = session.name + " · " + displayRole;
-    applyRolePermissions(session.role);
+    applyRolePermissions(session);
     loginScreen.classList.add("is-hidden");
     dashboardScreen.classList.remove("is-hidden");
   }
@@ -80,9 +94,7 @@
     if (!token) return showLogin();
     const result = await callApi("adminWhoAmI", { token });
     if (result.ok) {
-      const serverRole = result.role ? normalizeRole(result.role) : null;
-      const effectiveRole = serverRole || (savedRole ? normalizeRole(savedRole) : "SUPER_ADMIN");
-      showDashboard({ token, name: result.name, role: effectiveRole });
+      showDashboard({ token, name: result.name, role: result.role || savedRole || "", permissions: result.permissions || [] });
     } else {
       sessionStorage.removeItem("uaf_admin_token");
       sessionStorage.removeItem("uaf_admin_role");
@@ -95,23 +107,15 @@
     loginError.classList.add("is-hidden");
     const email = document.getElementById("login-email").value.trim();
     const password = document.getElementById("login-password").value;
-    const selectedRole = document.getElementById("login-role")?.value || "ADMIN";
     const submitBtn = loginForm.querySelector('button[type="submit"]');
 
     submitBtn.setAttribute("disabled", "true");
     try {
       const result = await callApi("adminLogin", { email, password });
       if (result.ok) {
-        // Admin must match Super Admin and all other account types should match Executive Staff
-        let effectiveRole;
-        if (result.role) {
-          effectiveRole = normalizeRole(result.role);
-        } else {
-          effectiveRole = normalizeRole(selectedRole);
-        }
         sessionStorage.setItem("uaf_admin_token", result.token);
-        sessionStorage.setItem("uaf_admin_role", effectiveRole);
-        showDashboard({ token: result.token, name: result.name, role: effectiveRole });
+        sessionStorage.setItem("uaf_admin_role", result.role || "");
+        showDashboard({ token: result.token, name: result.name, role: result.role, permissions: result.permissions || [] });
       } else {
         loginError.textContent = result.error || "Sign in failed.";
         loginError.classList.remove("is-hidden");
@@ -169,10 +173,7 @@
     }
 
     const session = window.__uafAdminSession;
-    const superUser = session && isSuperAdmin(session.role);
-    const allowedModules = ["dashboard", "community", "programs", "partners", "donations", "stories"];
-
-    if (!superUser && !allowedModules.includes(key)) {
+    if (!canAccessModule(session, key)) {
       dashboardPanel.classList.add("is-hidden");
       modulePanel.classList.remove("is-hidden");
       modulePanel.innerHTML = `

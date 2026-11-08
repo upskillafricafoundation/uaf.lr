@@ -3535,4 +3535,10 @@ body.is-home-screen .screen[data-screen="menu"] {
   margin-left: 6px;
 }
 
+/* UAF word in the header = link to the admin login */
+.brand-uaf-link { color: inherit; text-decoration: none; cursor: pointer; }
+.brand-uaf-link:hover, .brand-uaf-link:focus-visible { text-decoration: underline; text-underline-offset: 3px; }
 
+/* Contact line in the home footer */
+.menu-footer .menu-footer__contact a { color: var(--ink-700); font-weight: 600; text-decoration: none; }
+.menu-footer .menu-footer__contact a:hover { text-decoration: underline; }

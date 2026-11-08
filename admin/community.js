@@ -18,6 +18,11 @@
   };
 
   function can(perm, role) {
+    const sp = window.__uafAdminSession && window.__uafAdminSession.permissions;
+    if (sp && sp.length) {
+      const map = { REVIEW_SUBMISSIONS: "REVIEW_OUT_OF_SCHOOL_SUBMISSION", MANAGE_STATS: "VERIFY_COMMUNITY_STATS" };
+      return sp.includes("*") || sp.includes(map[perm] || perm);
+    }
     if (!role) return true;
     const r = String(role).toUpperCase().trim().replace(/[\s-]+/g, "_");
     if (r === "SUPER_ADMIN" || r === "ADMIN" || r === "SUPERADMIN") return true;
