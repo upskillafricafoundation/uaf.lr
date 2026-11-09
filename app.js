@@ -9,7 +9,7 @@
      CACHE BUSTING & INSTANT UPDATE PURGE
      Purges old caches on installed devices to ensure immediate updates
   --------------------------------------------------------- */
-  const CURRENT_BUILD_VER = "2026-11-08-uaf-campaign-drive-v26";
+  const CURRENT_BUILD_VER = "2026-11-08-uaf-campaign-drive-v28";
   try {
     const savedBuild = localStorage.getItem("uaf_app_build_version");
     if (savedBuild !== CURRENT_BUILD_VER) {
@@ -21,7 +21,8 @@
       }
       if ("caches" in window) {
         caches.keys().then((keys) => {
-          keys.forEach((k) => caches.delete(k));
+          // only the public app's caches; the independent Admin app keeps its own ("uaf-admin-*")
+          keys.filter((k) => !k.startsWith("uaf-admin-")).forEach((k) => caches.delete(k));
         });
       }
       if ("serviceWorker" in navigator) {
@@ -66,7 +67,6 @@
      4. impact-drive (Impact Overview, Programs & Interventions)
      5. request-data (Evidence & Data Request Form)
      6. submit-ossc (Out-of-School Children Field Intake Form)
-     7. partners (UAF Partners & Collaborators Showcase)
   --------------------------------------------------------- */
   const ROUTES = [
     "menu",
@@ -74,8 +74,7 @@
     "statistics",
     "impact-drive",
     "request-data",
-    "submit-ossc",
-    "partners"
+    "submit-ossc"
   ];
 
   function currentRoute() {
@@ -87,7 +86,6 @@
     if (raw === "impact-drive" || raw === "impact" || raw === "communities" || raw === "works") return "impact-drive";
     if (raw === "request-data" || raw === "request" || raw === "evidence") return "request-data";
     if (raw === "submit-ossc" || raw === "identify-ossc" || raw === "report" || raw === "ossc") return "submit-ossc";
-    if (raw === "partners" || raw === "partner" || raw === "collaborators") return "partners";
 
     return ROUTES.includes(raw) ? raw : "menu";
   }
@@ -132,8 +130,13 @@
   window.__uafGoTo = goTo;
 
   // The "UAF" word in the header opens the admin login page (must not be hijacked by the brand's data-goto)
+  const ADMIN_LINK = (window.UAF_CONFIG && window.UAF_CONFIG.ADMIN_URL) || "admin/";
+  window.__uafAdminUrl = ADMIN_LINK;
   const brandUafLink = document.getElementById("brand-uaf-link");
-  if (brandUafLink) brandUafLink.addEventListener("click", (e) => e.stopPropagation());
+  if (brandUafLink) {
+    brandUafLink.setAttribute("href", ADMIN_LINK);
+    brandUafLink.addEventListener("click", (e) => e.stopPropagation());
+  }
 
   // Universal global click delegation for all [data-goto] elements (menu cards, buttons, links)
   document.addEventListener("click", (e) => {
@@ -402,7 +405,6 @@
       { title: "UAF Programs", type: "Interventions", route: "impact-drive", desc: "No Invisible Child, Education Access, Safeguarding, ALP" },
       { title: "Request Data & Evidence", type: "Form", route: "request-data", desc: "Request research datasets and program evaluation records" },
       { title: "Submit Out-of-School Children", type: "Form", route: "submit-ossc", desc: "Report children needing school intake and support" },
-      { title: "UAF Partners & Collaborators", type: "Page", route: "partners", desc: "Institutional partners, school alliances, child protection" },
       { title: "Admin Portal & Login", type: "Staff Console", route: "admin", desc: "Authorized staff login, role verification, and admin portal access" },
       { title: "Montserrado County", type: "County", route: "statistics", county: "Montserrado", desc: "West Point, Clara Town, Duala, Red Light, New Kru Town" },
       { title: "Margibi County", type: "County", route: "statistics", county: "Margibi", desc: "Kakata, Harbel, Unification Town" },
@@ -424,7 +426,6 @@
               <span class="search-tag" data-search-route="impact-drive">Impact Drive</span>
               <span class="search-tag" data-search-route="submit-ossc">Submit OSSC</span>
               <span class="search-tag" data-search-route="request-data">Request Data</span>
-              <span class="search-tag" data-search-route="partners">Partners</span>
             </div>
           </div>
         `;
@@ -465,7 +466,7 @@
           const county = el.dataset.searchCounty;
           closeSearch();
           if (route === "admin" || route.startsWith("admin")) {
-            window.location.href = "admin/index.html";
+            window.location.href = ADMIN_LINK;
             return;
           }
           goTo(route);

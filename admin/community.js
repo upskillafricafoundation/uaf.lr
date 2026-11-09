@@ -1,11 +1,10 @@
 /* =========================================================
-   UAF IMPACT — ADMIN: COMMUNITY DATA, OSSC, ENROLLMENTS & STATS
+   UAF IMPACT — ADMIN: COMMUNITY DATA, OSSC & SCHOOL PARTNERSHIPS
    ---------------------------------------------------------
    Administrative portal for:
    1. Out-of-School Children review, verification & enrollment
    2. Verified School Partnerships management
-   3. Household Livelihood Empowerment Training records
-   4. Accurate Community Statistics Directory with manual target setting
+   (Empowerment Data is now its own tab: empowerment.js. Community Stats removed.)
    ========================================================= */
 (() => {
   "use strict";
@@ -20,7 +19,7 @@
   function can(perm, role) {
     const sp = window.__uafAdminSession && window.__uafAdminSession.permissions;
     if (sp && sp.length) {
-      const map = { REVIEW_SUBMISSIONS: "REVIEW_OUT_OF_SCHOOL_SUBMISSION", MANAGE_STATS: "VERIFY_COMMUNITY_STATS" };
+      const map = { REVIEW_SUBMISSIONS: "REVIEW_OUT_OF_SCHOOL_SUBMISSION" };
       return sp.includes("*") || sp.includes(map[perm] || perm);
     }
     if (!role) return true;
@@ -110,49 +109,6 @@
     });
   }
 
-  function getDeletedStats() {
-    try {
-      return JSON.parse(localStorage.getItem("uaf_deleted_stats") || "[]");
-    } catch (_) {
-      return [];
-    }
-  }
-
-  function addDeletedStat(item) {
-    if (!item) return;
-    const deleted = getDeletedStats();
-    const key = `${(item.county || "").toLowerCase().trim()}|${(item.community || "").toLowerCase().trim()}`;
-    const entry = {
-      key: key,
-      rowNumber: item.rowNumber != null ? String(item.rowNumber) : "",
-      county: item.county || "",
-      community: item.community || ""
-    };
-    if (!deleted.some(d => (entry.key && d.key === entry.key) || (entry.rowNumber && d.rowNumber === entry.rowNumber))) {
-      deleted.push(entry);
-    }
-    try {
-      localStorage.setItem("uaf_deleted_stats", JSON.stringify(deleted));
-      const delComms = JSON.parse(localStorage.getItem("uaf_deleted_communities") || "[]");
-      if (key && !delComms.includes(key)) {
-        delComms.push(key);
-        localStorage.setItem("uaf_deleted_communities", JSON.stringify(delComms));
-      }
-    } catch (_) {}
-  }
-
-  function isStatDeleted(item, deletedList) {
-    if (!item) return true;
-    const list = deletedList || getDeletedStats();
-    const key = `${(item.county || "").toLowerCase().trim()}|${(item.community || "").toLowerCase().trim()}`;
-    return list.some((d) => {
-      if (d.key && d.key === key) return true;
-      if (d.rowNumber && String(d.rowNumber) === String(item.rowNumber)) return true;
-      return false;
-    });
-  }
-
-  // School Partnerships Tombstones
   function getDeletedPartnerships() {
     try {
       return JSON.parse(localStorage.getItem("uaf_deleted_partnerships") || "[]");
@@ -181,40 +137,14 @@
   }
 
   // Empowerment Tombstones
-  function getDeletedEmpowerment() {
-    try {
-      return JSON.parse(localStorage.getItem("uaf_deleted_empowerment") || "[]");
-    } catch (_) {
-      return [];
-    }
-  }
-
-  function addDeletedEmpowerment(id, name) {
-    const list = getDeletedEmpowerment();
-    const str = String(id || name || "").trim();
-    if (str && !list.includes(str)) {
-      list.push(str);
-      try {
-        localStorage.setItem("uaf_deleted_empowerment", JSON.stringify(list));
-      } catch (_) {}
-    }
-  }
-
-  function isEmpowermentDeleted(item, deletedList) {
-    if (!item) return true;
-    const list = deletedList || getDeletedEmpowerment();
-    const id = String(item.id || "").trim();
-    const name = String(item.name || "").trim();
-    return list.some((d) => (id && d === id) || (name && d === name));
-  }
 
   /* ---------------------------------------------------------
      STATE & REGISTRIES
   --------------------------------------------------------- */
   let cachedSubmissions = [];
-  let cachedStats = [];
   let cachedPartnerships = [];
-  let cachedEmpowerment = [];
+  const T = window.__uafTools;
+  const pagers = { submissions: 0, partnerships: 0, _sig: "" };
   let currentTab = "submissions";
   let statusFilter = "ALL";
   let childSearch = "";
@@ -235,7 +165,7 @@
       <div class="admin-module-header">
         <div>
           <h2>Community Data, Field Reports &amp; Impact Operations</h2>
-          <p class="admin-muted" style="margin-top:4px;">Manage out-of-school children, school enrollment records, school partnerships, empowerment trainees, and accurate community statistics.</p>
+          <p class="admin-muted" style="margin-top:4px;">Manage out-of-school children, school enrollment records and school partnerships.</p>
         </div>
         <div style="display:flex;gap:8px;">
           <button id="community-refresh-btn" class="btn btn--outline">Refresh All Data</button>
@@ -248,8 +178,6 @@
       <div style="display:flex;gap:8px;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:12px;overflow-x:auto;">
         <button id="tab-submissions-btn" class="admin-filter-btn is-active">Out-of-School Children (<span id="count-sub-total">0</span>)</button>
         <button id="tab-partnerships-btn" class="admin-filter-btn">School Partnerships (<span id="count-partnerships-total">0</span>)</button>
-        <button id="tab-empowerment-btn" class="admin-filter-btn">Empowerment Data (<span id="count-empowerment-total">0</span>)</button>
-        <button id="tab-stats-btn" class="admin-filter-btn">Community Stats Directory (<span id="count-stats-total">0</span>)</button>
       </div>
 
       <!-- 1. Out-of-School Children View -->
@@ -328,103 +256,14 @@
               <h3 style="font-size:15px;margin:0;color:var(--blue-900);">Verified School Partnerships</h3>
               <p class="admin-muted" style="margin:4px 0 0;font-size:12.5px;">Partner schools collaborating with UAF to enroll and subsidize out-of-school children.</p>
             </div>
-            <button type="button" id="add-partnership-btn" class="btn btn--primary" style="font-size:12.5px;">+ Add School Partnership</button>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${T.exportButtonsHtml()}
+              <button type="button" id="add-partnership-btn" class="btn btn--primary" style="font-size:12.5px;">+ Add School Partnership</button>
+            </div>
           </div>
         </div>
         <div class="admin-table-wrap">
           <div id="partnerships-table-container">
             <p class="admin-muted" style="padding:24px;text-align:center;">Loading school partnerships…</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 3. Empowerment Data View -->
-      <div id="view-empowerment" class="is-hidden">
-        <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius-md);padding:16px;margin-bottom:14px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;">
-            <div>
-              <h3 style="font-size:15px;margin:0;color:var(--blue-900);">Household Livelihood Empowerment Training Records</h3>
-              <p class="admin-muted" style="margin:4px 0 0;font-size:12.5px;">Vocational training provided to caregivers to ensure sustainable household income for children's schooling.</p>
-            </div>
-            <button type="button" id="add-empowerment-btn" class="btn btn--primary" style="font-size:12.5px;">+ Add Empowerment Trainee</button>
-          </div>
-        </div>
-        <div class="admin-table-wrap">
-          <div id="empowerment-table-container">
-            <p class="admin-muted" style="padding:24px;text-align:center;">Loading empowerment records…</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- 4. Community Stats View -->
-      <div id="view-stats" class="is-hidden">
-        <!-- Global Indicators & Funding Editor -->
-        <div class="admin-card" style="margin-bottom:18px;background:var(--blue-050);border:1px solid var(--border);">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
-            <h3 style="font-size:15px;margin:0;color:var(--blue-900);">Global Funding Target &amp; System Indicators</h3>
-            <span class="admin-badge admin-badge--neutral">Target Settings</span>
-          </div>
-          <p class="admin-muted" style="margin-bottom:12px;font-size:12.5px;">Set overall campaign funding goals. Community balances are automatically calculated by deducting verified donations.</p>
-          <form id="global-kpis-form">
-            <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(200px, 1fr));gap:10px;">
-              <div class="form-field">
-                <label for="kpi-amount-needed">Total Campaign Target ($USD)</label>
-                <input type="number" id="kpi-amount-needed" min="0" value="0" />
-              </div>
-              <div class="form-field">
-                <label for="kpi-amount-raised">Total Donations Verified ($USD)</label>
-                <input type="number" id="kpi-amount-raised" min="0" value="0" />
-              </div>
-            </div>
-            <div style="margin-top:12px;text-align:right;">
-              <button type="submit" class="btn btn--primary" style="font-size:12.5px;">Save Global Funding</button>
-            </div>
-          </form>
-        </div>
-
-        <!-- Download / Export & Directory Controls -->
-        <div style="background:#fff;border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;margin-bottom:14px;">
-          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:10px;">
-            <div>
-              <h3 style="font-size:15px;margin:0;color:var(--blue-900);">Verified Community Indicators Directory</h3>
-              <p class="admin-muted" style="margin:2px 0 0;font-size:12px;">Statistics accurately derived from out-of-school records, enrollments, empowerment, and partnerships.</p>
-            </div>
-            <div style="display:flex;gap:8px;">
-              <button id="add-stat-btn" class="btn btn--primary" style="font-size:12.5px;">+ Set Community Target</button>
-            </div>
-          </div>
-
-          <!-- Download Community Data Filter Bar -->
-          <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;padding-top:10px;border-top:1px solid var(--ink-100);">
-            <div style="flex:1;min-width:130px;">
-              <label style="display:block;font-size:11.5px;font-weight:600;color:var(--ink-600);margin-bottom:4px;">Year</label>
-              <select id="export-comm-year" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;">
-                <option value="ALL">All Years</option>
-                <option value="2024">2024</option>
-                <option value="2025">2025</option>
-                <option value="2026">2026</option>
-                <option value="2027">2027</option>
-              </select>
-            </div>
-            <div style="flex:1;min-width:150px;">
-              <label style="display:block;font-size:11.5px;font-weight:600;color:var(--ink-600);margin-bottom:4px;">Location / County</label>
-              <select id="export-comm-location" style="width:100%;padding:6px 10px;font-size:12.5px;border:1px solid var(--border);border-radius:var(--radius-sm);background:#fff;">
-                <option value="ALL">All 15 Counties</option>
-                ${LIBERIA_COUNTIES.map(c => `<option value="${c}">${c}</option>`).join("")}
-              </select>
-            </div>
-            <div>
-              <button type="button" id="btn-download-community-csv" class="btn btn--outline" style="font-size:12px;padding:6px 12px;display:flex;align-items:center;gap:6px;background:#f8fafc;">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                <span>Download CSV</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div class="admin-table-wrap">
-          <div id="stats-table-container">
-            <p class="admin-muted" style="padding:24px;text-align:center;">Loading community stats…</p>
           </div>
         </div>
       </div>
@@ -504,110 +343,6 @@
             <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
               <button type="button" id="partner-modal-cancel" class="btn btn--outline">Cancel</button>
               <button type="submit" class="btn btn--primary">Save Partnership</button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- MODAL 3: Add Empowerment Trainee -->
-      <div id="empowerment-modal" class="admin-modal-overlay is-hidden">
-        <div class="admin-modal" style="max-width:560px;">
-          <h3 id="empowerment-modal-title">Add Empowerment Trainee</h3>
-          <form id="empowerment-form" style="margin-top:12px;">
-            <input type="hidden" id="empower-id" />
-            <div style="display:grid;grid-template-columns:2fr 1fr;gap:10px;">
-              <div class="form-field">
-                <label for="empower-name">Caregiver / Trainee Full Name *</label>
-                <input type="text" id="empower-name" required placeholder="Full Name" />
-              </div>
-              <div class="form-field">
-                <label for="empower-gender">Gender *</label>
-                <select id="empower-gender" required>
-                  <option value="Female">Female</option>
-                  <option value="Male">Male</option>
-                  <option value="Other">Other</option>
-                </select>
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-              <div class="form-field">
-                <label for="empower-county">County *</label>
-                <select id="empower-county" required>
-                  ${LIBERIA_COUNTIES.map(c => `<option value="${c}" ${c === 'Montserrado' ? 'selected' : ''}>${c}</option>`).join("")}
-                </select>
-              </div>
-              <div class="form-field">
-                <label for="empower-community">Community / Town *</label>
-                <input type="text" id="empower-community" required placeholder="e.g. Duport Road" />
-              </div>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-              <div class="form-field">
-                <label for="empower-skill">Skill Trained *</label>
-                <select id="empower-skill" required>
-                  <option value="Soap Making">Soap Making</option>
-                  <option value="Tie-Dye / Batik">Tie-Dye / Batik</option>
-                  <option value="Baking & Pastry">Baking &amp; Pastry</option>
-                  <option value="Tailoring & Sewing">Tailoring &amp; Sewing</option>
-                  <option value="Sustainable Agriculture">Sustainable Agriculture</option>
-                  <option value="Computer Literacy">Computer Literacy</option>
-                  <option value="Small Business / Susu Management">Small Business / Susu Management</option>
-                  <option value="Other Vocational Skill">Other Vocational Skill</option>
-                </select>
-              </div>
-              <div class="form-field">
-                <label for="empower-contact">Contact Telephone *</label>
-                <input type="tel" id="empower-contact" required placeholder="088... or 077..." />
-              </div>
-            </div>
-            <div class="form-field">
-              <label for="empower-child-select">Connected to Child (Optional)</label>
-              <select id="empower-child-select">
-                <option value="">-- None / General Household --</option>
-              </select>
-            </div>
-            <div class="form-field">
-              <label for="empower-photo">Trainee Photo (Optional)</label>
-              <input type="file" id="empower-photo" accept="image/*" />
-            </div>
-            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
-              <button type="button" id="empower-modal-cancel" class="btn btn--outline">Cancel</button>
-              <button type="submit" class="btn btn--primary">Save Empowerment Record</button>
-            </div>
-          </form>
-        </div>
-      </div>
-
-      <!-- MODAL 4: Set Manual Community Target -->
-      <div id="stat-target-modal" class="admin-modal-overlay is-hidden">
-        <div class="admin-modal" style="max-width:500px;">
-          <h3 id="stat-target-modal-title">Set Community Funding Target</h3>
-          <p class="admin-muted" style="font-size:12px;margin:2px 0 14px;">Set the funding target to raise manually. Donations will automatically deduct from it to find the balance to raise.</p>
-          <form id="stat-target-form">
-            <input type="hidden" id="stat-target-row" />
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-              <div class="form-field">
-                <label for="stat-target-county">County *</label>
-                <select id="stat-target-county" required>
-                  ${LIBERIA_COUNTIES.map(c => `<option value="${c}" ${c === 'Montserrado' ? 'selected' : ''}>${c}</option>`).join("")}
-                </select>
-              </div>
-              <div class="form-field">
-                <label for="stat-target-community">Community Name *</label>
-                <input type="text" id="stat-target-community" required placeholder="e.g. Duport Road" />
-              </div>
-            </div>
-            <div class="form-field">
-              <label for="stat-target-amount">Amount to Raise ($USD) *</label>
-              <input type="number" id="stat-target-amount" min="0" required placeholder="e.g. 5000" />
-            </div>
-            <div class="form-field">
-              <label for="stat-target-notes">Methodology / Notes (Optional)</label>
-              <input type="text" id="stat-target-notes" placeholder="Field census / door-to-door survey target" />
-            </div>
-            <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px;">
-              <button type="button" id="stat-target-modal-cancel" class="btn btn--outline">Cancel</button>
-              <button type="submit" class="btn btn--primary">Save Funding Target</button>
             </div>
           </form>
         </div>
@@ -727,18 +462,14 @@
     // Tab switcher events
     const tabSubBtn = document.getElementById("tab-submissions-btn");
     const tabPartnersBtn = document.getElementById("tab-partnerships-btn");
-    const tabEmpowerBtn = document.getElementById("tab-empowerment-btn");
-    const tabStatsBtn = document.getElementById("tab-stats-btn");
 
     const viewSub = document.getElementById("view-submissions");
     const viewPartners = document.getElementById("view-partnerships");
-    const viewEmpower = document.getElementById("view-empowerment");
-    const viewStats = document.getElementById("view-stats");
 
     function switchTab(tabKey) {
       currentTab = tabKey;
-      [tabSubBtn, tabPartnersBtn, tabEmpowerBtn, tabStatsBtn].forEach(b => b?.classList.remove("is-active"));
-      [viewSub, viewPartners, viewEmpower, viewStats].forEach(v => v?.classList.add("is-hidden"));
+      [tabSubBtn, tabPartnersBtn].forEach(b => b?.classList.remove("is-active"));
+      [viewSub, viewPartners].forEach(v => v?.classList.add("is-hidden"));
 
       if (tabKey === "submissions") {
         tabSubBtn?.classList.add("is-active");
@@ -748,28 +479,16 @@
         tabPartnersBtn?.classList.add("is-active");
         viewPartners?.classList.remove("is-hidden");
         loadPartnerships(session);
-      } else if (tabKey === "empowerment") {
-        tabEmpowerBtn?.classList.add("is-active");
-        viewEmpower?.classList.remove("is-hidden");
-        loadEmpowerment(session);
-      } else if (tabKey === "stats") {
-        tabStatsBtn?.classList.add("is-active");
-        viewStats?.classList.remove("is-hidden");
-        loadStats(session);
       }
     }
 
     tabSubBtn?.addEventListener("click", () => switchTab("submissions"));
     tabPartnersBtn?.addEventListener("click", () => switchTab("partnerships"));
-    tabEmpowerBtn?.addEventListener("click", () => switchTab("empowerment"));
-    tabStatsBtn?.addEventListener("click", () => switchTab("stats"));
 
     // Global refresh
     document.getElementById("community-refresh-btn")?.addEventListener("click", () => {
       loadSubmissions(session);
       loadPartnerships(session);
-      loadEmpowerment(session);
-      loadStats(session);
       flash("Refreshed all community data.", "success");
     });
 
@@ -832,55 +551,17 @@
     });
     document.getElementById("partnership-form")?.addEventListener("submit", (e) => handleSavePartnership(e, session));
 
-    // Empowerment Modal handlers
-    const empowerModal = document.getElementById("empowerment-modal");
-    document.getElementById("add-empowerment-btn")?.addEventListener("click", () => {
-      document.getElementById("empowerment-form").reset();
-      document.getElementById("empower-id").value = "";
-      document.getElementById("empowerment-modal-title").textContent = "Add Empowerment Trainee";
-      populateConnectedChildrenDropdown();
-      empowerModal.classList.remove("is-hidden");
-    });
-    document.getElementById("empower-modal-cancel")?.addEventListener("click", () => {
-      empowerModal.classList.add("is-hidden");
-    });
-    document.getElementById("empowerment-form")?.addEventListener("submit", (e) => handleSaveEmpowerment(e, session));
-
-    // Set Target Modal handlers
-    const targetModal = document.getElementById("stat-target-modal");
-    document.getElementById("add-stat-btn")?.addEventListener("click", () => {
-      document.getElementById("stat-target-form").reset();
-      document.getElementById("stat-target-row").value = "";
-      document.getElementById("stat-target-modal-title").textContent = "Set Community Funding Target";
-      targetModal.classList.remove("is-hidden");
-    });
-    document.getElementById("stat-target-modal-cancel")?.addEventListener("click", () => {
-      targetModal.classList.add("is-hidden");
-    });
-    document.getElementById("stat-target-form")?.addEventListener("submit", (e) => handleSaveTarget(e, session));
-
-    // Download CSV
-    document.getElementById("btn-download-community-csv")?.addEventListener("click", downloadCommunityCsv);
-
-    // Global KPIs Form handler
-    const globalKpisForm = document.getElementById("global-kpis-form");
-    if (globalKpisForm) {
-      globalKpisForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const funding = {
-          totalNeededUSD: Number(document.getElementById("kpi-amount-needed").value) || 0,
-          totalGeneratedUSD: Number(document.getElementById("kpi-amount-raised").value) || 0,
-          lastUpdated: new Date().toISOString()
-        };
-        try {
-          localStorage.setItem("uaf_admin_funding", JSON.stringify(funding));
-          window.dispatchEvent(new Event("uaf_data_updated"));
-          flash("Global campaign funding targets saved.", "success");
-        } catch (err) {
-          flash("Could not save to local storage: " + err.message);
-        }
-      });
-    }
+    // Download partner schools (Excel / PDF)
+    T.bindExport(document.getElementById("view-partnerships"), () => ({
+      base: "UAF-partner-schools-" + T.today(),
+      title: "Partner Schools",
+      sheet: "Partner Schools",
+      subtitle: "Verified school partnerships",
+      headers: ["School Name", "County / Location", "Community", "Representative", "Date of Partnership", "Telephone"],
+      rows: T.newestFirst(cachedPartnerships, ["createdAt", "partnershipDate", "updatedAt"]).map((p) => [
+        p.schoolName, p.location || p.county, p.community, p.repName, p.partnershipDate ? formatDate(p.partnershipDate) : "", p.telephone
+      ])
+    }), (m, k) => flash(m, k));
 
     // Detail modal close
     document.getElementById("case-detail-close")?.addEventListener("click", () => {
@@ -892,8 +573,6 @@
     // Initial load
     loadSubmissions(session);
     loadPartnerships(session);
-    loadEmpowerment(session);
-    loadStats(session);
   }
 
   function flash(message, kind) {
@@ -1187,6 +866,13 @@
       return;
     }
 
+    items = T.newestFirst(items, ["timestamp", "createdAt", "reportedAt", "date"]);
+    const _sig = [statusFilter, childSearch, childYear].join("|");
+    if (_sig !== pagers._sig) { pagers.submissions = 0; pagers._sig = _sig; }
+    const _pg = T.paginate(items, pagers.submissions, 10);
+    pagers.submissions = _pg.page;
+    items = _pg.slice;
+
     const rows = items.map((r) => {
       const st = String(r.status || "DRAFT").toUpperCase();
       let badgeCls = "admin-badge--pending";
@@ -1292,6 +978,8 @@
       </table>
     `;
 
+    T.attachPager(container, _pg, (pp) => { pagers.submissions = pp; renderSubmissionsTable(session); });
+
     container.querySelectorAll("button[data-sub-action='view']").forEach((b) => {
       b.addEventListener("click", () => {
         const rowNum = Number(b.dataset.row);
@@ -1360,7 +1048,6 @@
     cachedSubmissions = cachedSubmissions.filter((item) => Number(item.rowNumber) !== rowNumber && !isSubmissionDeleted(item));
     updateSubmissionsStats(cachedSubmissions);
     renderSubmissionsTable(session);
-    loadStats(session);
     window.dispatchEvent(new Event("uaf_data_updated"));
     flash("Child record permanently deleted from database.", "success");
   }
@@ -1455,7 +1142,6 @@
     flash(`Child record for "${newName}" updated successfully.`, "success");
     updateSubmissionsStats(cachedSubmissions);
     renderSubmissionsTable(session);
-    loadStats(session);
     window.dispatchEvent(new Event("uaf_data_updated"));
   }
 
@@ -1573,7 +1259,6 @@
       localStorage.setItem("uaf_ossc_reports", JSON.stringify(localReports));
       flash(`Report successfully updated to ${newStatus}.`, "success");
       loadSubmissions(session);
-      loadStats(session);
       window.dispatchEvent(new Event("uaf_data_updated"));
       return;
     }
@@ -1588,7 +1273,6 @@
       if (res.ok) {
         flash(`Report #${rowNumber} updated to ${newStatus}.`, "success");
         loadSubmissions(session);
-        loadStats(session);
         window.dispatchEvent(new Event("uaf_data_updated"));
       } else {
         flash(res.error || "Update failed.");
@@ -1746,7 +1430,6 @@
     document.getElementById("child-enrollment-modal").classList.add("is-hidden");
     flash(`Child "${sub.childName}" successfully enrolled in ${schoolName}!`, "success");
     renderSubmissionsTable(session);
-    loadStats(session);
     window.dispatchEvent(new Event("uaf_data_updated"));
   }
 
@@ -1794,7 +1477,9 @@
       return;
     }
 
-    const rows = cachedPartnerships.map(p => `
+    const _pg = T.paginate(T.newestFirst(cachedPartnerships, ["createdAt", "partnershipDate", "updatedAt"]), pagers.partnerships, 10);
+    pagers.partnerships = _pg.page;
+    const rows = _pg.slice.map(p => `
       <tr>
         <td><strong>${escapeHtml(p.schoolName)}</strong></td>
         <td>${escapeHtml(p.location || p.county)} · <span style="font-size:11.5px;color:var(--ink-500);">${escapeHtml(p.community || "—")}</span></td>
@@ -1827,6 +1512,8 @@
         </tbody>
       </table>
     `;
+
+    T.attachPager(container, _pg, (pp) => { pagers.partnerships = pp; renderPartnershipsTable(session); });
 
     container.querySelectorAll("button[data-edit-partner]").forEach(b => {
       b.addEventListener("click", () => handleEditPartnership(b.dataset.editPartner, session));
@@ -1929,7 +1616,6 @@
     }
 
     loadPartnerships(session);
-    loadStats(session);
     window.dispatchEvent(new Event("uaf_data_updated"));
   }
 
@@ -1950,576 +1636,6 @@
 
     flash("School partnership removed.", "success");
     loadPartnerships(session);
-    loadStats(session);
-    window.dispatchEvent(new Event("uaf_data_updated"));
-  }
-
-  /* ---------------------------------------------------------
-     3. EMPOWERMENT DATA LOGIC
-  --------------------------------------------------------- */
-  async function loadEmpowerment(session) {
-    const container = document.getElementById("empowerment-table-container");
-    if (!container) return;
-
-    let items = [];
-    try {
-      if (API_URL) {
-        const res = await callApi("listEmpowermentData", { token: session.token });
-        if (res && res.ok && Array.isArray(res.trainees)) items = res.trainees;
-      }
-    } catch (_) {}
-
-    if (!items.length) {
-      try {
-        const stored = localStorage.getItem("uaf_empowerment_records");
-        if (stored) {
-          items = JSON.parse(stored);
-        }
-      } catch (_) {}
-    }
-
-    // Clean out any legacy mock empowerment records
-    items = items.filter(e => {
-      const eId = String(e.id || "");
-      return !eId.startsWith("emp_") || (e.id && Number(e.id.replace("emp_", "")) > 100);
-    });
-
-    const delList = getDeletedEmpowerment();
-    items = items.filter(e => !isEmpowermentDeleted(e, delList));
-    cachedEmpowerment = items;
-    try {
-      localStorage.setItem("uaf_empowerment_records", JSON.stringify(cachedEmpowerment));
-    } catch (_) {}
-
-    const elCount = document.getElementById("count-empowerment-total");
-    if (elCount) elCount.textContent = cachedEmpowerment.length;
-
-    renderEmpowermentTable(session);
-  }
-
-  function renderEmpowermentTable(session) {
-    const container = document.getElementById("empowerment-table-container");
-    if (!container) return;
-
-    if (!cachedEmpowerment.length) {
-      container.innerHTML = '<p class="admin-muted" style="padding:28px;text-align:center;">No empowerment records on file. Click <strong>"+ Add Empowerment Trainee"</strong> to log vocational training data.</p>';
-      return;
-    }
-
-    const rows = cachedEmpowerment.map(e => `
-      <tr>
-        <td>
-          <div style="display:flex;align-items:center;gap:10px;">
-            ${e.photoData ? `
-              <img src="${e.photoData}" alt="${escapeHtml(e.name)}" style="width:34px;height:34px;border-radius:50%;object-fit:cover;border:1px solid #cbd5e1;flex-shrink:0;" />
-            ` : `
-              <div style="width:34px;height:34px;border-radius:50%;background:#fef3c7;color:#b45309;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0;">
-                ${escapeHtml((e.name || "E").charAt(0).toUpperCase())}
-              </div>
-            `}
-            <div>
-              <strong>${escapeHtml(e.name)}</strong>
-              <div style="font-size:11px;color:var(--ink-500);">${escapeHtml(e.gender || "—")}</div>
-            </div>
-          </div>
-        </td>
-        <td>${escapeHtml(e.county)} · <span style="font-size:11.5px;color:var(--ink-500);">${escapeHtml(e.community)}</span></td>
-        <td><span class="admin-badge admin-badge--neutral" style="font-size:11px;font-weight:600;">${escapeHtml(e.skill)}</span></td>
-        <td>${e.connectedChild ? `<span style="color:var(--blue-700);font-weight:600;">${escapeHtml(e.connectedChild)}</span>` : '<span style="color:var(--ink-400);">None</span>'}</td>
-        <td><a href="tel:${escapeHtml(e.contact)}" style="color:var(--blue-700);text-decoration:none;">${escapeHtml(e.contact)}</a></td>
-        <td>
-          <div style="display:flex;gap:6px;">
-            <button class="btn btn--outline" style="padding:4px 9px;font-size:11.5px;" data-edit-empower="${e.id || e.name}">Edit</button>
-            <button class="btn btn--outline" style="padding:4px 9px;font-size:11.5px;color:var(--red-700);" data-delete-empower="${e.id || e.name}">Delete</button>
-          </div>
-        </td>
-      </tr>
-    `).join("");
-
-    container.innerHTML = `
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>Trainee / Caregiver</th>
-            <th>Location / Community</th>
-            <th>Skill Trained</th>
-            <th>Connected Child</th>
-            <th>Contact</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows}
-        </tbody>
-      </table>
-    `;
-
-    container.querySelectorAll("button[data-edit-empower]").forEach(b => {
-      b.addEventListener("click", () => handleEditEmpowerment(b.dataset.editEmpower, session));
-    });
-
-    container.querySelectorAll("button[data-delete-empower]").forEach(b => {
-      b.addEventListener("click", () => handleDeleteEmpowerment(b.dataset.deleteEmpower, session));
-    });
-  }
-
-  function handleEditEmpowerment(id, session) {
-    const e = cachedEmpowerment.find(x => (x.id || x.name) === id);
-    if (!e) return;
-    document.getElementById("empower-id").value = e.id || e.name;
-    document.getElementById("empower-name").value = e.name || "";
-    document.getElementById("empower-gender").value = e.gender || "Female";
-    document.getElementById("empower-county").value = e.county || "Montserrado";
-    document.getElementById("empower-community").value = e.community || "";
-    document.getElementById("empower-skill").value = e.skill || "Soap Making";
-    document.getElementById("empower-contact").value = e.contact || "";
-
-    populateConnectedChildrenDropdown();
-    if (e.connectedChild) {
-      document.getElementById("empower-child-select").value = e.connectedChild;
-    }
-
-    const titleEl = document.getElementById("empowerment-modal-title");
-    if (titleEl) titleEl.textContent = `Edit Empowerment Record: ${e.name}`;
-    const modal = document.getElementById("empowerment-modal");
-    if (modal) modal.classList.remove("is-hidden");
-  }
-
-  function populateConnectedChildrenDropdown() {
-    const select = document.getElementById("empower-child-select");
-    if (!select) return;
-    select.innerHTML = '<option value="">-- None / General Household --</option>';
-
-    cachedSubmissions.forEach(sub => {
-      const opt = document.createElement("option");
-      opt.value = sub.childName;
-      opt.textContent = `${sub.childName} (${sub.residenceCounty || sub.county} · ${sub.community})`;
-      select.appendChild(opt);
-    });
-  }
-
-  async function handleSaveEmpowerment(e, session) {
-    e.preventDefault();
-    const existingId = document.getElementById("empower-id").value.trim();
-    const name = document.getElementById("empower-name").value.trim();
-    const gender = document.getElementById("empower-gender").value;
-    const county = document.getElementById("empower-county").value;
-    const community = document.getElementById("empower-community").value.trim();
-    const skill = document.getElementById("empower-skill").value;
-    const connectedChild = document.getElementById("empower-child-select").value.trim();
-    const contact = document.getElementById("empower-contact").value.trim();
-    const photoInput = document.getElementById("empower-photo");
-
-    let photoData = "";
-    if (photoInput && photoInput.files && photoInput.files[0]) {
-      try {
-        photoData = await new Promise((res, rej) => {
-          const r = new FileReader();
-          r.onload = () => res(r.result);
-          r.onerror = rej;
-          r.readAsDataURL(photoInput.files[0]);
-        });
-      } catch (_) {}
-    }
-
-    if (existingId) {
-      const idx = cachedEmpowerment.findIndex(x => (x.id || x.name) === existingId);
-      if (idx >= 0) {
-        cachedEmpowerment[idx] = {
-          ...cachedEmpowerment[idx],
-          name,
-          gender,
-          county,
-          community,
-          skill,
-          connectedChild,
-          contact,
-          photoData: photoData || cachedEmpowerment[idx].photoData,
-          updatedAt: new Date().toISOString()
-        };
-      }
-      try {
-        localStorage.setItem("uaf_empowerment_records", JSON.stringify(cachedEmpowerment));
-        localStorage.setItem("uaf_empowerment_customized", "true");
-      } catch (_) {}
-
-      try {
-        callApi("updateEmpowermentData", {
-          token: session.token,
-          id: existingId,
-          name,
-          gender,
-          county,
-          community,
-          skill,
-          connectedChild,
-          contact
-        }).catch(() => {});
-      } catch (_) {}
-
-      document.getElementById("empowerment-modal").classList.add("is-hidden");
-      flash(`Empowerment record for "${name}" updated successfully.`, "success");
-    } else {
-      const newEmpower = {
-        id: "emp_" + Date.now(),
-        name,
-        gender,
-        county,
-        community,
-        skill,
-        connectedChild,
-        contact,
-        photoData,
-        createdAt: new Date().toISOString()
-      };
-
-      cachedEmpowerment.unshift(newEmpower);
-      try {
-        localStorage.setItem("uaf_empowerment_records", JSON.stringify(cachedEmpowerment));
-        localStorage.setItem("uaf_empowerment_customized", "true");
-      } catch (_) {}
-
-      // Background backend call
-      try {
-        callApi("createEmpowermentData", Object.assign({ token: session.token }, newEmpower)).catch(() => {});
-      } catch (_) {}
-
-      document.getElementById("empowerment-modal").classList.add("is-hidden");
-      flash(`Empowerment record for "${name}" saved successfully.`, "success");
-    }
-    loadEmpowerment(session);
-    loadStats(session);
-    window.dispatchEvent(new Event("uaf_data_updated"));
-  }
-
-  function handleDeleteEmpowerment(id, session) {
-    const e = cachedEmpowerment.find(x => (x.id || x.name) === id);
-    if (!confirm(`Are you sure you want to permanently delete "${e ? e.name : id}"?`)) return;
-
-    addDeletedEmpowerment(id, e?.name);
-    cachedEmpowerment = cachedEmpowerment.filter(x => (x.id || x.name) !== id);
-    try {
-      localStorage.setItem("uaf_empowerment_records", JSON.stringify(cachedEmpowerment));
-    } catch (_) {}
-
-    // Background backend call
-    try {
-      callApi("deleteEmpowermentData", { token: session.token, id: id, name: e?.name }).catch(() => {});
-    } catch (_) {}
-
-    flash("Empowerment trainee record removed.", "success");
-    loadEmpowerment(session);
-    loadStats(session);
-    window.dispatchEvent(new Event("uaf_data_updated"));
-  }
-
-  /* ---------------------------------------------------------
-     4. COMMUNITY STATS DIRECTORY & MANUAL TARGET SETTING
-  --------------------------------------------------------- */
-  async function loadStats(session) {
-    const container = document.getElementById("stats-table-container");
-    if (!container) return;
-
-    // Load active child reports
-    const localReports = JSON.parse(localStorage.getItem("uaf_ossc_reports") || "[]");
-    const delSubs = getDeletedSubmissions();
-    const activeChildren = localReports.filter((r) => !isSubmissionDeleted(r, delSubs) && String(r.status).toUpperCase() !== "REJECTED");
-
-    // Load enrollments
-    const enrollments = JSON.parse(localStorage.getItem("uaf_child_enrollments") || "[]");
-
-    // Load partnerships
-    const partnerships = JSON.parse(localStorage.getItem("uaf_school_partnerships") || "[]");
-    const delPartners = getDeletedPartnerships();
-    const activePartners = partnerships.filter((p) => !isPartnershipDeleted(p, delPartners));
-
-    // Load empowerment
-    const empowerment = JSON.parse(localStorage.getItem("uaf_empowerment_records") || "[]");
-    const delEmp = getDeletedEmpowerment();
-    const activeEmp = empowerment.filter((e) => !isEmpowermentDeleted(e, delEmp));
-
-    // Load verified donations
-    let verifiedDonations = [];
-    try {
-      const stored = localStorage.getItem("uaf_admin_donations");
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          verifiedDonations = parsed.filter((d) => String(d.status || "").toUpperCase() === "VERIFIED");
-        }
-      }
-    } catch (_) {}
-
-    // Load admin communities (manual targets)
-    let adminComms = [];
-    try {
-      const stored = localStorage.getItem("uaf_admin_communities");
-      if (stored) adminComms = JSON.parse(stored);
-    } catch (_) {}
-
-    const delStats = getDeletedStats();
-    adminComms = adminComms.filter((s) => !isStatDeleted(s, delStats));
-
-    // Build unique list of communities from adminComms + activeChildren + partnerships + empowerment
-    const commMap = new Map();
-
-    adminComms.forEach((s) => {
-      const key = `${(s.county || "").toLowerCase().trim()}|${(s.community || "").toLowerCase().trim()}`;
-      commMap.set(key, { ...s });
-    });
-
-    activeChildren.forEach((c) => {
-      const co = (c.residenceCounty || c.county || "").trim();
-      const cm = (c.community || "").trim();
-      if (co && cm && !isStatDeleted({ county: co, community: cm }, delStats)) {
-        const key = `${co.toLowerCase()}|${cm.toLowerCase()}`;
-        if (!commMap.has(key)) {
-          commMap.set(key, {
-            rowNumber: Date.now() + Math.random(),
-            county: co,
-            community: cm,
-            year: "2026",
-            status: "VERIFIED",
-            amountNeeded: 0,
-            amountGenerated: 0
-          });
-        }
-      }
-    });
-
-    // Compute strictly accurate figures:
-    const calculatedStats = Array.from(commMap.values()).map((comm) => {
-      const coKey = (comm.county || "").toLowerCase().trim();
-      const cmKey = (comm.community || "").toLowerCase().trim();
-
-      // Count out-of-school children identified living in this community & county
-      const outCount = activeChildren.filter((r) => {
-        const rCo = (r.residenceCounty || r.county || "").toLowerCase().trim();
-        const rCm = (r.community || "").toLowerCase().trim();
-        return rCo === coKey && (rCm === cmKey || !cmKey);
-      }).length;
-
-      // Count enrolled children living in this community & county
-      const enrCount = activeChildren.filter((r) => {
-        const rCo = (r.residenceCounty || r.county || "").toLowerCase().trim();
-        const rCm = (r.community || "").toLowerCase().trim();
-        const isEnr = r.enrolled === true || String(r.status).toUpperCase() === "ENROLLED" || enrollments.some((en) => String(en.childName || "").toLowerCase().trim() === String(r.childName || "").toLowerCase().trim());
-        return rCo === coKey && (rCm === cmKey || !cmKey) && isEnr;
-      }).length;
-
-      // Count parents empowered
-      const parentsCount = activeEmp.filter((e) => {
-        const eCo = (e.county || "").toLowerCase().trim();
-        const eCm = (e.community || "").toLowerCase().trim();
-        return eCo === coKey && (eCm === cmKey || !cmKey);
-      }).length;
-
-      // Count school partners
-      const schoolCount = activePartners.filter((p) => {
-        const pCo = (p.location || p.county || "").toLowerCase().trim();
-        const pCm = (p.community || "").toLowerCase().trim();
-        return pCo === coKey && (pCm === cmKey || !cmKey);
-      }).length;
-
-      // Amount to Raise (Target): Admin sets manually
-      const targetNeeded = Number(comm.amountNeeded || comm.amountNeededUSD) || 0;
-
-      // Amount Raised (Donations): strictly verified donations for this community/county
-      let donGenerated = 0;
-      verifiedDonations.forEach((d) => {
-        const dText = `${d.campaign || ""} ${d.notes || ""} ${d.message || ""}`.toLowerCase();
-        if (dText.includes(cmKey) || (dText.includes(coKey) && !cmKey)) {
-          donGenerated += Number(d.amount) || 0;
-        }
-      });
-      const generated = donGenerated;
-
-      // Balance to Raise = Amount Needed - Amount Raised
-      const balanceToRaise = Math.max(0, targetNeeded - generated);
-
-      return {
-        ...comm,
-        outOfSchoolIdentified: outCount,
-        supportedReenrolled: enrCount,
-        yetToEnroll: Math.max(0, outCount - enrCount),
-        parentsEmpowered: parentsCount,
-        schoolPartners: schoolCount,
-        amountNeeded: targetNeeded,
-        amountGenerated: generated,
-        balanceToRaise: balanceToRaise
-      };
-    });
-
-    cachedStats = calculatedStats;
-    try {
-      localStorage.setItem("uaf_admin_communities", JSON.stringify(cachedStats));
-    } catch (_) {}
-
-    const elCount = document.getElementById("count-stats-total");
-    if (elCount) elCount.textContent = cachedStats.length;
-
-    renderStatsTable(session);
-  }
-
-  function renderStatsTable(session) {
-    const container = document.getElementById("stats-table-container");
-    if (!container) return;
-
-    if (!cachedStats.length) {
-      container.innerHTML = '<p class="admin-muted" style="padding:28px;text-align:center;">No community statistics on file yet. Click <strong>"+ Set Community Target"</strong> to create an entry.</p>';
-      return;
-    }
-
-    const rows = cachedStats.map((s) => `
-      <tr>
-        <td><strong>${escapeHtml(s.county)}</strong><br/><span style="font-size:11.5px;color:var(--ink-600);">${escapeHtml(s.community)}</span></td>
-        <td><strong>${Number(s.outOfSchoolIdentified || 0).toLocaleString()}</strong></td>
-        <td><span style="color:var(--green-700);font-weight:700;">${Number(s.supportedReenrolled || 0).toLocaleString()}</span></td>
-        <td><span style="color:var(--amber-700);font-weight:700;">${Number(s.yetToEnroll || 0).toLocaleString()}</span></td>
-        <td>${Number(s.parentsEmpowered || 0).toLocaleString()}</td>
-        <td>${Number(s.schoolPartners || 0).toLocaleString()}</td>
-        <td>$${Number(s.amountNeeded || 0).toLocaleString()}</td>
-        <td>$${Number(s.amountGenerated || 0).toLocaleString()}</td>
-        <td><strong style="color:var(--blue-700);">$${Number(s.balanceToRaise || 0).toLocaleString()}</strong></td>
-        <td>
-          <div style="display:flex;gap:6px;">
-            <button class="btn btn--outline" style="padding:4px 8px;font-size:11px;" data-edit-target="${s.rowNumber}">Set Target</button>
-            <button class="btn btn--outline" style="padding:4px 8px;font-size:11px;color:var(--red-700);" data-delete-stat="${s.rowNumber}">Delete</button>
-          </div>
-        </td>
-      </tr>
-    `).join("");
-
-    container.innerHTML = `
-      <table class="admin-table">
-        <thead>
-          <tr>
-            <th>County / Community</th>
-            <th>Out of School</th>
-            <th>Re-enrolled</th>
-            <th>Yet to Enroll</th>
-            <th>Empowerment</th>
-            <th>Schools</th>
-            <th>Target to Raise ($)</th>
-            <th>Raised ($)</th>
-            <th>Balance to Raise ($)</th>
-            <th>Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows}
-        </tbody>
-      </table>
-    `;
-
-    container.querySelectorAll("button[data-edit-target]").forEach((btn) => {
-      btn.addEventListener("click", () => openSetTargetModal(Number(btn.dataset.editTarget)));
-    });
-    container.querySelectorAll("button[data-delete-stat]").forEach((btn) => {
-      btn.addEventListener("click", () => handleDeleteStat(Number(btn.dataset.deleteStat), session));
-    });
-  }
-
-  function openSetTargetModal(rowNumber) {
-    const item = cachedStats.find((s) => Number(s.rowNumber) === rowNumber);
-    if (!item) return;
-
-    document.getElementById("stat-target-row").value = item.rowNumber;
-    document.getElementById("stat-target-county").value = item.county;
-    document.getElementById("stat-target-community").value = item.community;
-    document.getElementById("stat-target-amount").value = item.amountNeeded || 0;
-    document.getElementById("stat-target-notes").value = item.rateMethodologyNote || "";
-
-    document.getElementById("stat-target-modal-title").textContent = `Funding Target: ${item.community} (${item.county})`;
-    document.getElementById("stat-target-modal").classList.remove("is-hidden");
-  }
-
-  async function handleSaveTarget(e, session) {
-    e.preventDefault();
-    const rowVal = document.getElementById("stat-target-row").value;
-    const rowNumber = rowVal ? Number(rowVal) : Date.now();
-    const county = document.getElementById("stat-target-county").value;
-    const community = document.getElementById("stat-target-community").value.trim();
-    const targetAmount = Number(document.getElementById("stat-target-amount").value) || 0;
-    const notes = document.getElementById("stat-target-notes").value.trim();
-
-    const existingIdx = cachedStats.findIndex((s) => Number(s.rowNumber) === rowNumber || (s.county === county && s.community === community));
-    if (existingIdx >= 0) {
-      cachedStats[existingIdx].amountNeeded = targetAmount;
-      cachedStats[existingIdx].rateMethodologyNote = notes;
-      cachedStats[existingIdx].balanceToRaise = Math.max(0, targetAmount - (cachedStats[existingIdx].amountGenerated || 0));
-    } else {
-      cachedStats.unshift({
-        rowNumber,
-        county,
-        community,
-        year: "2026",
-        status: "VERIFIED",
-        outOfSchoolIdentified: 0,
-        supportedReenrolled: 0,
-        yetToEnroll: 0,
-        parentsEmpowered: 0,
-        schoolPartners: 0,
-        amountNeeded: targetAmount,
-        amountGenerated: 0,
-        balanceToRaise: targetAmount,
-        rateMethodologyNote: notes
-      });
-    }
-
-    try {
-      localStorage.setItem("uaf_admin_communities", JSON.stringify(cachedStats));
-    } catch (_) {}
-
-    // Background backend call
-    try {
-      callApi("updateCommunityStat", {
-        token: session.token,
-        rowNumber,
-        county,
-        community,
-        amountNeededUSD: targetAmount,
-        rateMethodologyNote: notes
-      }).catch(() => {});
-    } catch (_) {}
-
-    document.getElementById("stat-target-modal").classList.add("is-hidden");
-    flash(`Funding target for ${community} set to $${targetAmount.toLocaleString()}.`, "success");
-    loadStats(session);
-    window.dispatchEvent(new Event("uaf_data_updated"));
-  }
-
-  async function handleDeleteStat(rowNumber, session) {
-    const item = cachedStats.find((s) => Number(s.rowNumber) === rowNumber);
-    const commName = item ? item.community : "this community";
-    if (!confirm(`Are you sure you want to permanently delete statistics for ${commName}?`)) return;
-
-    try {
-      if (API_URL) {
-        const res = await callApi("deleteCommunityStat", {
-          token: session.token,
-          rowNumber: rowNumber,
-          county: item?.county,
-          community: item?.community
-        });
-        if (res && res.ok === false) {
-          flash(res.error || "Failed to delete community stat from database.", "error");
-          return;
-        }
-      }
-    } catch (err) {
-      console.warn("Delete stat server warning:", err);
-    }
-
-    addDeletedStat(item || { rowNumber });
-    cachedStats = cachedStats.filter((s) => Number(s.rowNumber) !== rowNumber && !isStatDeleted(s));
-
-    try {
-      localStorage.setItem("uaf_admin_communities", JSON.stringify(cachedStats));
-    } catch (_) {}
-
-    flash(`Community statistics for ${commName} permanently deleted.`, "success");
-    loadStats(session);
     window.dispatchEvent(new Event("uaf_data_updated"));
   }
 
@@ -2708,63 +1824,6 @@
         flash("Brochure reset to default institutional document.", "success");
       }
     });
-  }
-
-  function downloadCommunityCsv() {
-    const locFilter = document.getElementById("export-comm-location")?.value || "ALL";
-    let list = cachedStats.slice();
-
-    if (locFilter !== "ALL") {
-      list = list.filter((s) => (s.county || "").toLowerCase() === locFilter.toLowerCase());
-    }
-
-    if (!list.length) {
-      flash("No community records available to download.");
-      return;
-    }
-
-    const headers = [
-      "County",
-      "Community",
-      "Out of School Identified",
-      "Supported and Re-enrolled",
-      "Yet to Enroll",
-      "Parents Empowered",
-      "School Partners",
-      "Target to Raise (USD)",
-      "Amount Raised (USD)",
-      "Balance to Raise (USD)"
-    ];
-
-    const escapeCsv = (val) => {
-      const s = String(val == null ? "" : val).replace(/"/g, '""');
-      return `"${s}"`;
-    };
-
-    const rows = list.map((s) => [
-      escapeCsv(s.county),
-      escapeCsv(s.community),
-      Number(s.outOfSchoolIdentified || 0),
-      Number(s.supportedReenrolled || 0),
-      Number(s.yetToEnroll || 0),
-      Number(s.parentsEmpowered || 0),
-      Number(s.schoolPartners || 0),
-      Number(s.amountNeeded || 0),
-      Number(s.amountGenerated || 0),
-      Number(s.balanceToRaise || 0)
-    ].join(","));
-
-    const csvContent = "\uFEFF" + [headers.join(","), ...rows].join("\r\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `UAF_Community_Stats_${new Date().toISOString().split("T")[0]}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    flash("Community statistics CSV downloaded.", "success");
   }
 
   // Register with admin.js module router

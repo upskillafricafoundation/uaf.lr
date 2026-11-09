@@ -11,7 +11,7 @@
   if (!T) return;
   const { callApi, esc, fmtDate, field, area, badge, INPUT, SMALL_BTN } = T;
 
-  const S = { tasks: [], assignees: [], canManage: false, me: "", today: "", filter: "open", form: null, msg: "", err: "" };
+  const S = { tasks: [], assignees: [], contacts: [], canManage: false, me: "", today: "", filter: "open", form: null, msg: "", err: "" };
   let root = null, session = null;
   const $ = (s) => root.querySelector(s);
 
@@ -23,7 +23,7 @@
     S.tasks = r.tasks; S.canManage = r.canManage; S.me = r.me; S.today = r.today;
     if (S.canManage && !S.assignees.length) {
       const a = await callApi("listTaskAssignees", { token: session.token });
-      if (a.ok) S.assignees = a.assignees;
+      if (a.ok) { S.assignees = a.assignees || []; S.contacts = a.contacts || []; }
     }
     draw();
   }
@@ -116,23 +116,29 @@
 
   function formHtml() {
     const d = S.form.data || {};
-    const known = S.assignees.some((a) => a.email === (d.assigneeEmail || "").toLowerCase());
-    const opts = S.assignees.map((a) =>
-      `<option value="${esc(a.email)}" data-name="${esc(a.name)}" ${(d.assigneeEmail || "").toLowerCase() === a.email ? "selected" : ""}>${esc(a.name)} — ${esc(a.email)}</option>`).join("");
-    const other = d.assigneeEmail && !known;
+    const em = (d.assigneeEmail || "").toLowerCase();
+    const known = S.assignees.some((a) => a.email === em) || S.contacts.some((c) => c.email === em);
+    const manual = em && !known;
+    const userOpts = S.assignees.map((a) =>
+      `<option value="${esc(a.email)}" data-name="${esc(a.name)}" ${em === a.email ? "selected" : ""}>${esc(a.name)} — ${esc(a.email)}</option>`).join("");
+    const contactOpts = S.contacts.map((c) =>
+      `<option value="${esc(c.email)}" data-name="${esc(c.name)}" ${em === c.email ? "selected" : ""}>${esc(c.name)}${c.institution ? " (" + esc(c.institution) + ")" : ""} — ${esc(c.email)}</option>`).join("");
     return `<div class="admin-card" style="margin-top:14px;max-width:680px;">
       <h3 style="margin:0 0 10px;">${S.form.mode === "edit" ? "Edit task" : "Assign a task"}</h3>
       ${field("tf-name", "Task name *", d.name)}
       ${area("tf-desc", "Description", d.description, 3)}
       ${field("tf-date", "Deadline date *", d.deadlineDate, "date")}
       ${field("tf-loc", "Location (optional)", d.location)}
-      <div class="form-field"><label for="tf-assignee">Assign to</label>
+      <div class="form-field"><label for="tf-assignee">Assign to (admin users and contacts)</label>
         <select id="tf-assignee" style="${INPUT}">
-          <option value="">— Nobody yet —</option>${opts}
-          <option value="__other" ${other ? "selected" : ""}>Someone else (type email)…</option></select></div>
-      <div id="tf-other" class="${other ? "" : "is-hidden"}">
-        ${field("tf-oname", "Assignee name", other ? d.assignedTo : "")}
-        ${field("tf-oemail", "Assignee email", other ? d.assigneeEmail : "", "email")}
+          <option value="">— Nobody yet —</option>
+          ${userOpts ? `<optgroup label="Admin users">${userOpts}</optgroup>` : ""}
+          ${contactOpts ? `<optgroup label="Contacts">${contactOpts}</optgroup>` : ""}
+        </select></div>
+      <div style="border:1px dashed var(--border);border-radius:8px;padding:10px 12px;margin-bottom:12px;">
+        <div class="admin-muted" style="font-size:12.5px;margin-bottom:6px;">Not in the lists above? Type the email to assign manually (this overrides the selection).</div>
+        ${field("tf-oname", "Assignee name (optional)", manual ? d.assignedTo : "")}
+        ${field("tf-oemail", "Assignee email", manual ? d.assigneeEmail : "", "email")}
       </div>
       ${S.form.mode === "edit" ? `<div class="form-field"><label for="tf-status">Status</label>
         <select id="tf-status" style="${INPUT}">${["Upcoming", "In Progress", "Completed", "Cancelled"].map((s) => `<option ${d.status === s ? "selected" : ""}>${s}</option>`).join("")}</select></div>` : ""}
@@ -148,13 +154,13 @@
     const save = $("#tf-save");
     if (!save) return;
     const sel = $("#tf-assignee");
-    sel.addEventListener("change", () => $("#tf-other").classList.toggle("is-hidden", sel.value !== "__other"));
     $("#tf-cancel").addEventListener("click", () => { S.form = null; draw(); });
 
     save.addEventListener("click", async () => {
       const err = $("#tf-error"); err.classList.add("is-hidden");
       let assigneeEmail = "", assignedTo = "";
-      if (sel.value === "__other") { assigneeEmail = $("#tf-oemail").value.trim(); assignedTo = $("#tf-oname").value.trim(); }
+      const manualEmail = $("#tf-oemail").value.trim();
+      if (manualEmail) { assigneeEmail = manualEmail; assignedTo = $("#tf-oname").value.trim(); }
       else if (sel.value) { assigneeEmail = sel.value; assignedTo = sel.options[sel.selectedIndex].dataset.name || ""; }
 
       const payload = {

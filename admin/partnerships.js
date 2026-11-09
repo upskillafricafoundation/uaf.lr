@@ -6,11 +6,12 @@
 (() => {
   "use strict";
   const T = window.__uafTeam;
-  if (!T) return;
+  const Tl = window.__uafTools;
+  if (!T || !Tl) return;
   const { callApi, esc, fmtDate, field, area, badge, INPUT, SMALL_BTN } = T;
 
   const CATEGORIES = ["Collaborative Partner", "Funding Partner", "Implementing Partner", "Government", "School", "Community Organization", "Corporate", "Other"];
-  const S = { list: [], form: null, selected: null, q: "", cat: "", msg: "", logo: undefined };
+  const S = { list: [], form: null, selected: null, q: "", cat: "", msg: "", logo: undefined, page: 0 };
   let root = null, session = null;
   const $ = (s) => root.querySelector(s);
 
@@ -31,15 +32,17 @@
   function drawList() {
     S.selected = null;
     const q = S.q.toLowerCase();
-    const items = S.list.filter((p) => (!S.cat || p.category === S.cat) &&
-      (!q || (p.name + " " + p.purpose + " " + p.category).toLowerCase().includes(q)));
+    const items = Tl.newestFirst(S.list.filter((p) => (!S.cat || p.category === S.cat) &&
+      (!q || (p.name + " " + p.purpose + " " + p.category).toLowerCase().includes(q))), ["createdAt", "dateOfPartnership"]);
+    const pg = Tl.paginate(items, S.page, 10);
+    S.page = pg.page;
     const cats = Array.from(new Set(S.list.map((p) => p.category))).sort();
 
     root.innerHTML = `
       <div class="admin-card">
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
-          <h2 style="margin:0;">Partnerships (${S.list.length})</h2>
-          <button id="pt-new" class="btn btn--primary">+ Add partnership</button>
+          <h2 style="margin:0;">Registered Partners &amp; Alliances (${S.list.length})</h2>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;">${Tl.exportButtonsHtml()}<button id="pt-new" class="btn btn--primary">+ Add partnership</button></div>
         </div>
         <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
           <input id="pt-q" placeholder="Search…" value="${esc(S.q)}" style="${INPUT}flex:1;min-width:140px;width:auto;" />
@@ -48,19 +51,30 @@
         </div>
       </div>
       <div style="margin-top:14px;">${flash()}
-        ${items.map((p) => `<div class="admin-card" style="margin-bottom:10px;display:flex;gap:12px;align-items:center;cursor:pointer;" data-open="${esc(p.id)}">
+        ${pg.slice.map((p) => `<div class="admin-card" style="margin-bottom:10px;display:flex;gap:12px;align-items:center;cursor:pointer;" data-open="${esc(p.id)}">
           ${logoImg(p, 52)}
           <div style="flex:1;"><strong>${esc(p.name)}</strong> ${badge(p.category, "blue")}
             <div class="admin-muted" style="font-size:12.5px;">${esc(p.purpose).slice(0, 140)}</div>
             <div class="admin-muted" style="font-size:12px;">${p.dateOfPartnership ? "Since " + esc(fmtDate(p.dateOfPartnership)) : ""}${p.partnershipPeriod ? " · " + esc(p.partnershipPeriod) : ""}</div></div>
         </div>`).join("") || '<div class="admin-card"><p class="admin-muted">No partnerships found.</p></div>'}
+        ${Tl.pagerHtml(pg)}
       </div>
+      <div id="pt-flash" class="admin-muted" style="margin-top:8px;"></div>
       ${S.form ? formHtml() : ""}`;
     S.msg = "";
 
     $("#pt-new").addEventListener("click", () => { S.form = { mode: "new", data: {} }; S.logo = undefined; drawList(); });
-    $("#pt-q").addEventListener("input", (e) => { S.q = e.target.value; const pos = e.target.selectionStart; drawList(); const i = $("#pt-q"); i.focus(); i.setSelectionRange(pos, pos); });
-    $("#pt-cat").addEventListener("change", (e) => { S.cat = e.target.value; drawList(); });
+    Tl.bindPager(root, (pp) => { S.page = pp; drawList(); });
+    Tl.bindExport(root, () => ({
+      base: "UAF-registered-partners-" + Tl.today(),
+      title: "Registered Partners & Alliances",
+      sheet: "Partners & Alliances",
+      subtitle: [S.cat ? "Category: " + S.cat : "", S.q ? "Search: " + S.q : ""].filter(Boolean).join(" | "),
+      headers: ["Partner", "Category", "Date of Partnership", "Period", "Purpose", "What UAF Gains", "Email", "Telephone", "Address"],
+      rows: items.map((p) => [p.name, p.category, p.dateOfPartnership ? fmtDate(p.dateOfPartnership) : "", p.partnershipPeriod, p.purpose, p.whatUafGains, p.email, p.tel, p.address])
+    }), (m) => { const f = $("#pt-flash"); if (f) f.textContent = m; });
+    $("#pt-q").addEventListener("input", (e) => { S.q = e.target.value; S.page = 0; const pos = e.target.selectionStart; drawList(); const i = $("#pt-q"); i.focus(); i.setSelectionRange(pos, pos); });
+    $("#pt-cat").addEventListener("change", (e) => { S.cat = e.target.value; S.page = 0; drawList(); });
     root.querySelectorAll("[data-open]").forEach((el) => el.addEventListener("click", () => { S.selected = el.dataset.open; drawDetail(); }));
     wireForm();
   }

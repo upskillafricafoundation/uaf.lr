@@ -50,9 +50,9 @@
   // Which permission(s) unlock each menu module (the server enforces the same rules).
   const MODULE_PERMISSIONS = {
     dashboard: null,
-    community: ["MANAGE_COMMUNITIES", "REVIEW_OUT_OF_SCHOOL_SUBMISSION", "VERIFY_COMMUNITY_STATS", "MANAGE_IMPACT_DATA"],
+    community: ["MANAGE_COMMUNITIES", "REVIEW_OUT_OF_SCHOOL_SUBMISSION", "MANAGE_IMPACT_DATA"],
     programs: ["MANAGE_PROGRAMS", "MANAGE_IMPACT"],
-    partners: ["MANAGE_PARTNERS"],
+    empowerment: ["MANAGE_EMPOWERMENT"],
     partnerships: ["MANAGE_PARTNERSHIPS"],
     donations: ["VIEW_DONATIONS"],
     stories: ["MANAGE_NEWS", "REVIEW_EVIDENCE_REQUEST"],

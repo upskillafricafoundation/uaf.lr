@@ -5,5 +5,9 @@
    ========================================================= */
 window.UAF_CONFIG = {
   API_URL: "https://script.google.com/macros/s/AKfycbxmd3eYHQ2heZA7Q-lEkBARNzBRGHGuHBHqhJvu_uPlMEFINPbk37TfWbB_o1tM3_YJ/exec",
-    SHARE_BASE: "https://uaf-share.upskillafrica-lr.workers.dev/" 
+    SHARE_BASE: "https://uaf-share.upskillafrica-lr.workers.dev/",
+
+  // Where the independent Admin app lives. Default: the /admin/ folder of this site.
+  // If you host the admin on its own address, put the full link here, e.g. "https://admin.upskillafrica.org/"
+  ADMIN_URL: "admin/"
 };

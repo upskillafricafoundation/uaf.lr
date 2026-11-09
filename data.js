@@ -385,110 +385,15 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
   }
   window.__uafRenderFundraisingStories = renderFundraisingStories;
 
-  /* ---------------------------------------------------------
-     PARTNERS & COLLABORATORS DATASET (Dynamic Store)
-  --------------------------------------------------------- */
-  const DEFAULT_PARTNERS_DATASET = [
-    {
-      id: "part_cas",
-      name: "Community School Alliances",
-      type: "Education Access Partner",
-      logoUrl: "assets/uaf-logo.png",
-      desc: "Partnering with verified community primary and junior high schools across Montserrado County to admit out-of-school learners with waived or subsidized fees."
-    },
-    {
-      id: "part_lcpn",
-      name: "Liberia Child Protection Network",
-      type: "Safeguarding Alliance",
-      logoUrl: "assets/nic-logo.png",
-      desc: "Collaborating on child protection referrals, household counseling, and community awareness against child labor and early school drop-outs."
-    },
-    {
-      id: "part_alp",
-      name: "Learning Alternative Program (ALP)",
-      type: "Digital Literacy & Skills",
-      logoUrl: "assets/icon-partners.png",
-      desc: "Empowering youth and young mothers with computer literacy, job readiness, and technology training to fund household educational needs."
-    },
-    {
-      id: "part_clc",
-      name: "Community Leadership Councils",
-      type: "Local Governance",
-      logoUrl: "assets/icon-impact.jpg",
-      desc: "Zone leaders, block chairs, and community elders who guide UAF field verifiers through neighborhoods to identify every out-of-school child."
-    },
-    {
-      id: "part_nic",
-      name: "No Invisible Child (NIC)",
-      type: "Founding Coalition",
-      logoUrl: "assets/nic-logo.png",
-      desc: "Flagship educational initiative ensuring every marginalized out-of-school child in Liberia is identified, supported, and re-enrolled."
-    },
-    {
-      id: "part_uaf",
-      name: "Upskill Africa Foundation",
-      type: "Implementing Organization",
-      logoUrl: "assets/uaf-logo.png",
-      desc: "Community grassroots non-profit dedicated to child protection, literacy, livelihood empowerment, and digital access."
-    }
-  ];
-
-  // Partners / programs delivered by the database (public route). Filled by loadPublicLists().
-  let serverPartners = [];
+  // Programs delivered by the database (public route). Filled by loadPublicLists().
   let serverPrograms = [];
 
   function escapeAttr(str) {
     return String(str == null ? "" : str).replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/'/g, "&#39;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
   }
 
-  function getUafPartners() {
-    let deletedList = [];
-    try {
-      deletedList = JSON.parse(localStorage.getItem("uaf_deleted_partners") || "[]");
-    } catch (_) {}
-
-    let base = DEFAULT_PARTNERS_DATASET;
-    try {
-      const stored = localStorage.getItem("uaf_partners");
-      if (stored !== null) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) base = parsed;
-      }
-    } catch (_) {}
-
-    // Database partners are added on top (de-duplicated by name)
-    const seen = new Set(base.map((p) => String(p.name || "").trim().toLowerCase()));
-    const extra = serverPartners.filter((p) => !seen.has(String(p.name || "").trim().toLowerCase()));
-    return base.concat(extra).filter((p) => !deletedList.includes(String(p.id || p.name).trim()));
-  }
-  window.__uafGetPartners = getUafPartners;
-
-  function renderPartners() {
-    const container = document.getElementById("partners-grid-display");
-    if (!container) return;
-
-    const partners = getUafPartners();
-    if (partners.length === 0) {
-      container.innerHTML = '<p style="padding:24px;text-align:center;color:var(--ink-400);grid-column:1/-1;">No partners registered yet.</p>';
-      return;
-    }
-
-    container.innerHTML = partners.map((p) => `
-      <div class="partner-card">
-        <div class="partner-card__logo-wrap">
-          <img src="${escapeAttr(p.logoUrl || 'assets/uaf-logo.png')}" alt="${escapeAttr(p.name)}" class="partner-card__logo" onerror="this.onerror=null;this.src='assets/uaf-logo.png';" />
-        </div>
-        <div class="partner-card__title">${escapeHtml(p.name)}</div>
-        <div class="partner-card__type">${escapeHtml(p.type || "Collaborator")}</div>
-        <p class="partner-card__desc">${escapeHtml(p.desc || "")}</p>
-      </div>
-    `).join("");
-  }
-  window.__uafRenderPartners = renderPartners;
-
   // Real-time synchronization event listeners
   window.addEventListener("uaf_stories_updated", renderFundraisingStories);
-  window.addEventListener("uaf_partners_updated", renderPartners);
   window.addEventListener("uaf_communities_updated", () => {
     refreshMergedDataset();
     renderAll();
@@ -499,7 +404,6 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
   });
   window.addEventListener("storage", (e) => {
     if (e.key === "uaf_stories" || e.key === "uaf_deleted_stories") renderFundraisingStories();
-    if (e.key === "uaf_partners" || e.key === "uaf_deleted_partners") renderPartners();
     if (e.key === "uaf_admin_communities" || e.key === "uaf_dynamic_communities" || e.key === "uaf_deleted_communities" || e.key === "uaf_deleted_stats") {
       refreshMergedDataset();
       renderAll();
@@ -1362,10 +1266,8 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
         return json && json.ok ? json : null;
       } catch (_) { return null; }
     };
-    const [pj, gj] = await Promise.all([get("publicPartners"), get("publicPrograms")]);
-    if (pj && Array.isArray(pj.partners)) serverPartners = pj.partners;
+    const gj = await get("publicPrograms");
     if (gj && Array.isArray(gj.programs)) serverPrograms = gj.programs;
-    renderPartners();
     renderUafPrograms();
   }
 
@@ -1393,7 +1295,6 @@ const stories = getUafStories().filter((s) => String(s.status || "PUBLISHED").to
     renderCombinedStatistics();
     renderImpactDashboard();
     renderUafPrograms();
-    renderPartners();
   }
 
   /* ---------------------------------------------------------
@@ -2018,7 +1919,6 @@ startxref
   --------------------------------------------------------- */
   window.__uafDataInit = function () {
     renderFundraisingStories();
-    renderPartners();
     initSelectorDropdowns();
     initReportForm();
     initEvidenceForm();

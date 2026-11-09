@@ -77,6 +77,10 @@
     }
   }
 
+  const T = window.__uafTools;
+  let storyPage = 0;
+  let storySig = "";
+  let evidencePage = 0;
   let cachedStories = [];
   let cachedEvidence = [];
   let currentTab = "stories";
@@ -121,7 +125,7 @@
             <button class="admin-filter-btn" data-story-filter="DRAFT">Draft</button>
             <button class="admin-filter-btn" data-story-filter="ARCHIVED">Archived</button>
           </div>
-          <span style="font-size:12px;color:var(--ink-500);">Stories are dynamically rendered on the public Fundraising screen</span>
+          <span style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">${T.exportButtonsHtml()}<span style="font-size:12px;color:var(--ink-500);">Stories are dynamically rendered on the public Fundraising screen</span></span>
         </div>
 
         <div class="admin-table-wrap">
@@ -131,6 +135,7 @@
 
       <!-- Evidence View -->
       <div id="view-evidence" class="is-hidden">
+        <div style="display:flex;justify-content:flex-end;margin-bottom:10px;">${T.exportButtonsHtml()}</div>
         <div class="admin-table-wrap">
           <div id="evidence-table-container">
             <p class="admin-muted" style="padding:24px;text-align:center;">Loading evidence requests…</p>
@@ -450,6 +455,36 @@
     });
 
     // Refresh button
+    // Download buttons (Excel / PDF)
+    T.bindExport(document.getElementById("view-stories"), () => {
+      let list = cachedStories.slice();
+      if (storyFilter !== "ALL") list = list.filter((x) => String(x.status || "DRAFT").toUpperCase() === storyFilter);
+      list = T.newestFirst(list, ["storyDate", "createdAt", "updatedAt"]);
+      return {
+        base: "UAF-field-stories-" + T.today(),
+        title: "Field Stories",
+        sheet: "Field Stories",
+        subtitle: "Status: " + (storyFilter === "ALL" ? "All" : storyFilter),
+        headers: ["Title", "Category", "Community", "County", "Status", "Amount Raised (USD)", "Funding Goal (USD)", "Story Date", "Share Link"],
+        rows: list.map((x) => [
+          x.title, x.category, x.community, x.county || "Liberia", String(x.status || "DRAFT").toUpperCase(),
+          Number(x.amountRaised || 0).toFixed(2), Number(x.fundingGoal || 0).toFixed(2),
+          x.storyDate ? formatDate(x.storyDate) : "", "#/c/" + (x.shareCode || String(x.id || x.storyId || "").replace("story_", ""))
+        ])
+      };
+    }, (m, k) => flash(m, k));
+
+    T.bindExport(document.getElementById("view-evidence"), () => ({
+      base: "UAF-evidence-requests-" + T.today(),
+      title: "Data & Evidence Requests",
+      sheet: "Evidence Requests",
+      subtitle: "All requests",
+      headers: ["Requester", "Organization", "Email", "Request Details", "Status", "Date"],
+      rows: T.newestFirst(cachedEvidence, ["createdAt"]).map((r) => [
+        r.requesterName, r.organization || "Independent", r.email, r.requestDetails, r.status, r.createdAt ? formatDate(r.createdAt) : ""
+      ])
+    }), (m, k) => flash(m, k));
+
     document.getElementById("stories-refresh-btn")?.addEventListener("click", () => {
       cachedStories = getLocalStories();
       renderStoriesTable(session);
@@ -619,6 +654,13 @@
       return;
     }
 
+    items = T.newestFirst(items, ["storyDate", "createdAt", "updatedAt"]);
+    const _sig = storyFilter;
+    if (_sig !== storySig) { storyPage = 0; storySig = _sig; }
+    const _pg = T.paginate(items, storyPage, 10);
+    storyPage = _pg.page;
+    items = _pg.slice;
+
     const rows = items.map((s) => {
       const st = String(s.status || "DRAFT").toUpperCase();
       let badgeCls = "admin-badge--pending";
@@ -699,6 +741,8 @@
     `;
 
     // Edit handler
+    T.attachPager(container, _pg, (pp) => { storyPage = pp; renderStoriesTable(session); });
+
     container.querySelectorAll(".story-edit-btn").forEach((btn) => {
       btn.addEventListener("click", () => {
         const id = btn.dataset.id;
@@ -899,44 +943,54 @@
         return;
       }
 
-      const rows = cachedEvidence.map((r) => `
-        <tr>
-          <td>
-            <div style="font-weight:600;">${escapeHtml(r.requesterName)}</div>
-            <div style="font-size:11px;color:var(--ink-500);">${escapeHtml(r.organization || "Independent")} · ${escapeHtml(r.email)}</div>
-          </td>
-          <td style="max-width:280px;white-space:normal;font-size:12px;">${escapeHtml(r.requestDetails)}</td>
-          <td><span class="admin-badge admin-badge--pending">${escapeHtml(r.status)}</span></td>
-          <td>${formatDate(r.createdAt)}</td>
-          <td>
-            <button class="btn btn--outline" style="padding:4px 8px;font-size:11.5px;" data-evidence-id="${r.requestId}">Update</button>
-          </td>
-        </tr>
-      `).join("");
-
-      container.innerHTML = `
-        <table class="admin-table">
-          <thead>
-            <tr>
-              <th>Requester / Org</th>
-              <th>Request Details</th>
-              <th>Status</th>
-              <th>Date</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rows}
-          </tbody>
-        </table>
-      `;
-
-      container.querySelectorAll("button[data-evidence-id]").forEach((b) => {
-        b.addEventListener("click", () => handleUpdateEvidence(b.dataset.evidenceId, session));
-      });
+      renderEvidenceTable(session);
     } catch (e) {
       container.innerHTML = '<div class="admin-error" style="margin:16px;">Connection error or backend unavailable.</div>';
     }
+  }
+
+  function renderEvidenceTable(session) {
+    const container = document.getElementById("evidence-table-container");
+    if (!container) return;
+    const _pg = T.paginate(T.newestFirst(cachedEvidence, ["createdAt"]), evidencePage, 10);
+    evidencePage = _pg.page;
+    const rows = _pg.slice.map((r) => `
+      <tr>
+        <td>
+          <div style="font-weight:600;">${escapeHtml(r.requesterName)}</div>
+          <div style="font-size:11px;color:var(--ink-500);">${escapeHtml(r.organization || "Independent")} · ${escapeHtml(r.email)}</div>
+        </td>
+        <td style="max-width:280px;white-space:normal;font-size:12px;">${escapeHtml(r.requestDetails)}</td>
+        <td><span class="admin-badge admin-badge--pending">${escapeHtml(r.status)}</span></td>
+        <td>${formatDate(r.createdAt)}</td>
+        <td>
+          <button class="btn btn--outline" style="padding:4px 8px;font-size:11.5px;" data-evidence-id="${r.requestId}">Update</button>
+        </td>
+      </tr>
+    `).join("");
+
+    container.innerHTML = `
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Requester / Org</th>
+            <th>Request Details</th>
+            <th>Status</th>
+            <th>Date</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+    `;
+
+    T.attachPager(container, _pg, (pp) => { evidencePage = pp; renderEvidenceTable(session); });
+
+    container.querySelectorAll("button[data-evidence-id]").forEach((b) => {
+      b.addEventListener("click", () => handleUpdateEvidence(b.dataset.evidenceId, session));
+    });
   }
 
   async function handleUpdateEvidence(requestId, session) {
