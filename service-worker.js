@@ -1,11 +1,11 @@
 /* =========================================================
-   UAF CAMPAIGN DRIVE — SERVICE WORKER (v28)
+   UAF CAMPAIGN DRIVE — SERVICE WORKER (v29)
    Features auto-update, network-first strategy for app code,
    and instant cache invalidation so installed devices always
    receive the latest updates immediately.
    ========================================================= */
 
-const CACHE_VERSION = "uaf-campaign-drive-v28";
+const CACHE_VERSION = "uaf-campaign-drive-v29";
 const APP_SHELL = [
   "./",
   "./index.html",

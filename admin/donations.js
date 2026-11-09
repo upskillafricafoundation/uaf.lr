@@ -102,6 +102,10 @@
   let searchQuery = "";
 
   function renderDonationsModule(container, session) {
+    if (!window.__uafTools) {
+      container.innerHTML = '<div class="admin-card"><h2>Missing helper file</h2><p class="admin-error">The file <strong>admin-tools.js</strong> did not load. Make sure it is uploaded in the same folder as admin/index.html, then refresh this page (Ctrl+F5).</p></div>';
+      return;
+    }
     if (!can("VIEW_DONATIONS", session.role)) {
       container.innerHTML = `
         <div class="admin-card">
