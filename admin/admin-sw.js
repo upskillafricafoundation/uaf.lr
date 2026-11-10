@@ -1,12 +1,12 @@
 /* =========================================================
-   UAF ADMIN — SERVICE WORKER (v29)
+   UAF ADMIN — SERVICE WORKER (v30)
    Scope: this admin folder only (independent from the public app).
    - The app shell (pages, scripts, styles, icons) opens offline.
    - Admin DATA is never cached: only same-origin GET requests are
      handled, and every API call goes to Apps Script (another origin).
    - Network-first for code so new releases always win.
    ========================================================= */
-const ADMIN_CACHE = "uaf-admin-v29";
+const ADMIN_CACHE = "uaf-admin-v30";
 const SHELL = [
   "./",
   "./index.html",

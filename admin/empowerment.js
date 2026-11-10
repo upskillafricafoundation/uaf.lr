@@ -1,6 +1,6 @@
 /* =========================================================
    UAF IMPACT — ADMIN: EMPOWERMENT DATA  (NEW FILE - own menu tab)
-   Household livelihood empowerment training records.
+   Household livelihood empowerment training records (multiple trainings + beneficiary dependents).
    Separate permission: MANAGE_EMPOWERMENT (give it to any admin).
    Needs: admin-tools.js
    ========================================================= */
@@ -95,10 +95,18 @@
                 <select id="emp-county" required>${COUNTIES.map((c) => `<option ${c === "Montserrado" ? "selected" : ""}>${c}</option>`).join("")}</select></div>
               <div class="form-field"><label for="emp-community">Community / Town *</label><input type="text" id="emp-community" required placeholder="e.g. Duport Road" /></div>
             </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-              <div class="form-field"><label for="emp-skill">Skill Trained *</label>
-                <select id="emp-skill" required>${SKILLS.map((s) => `<option>${esc(s)}</option>`).join("")}</select></div>
-              <div class="form-field"><label for="emp-contact">Contact Telephone *</label><input type="tel" id="emp-contact" required placeholder="088... or 077..." /></div>
+            <div class="form-field"><label>Training(s) received * <span class="admin-muted" style="font-weight:400;">(tick one or more)</span></label>
+              <div id="emp-skills" style="display:grid;grid-template-columns:1fr 1fr;gap:6px 14px;border:1px solid #cbd5e1;border-radius:8px;padding:10px 12px;">
+                ${SKILLS.map((sk, i) => `<label style="display:flex;gap:8px;align-items:center;font-size:13px;font-weight:400;"><input type="checkbox" class="emp-skill-cb" value="${esc(sk)}" data-i="${i}" /> ${esc(sk)}</label>`).join("")}
+              </div>
+              <input type="text" id="emp-skill-other" class="is-hidden" placeholder="Specify the other training(s), separated by commas" style="margin-top:6px;" />
+            </div>
+            <div class="form-field"><label for="emp-contact">Contact Telephone *</label><input type="tel" id="emp-contact" required placeholder="088... or 077..." /></div>
+            <div style="display:grid;grid-template-columns:1fr 2fr;gap:10px;">
+              <div class="form-field"><label for="emp-dep-count">Beneficiary dependents *</label>
+                <input type="number" id="emp-dep-count" min="0" max="99" step="1" required placeholder="Number of people" /></div>
+              <div class="form-field"><label for="emp-dep-details">Dependents' names / ages (optional)</label>
+                <input type="text" id="emp-dep-details" maxlength="1000" placeholder="e.g. Mary 8, John 5, Grandmother 70" /></div>
             </div>
             <div class="form-field"><label for="emp-child">Connected to Child (optional)</label>
               <input type="text" id="emp-child" list="emp-child-list" placeholder="Pick an identified child or type a name — leave empty for general household" />
@@ -117,6 +125,7 @@
     $("#emp-add").addEventListener("click", () => openModal(null));
     $("#emp-cancel").addEventListener("click", closeModal);
     $("#emp-form").addEventListener("submit", save);
+    $("#emp-skills").addEventListener("change", syncOther);
     $("#emp-search").addEventListener("input", (e) => {
       search = e.target.value; page = 0; drawTable();
     });
@@ -147,7 +156,7 @@
   function filtered() {
     const q = search.toLowerCase().trim();
     let list = T.newestFirst(items, ["date", "createdAt"]);
-    if (q) list = list.filter((e) => [e.name, e.community, e.county, e.skill, e.contact, e.connectedChild].join(" ").toLowerCase().includes(q));
+    if (q) list = list.filter((e) => [e.name, e.community, e.county, e.skill, e.contact, e.connectedChild, e.dependentsDetails].join(" ").toLowerCase().includes(q));
     return list;
   }
 
@@ -169,7 +178,8 @@
                   : `<div style="width:34px;height:34px;border-radius:50%;background:#fef3c7;color:#b45309;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;">${esc((e.name || "E").charAt(0).toUpperCase())}</div>`}
           <div><strong>${esc(e.name)}</strong><div style="font-size:11px;color:var(--ink-500);">${esc(e.gender || "—")}</div></div></div></td>
         <td>${esc(e.county)} · <span style="font-size:11.5px;color:var(--ink-500);">${esc(e.community)}</span></td>
-        <td><span class="admin-badge admin-badge--neutral" style="font-size:11px;font-weight:600;">${esc(e.skill)}</span></td>
+        <td style="white-space:normal;min-width:180px;">${skillList(e.skill).map((sk) => `<span class="admin-badge admin-badge--neutral" style="font-size:11px;font-weight:600;display:inline-block;margin:1px 3px 1px 0;">${esc(sk)}</span>`).join("")}</td>
+        <td title="${esc(e.dependentsDetails || "")}" style="white-space:normal;min-width:120px;"><strong>${e.dependentsCount === "" || e.dependentsCount == null ? "—" : esc(e.dependentsCount)}</strong>${e.dependentsDetails ? `<div style="font-size:11px;color:var(--ink-500);">${esc(e.dependentsDetails).slice(0, 60)}${e.dependentsDetails.length > 60 ? "…" : ""}</div>` : ""}</td>
         <td>${e.connectedChild ? `<span style="color:var(--blue-700);font-weight:600;">${esc(e.connectedChild)}</span>` : '<span style="color:var(--ink-400);">None</span>'}</td>
         <td><a href="tel:${esc(e.contact)}" style="color:var(--blue-700);text-decoration:none;">${esc(e.contact)}</a></td>
         <td><div style="display:flex;gap:6px;">
@@ -178,12 +188,19 @@
     }).join("");
 
     box.innerHTML = `<table class="admin-table"><thead><tr>
-      <th>Trainee / Caregiver</th><th>Location / Community</th><th>Skill Trained</th><th>Connected Child</th><th>Contact</th><th>Action</th>
+      <th>Trainee / Caregiver</th><th>Location / Community</th><th>Training(s)</th><th>Dependents</th><th>Connected Child</th><th>Contact</th><th>Action</th>
       </tr></thead><tbody>${rows}</tbody></table>`;
     T.attachPager(box, pg, (p) => { page = p; drawTable(); });
     box.querySelectorAll("[data-edit]").forEach((b) => b.addEventListener("click", () => openModal(items.find((x) => x.id === b.dataset.edit))));
     box.querySelectorAll("[data-del]").forEach((b) => b.addEventListener("click", () => remove(b.dataset.del)));
   }
+
+  const OTHER = "Other Vocational Skill";
+  function syncOther() {
+    const other = root.querySelector('.emp-skill-cb[value="' + OTHER + '"]');
+    $("#emp-skill-other").classList.toggle("is-hidden", !(other && other.checked));
+  }
+  const skillList = (txt) => String(txt || "").split(",").map((x) => x.trim()).filter(Boolean);
 
   function openModal(e) {
     $("#emp-form").reset();
@@ -196,10 +213,22 @@
       $("#emp-gender").value = e.gender || "Female";
       $("#emp-county").value = e.county || "Montserrado";
       $("#emp-community").value = e.community || "";
-      $("#emp-skill").value = SKILLS.includes(e.skill) ? e.skill : "Other Vocational Skill";
+      const have = skillList(e.skill);
+      const unknown = [];
+      have.forEach((sk) => {
+        const cb = root.querySelector('.emp-skill-cb[value="' + sk.replace(/"/g, '\\"') + '"]');
+        if (cb) cb.checked = true; else unknown.push(sk);
+      });
+      if (unknown.length) {
+        root.querySelector('.emp-skill-cb[value="' + OTHER + '"]').checked = true;
+        $("#emp-skill-other").value = unknown.join(", ");
+      }
       $("#emp-contact").value = e.contact || "";
+      $("#emp-dep-count").value = e.dependentsCount === "" || e.dependentsCount == null ? "" : e.dependentsCount;
+      $("#emp-dep-details").value = e.dependentsDetails || "";
       $("#emp-child").value = e.connectedChild || "";
     }
+    syncOther();
     $("#emp-modal").classList.remove("is-hidden");
   }
   function closeModal() { $("#emp-modal").classList.add("is-hidden"); }
@@ -210,14 +239,22 @@
     err.classList.add("is-hidden");
     const btn = $("#emp-save");
     const id = $("#emp-id").value;
+    const chosen = Array.from(root.querySelectorAll(".emp-skill-cb:checked")).map((c) => c.value).filter((v) => v !== OTHER);
+    if (root.querySelector('.emp-skill-cb[value="' + OTHER + '"]').checked) {
+      const extra = skillList($("#emp-skill-other").value);
+      if (extra.length) extra.forEach((x) => chosen.push(x)); else chosen.push(OTHER);
+    }
+    if (!chosen.length) { err.textContent = "Select at least one training."; err.classList.remove("is-hidden"); return; }
     const payload = {
       token: session.token,
       name: $("#emp-name").value.trim(),
       gender: $("#emp-gender").value,
       county: $("#emp-county").value,
       community: $("#emp-community").value.trim(),
-      skill: $("#emp-skill").value,
+      skill: chosen.join(", "),
       contact: $("#emp-contact").value.trim(),
+      dependentsCount: $("#emp-dep-count").value,
+      dependentsDetails: $("#emp-dep-details").value.trim(),
       connectedChild: $("#emp-child").value.trim()
     };
     btn.disabled = true;
